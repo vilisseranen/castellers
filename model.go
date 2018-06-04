@@ -23,16 +23,35 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 	description TEXT,
 	uuid TEXT NOT NULL,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
-)
-;`
+);`
 const AdminsTableCreationQuery = `CREATE TABLE IF NOT EXISTS admins
-( id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT NOT NULL );`
+(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	uuid TEXT NOT NULL,
+	CONSTRAINT uuid_unique UNIQUE (uuid)
+);`
+
+const UUID_SIZE = 40
 
 type event struct {
 	UUID      string `json:"uuid"`
 	Name      string `json:"name"`
 	StartDate string `json:"startDate"`
 	EndDate   string `json:"endDate"`
+}
+
+type admin struct {
+	UUID string `json:"uuid"`
+}
+
+func (a *admin) getAdmin(db *sql.DB) error {
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT uuid FROM %s WHERE uuid= ?", ADMIN_TABLE))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(a.UUID).Scan(&a.UUID)
+	return err
 }
 
 func (e *event) getEvent(db *sql.DB) error {
@@ -112,5 +131,5 @@ func (e *event) generateUUID() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e.UUID = fmt.Sprintf("%x", sha256.Sum256(data))
+	e.UUID = fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
 }

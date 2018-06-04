@@ -9,7 +9,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/satori/go.uuid"
 	"github.com/vilisseranen/castellers"
 )
 
@@ -58,10 +57,11 @@ func TestGetNonExistentEvent(t *testing.T) {
 
 func TestCreateEvent(t *testing.T) {
 	clearTables()
+	addAdmin("deadbeef")
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/event", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/admin/deadbeef/event", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -74,11 +74,38 @@ func TestCreateEvent(t *testing.T) {
 	}
 
 	if m["startDate"] != "2018-06-01 23:16" {
-		t.Errorf("Expected event date to be '2018-06-01 23:16'. Got '%v'", m["date"])
+		t.Errorf("Expected event start date to be '2018-06-01 23:16'. Got '%v'", m["date"])
 	}
 
 	if m["endDate"] != "2018-06-03 17:14" {
-		t.Errorf("Expected event date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+	}
+}
+
+func TestCreateEventNonAdmin(t *testing.T) {
+	clearTables()
+	addAdmin("deadbeef")
+
+	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
+
+	req, _ := http.NewRequest("POST", "/admin/4b1d/event", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["name"] != nil {
+		t.Errorf("Expected event name to be ''. Got '%v'", m["name"])
+	}
+
+	if m["startDate"] != nil {
+		t.Errorf("Expected event start date to be ''. Got '%v'", m["date"])
+	}
+
+	if m["endDate"] != nil {
+		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
 	}
 }
 
@@ -104,6 +131,44 @@ func TestGetEvent(t *testing.T) {
 
 	if m["endDate"] != "2018-06-03 21:00" {
 		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+	}
+}
+
+func TestGetEvents(t *testing.T) {
+	clearTables()
+	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
+	addEvent("deadfeed", "Another event", "2018-06-04 18:00", "2018-06-04 21:00")
+
+	req, _ := http.NewRequest("GET", "/events?count=2&start=0", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m [2]map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m[0]["name"] != "An event" {
+		t.Errorf("Expected event name to be 'An event'. Got '%v'", m[0]["name"])
+	}
+
+	if m[0]["startDate"] != "2018-06-03 18:00" {
+		t.Errorf("Expected event start date to be '2018-06-03 18:00'. Got '%v'", m[0]["date"])
+	}
+
+	if m[0]["endDate"] != "2018-06-03 21:00" {
+		t.Errorf("Expected event end date to be '2018-06-03 21:00'. Got '%v'", m[0]["date"])
+	}
+
+	if m[1]["name"] != "Another event" {
+		t.Errorf("Expected event name to be 'Another event'. Got '%v'", m[1]["name"])
+	}
+
+	if m[1]["startDate"] != "2018-06-04 18:00" {
+		t.Errorf("Expected event start date to be '2018-06-04 18:00'. Got '%v'", m[1]["date"])
+	}
+
+	if m[1]["endDate"] != "2018-06-04 21:00" {
+		t.Errorf("Expected event end date to be '2018-06-04 21:00'. Got '%v'", m[1]["date"])
 	}
 }
 
@@ -151,11 +216,9 @@ func TestDeleteEvent(t *testing.T) {
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	/*
-		req, _ = http.NewRequest("GET", "/event/deadbeef", nil)
-		response = executeRequest(req)
-		checkResponseCode(t, http.StatusNotFound, response.Code)
-	*/
+	req, _ = http.NewRequest("GET", "/event/deadbeef", nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
@@ -189,7 +252,7 @@ func addEvent(uuid, name, startDate, endDate string) {
 
 }
 
-func addAdmin() {
+func addAdmin(uuid string) {
 	tx, err := a.DB.Begin()
 
 	if err != nil {
@@ -200,10 +263,6 @@ func addAdmin() {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		log.Fatal(err)
-	}
 	_, err = stmt.Exec(uuid)
 	if err != nil {
 		log.Fatal(err)

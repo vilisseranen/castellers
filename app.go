@@ -11,8 +11,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const UUID_SIZE = 50
-
 type App struct {
 	Router *mux.Router
 	DB     *sql.DB
@@ -37,7 +35,7 @@ func (a *App) Run(addr string) {
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/events", a.getEvents).Methods("GET")
 	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.getEvent).Methods("GET")
-	a.Router.HandleFunc("/event", a.createEvent).Methods("POST")
+	a.Router.HandleFunc("/admin/{uuid:[0-9a-f]+}/event", a.createEvent).Methods("POST")
 	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.updateEvent).Methods("PUT")
 	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.deleteEvent).Methods("DELETE")
 }
@@ -61,6 +59,9 @@ func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
 func (a *App) getEvents(w http.ResponseWriter, r *http.Request) {
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	start, _ := strconv.Atoi(r.FormValue("start"))
+	if count < 1 {
+		count = 10
+	}
 	e := event{}
 	events, err := e.getEvents(a.DB, start, count)
 	if err != nil {
@@ -74,6 +75,20 @@ func (a *App) getEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createEvent(w http.ResponseWriter, r *http.Request) {
+	// Check if admin exists
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	admin := admin{UUID: uuid}
+	if err := admin.getAdmin(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create events.")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	// Create the event
 	var e event
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
