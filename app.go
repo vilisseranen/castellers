@@ -36,6 +36,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/events", a.getEvents).Methods("GET")
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.getEvent).Methods("GET")
 	a.Router.HandleFunc("/admins/{uuid:[0-9a-f]+}/events", a.createEvent).Methods("POST")
+	a.Router.HandleFunc("/admins/{uuid:[0-9a-f]+}/members", a.createMember).Methods("POST")
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.updateEvent).Methods("PUT")
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.deleteEvent).Methods("DELETE")
 }
@@ -101,6 +102,35 @@ func (a *App) createEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, e)
+}
+
+func (a *App) createMember(w http.ResponseWriter, r *http.Request) {
+	// Check if admin exists
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	admin := admin{UUID: uuid}
+	if err := admin.getAdmin(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	// Create the event
+	var m member
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+	if err := m.createMember(a.DB); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusCreated, m)
 }
 
 func (a *App) updateEvent(w http.ResponseWriter, r *http.Request) {

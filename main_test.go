@@ -109,6 +109,29 @@ func TestCreateEventNonAdmin(t *testing.T) {
 	}
 }
 
+func TestCreateMember(t *testing.T) {
+	clearTables()
+	addAdmin("deadbeef")
+
+	payload := []byte(`{"name":"clement","roles": ["baix", "second"], "extra":"Santi"}`)
+
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["name"] != "clement" {
+		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	}
+
+	if m["extra"] != "Santi" {
+		t.Errorf("Expected extra to be 'Santi'. Got '%v'", m["extra"])
+	}
+}
+
 func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
@@ -272,8 +295,10 @@ func addAdmin(uuid string) {
 func ensureTablesExist() {
 	a.DB.Exec("DROP TABLE events")
 	a.DB.Exec("DROP TABLE admins")
+	a.DB.Exec("DROP TABLE members")
 	a.DB.Exec(main.EventsTableCreationQuery)
 	a.DB.Exec(main.AdminsTableCreationQuery)
+	a.DB.Exec(main.MembersTableCreationQuery)
 }
 
 func clearTables() {
@@ -281,5 +306,6 @@ func clearTables() {
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'events'")
 	a.DB.Exec("DELETE FROM admins")
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
-
+	a.DB.Exec("DELETE FROM members")
+	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
 }

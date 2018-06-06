@@ -30,6 +30,14 @@ const AdminsTableCreationQuery = `CREATE TABLE IF NOT EXISTS admins
 	uuid TEXT NOT NULL,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
+const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
+(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	uuid TEXT NOT NULL,
+	name TEXT NOT NULL,
+	extra TEXT,
+	CONSTRAINT uuid_unique UNIQUE (uuid)
+);`
 
 const UUID_SIZE = 40
 
@@ -42,6 +50,12 @@ type event struct {
 
 type admin struct {
 	UUID string `json:"uuid"`
+}
+
+type member struct {
+	UUID  string `json:"uuid"`
+	Name  string `json:"name"`
+	Extra string `json:"extra"`
 }
 
 func (a *admin) getAdmin(db *sql.DB) error {
@@ -125,6 +139,25 @@ func (e *event) createEvent(db *sql.DB) error {
 	return err
 }
 
+func (m *member) createMember(db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, extra) VALUES (?, ?, ?)", MEMBERS_TABLE))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	m.generateUUID()
+	_, err = stmt.Exec(m.UUID, m.Name, m.Extra)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return err
+}
+
 func (e *event) generateUUID() {
 	data := make([]byte, 10)
 	_, err := rand.Read(data)
@@ -132,4 +165,13 @@ func (e *event) generateUUID() {
 		log.Fatal(err)
 	}
 	e.UUID = fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
+}
+
+func (m *member) generateUUID() {
+	data := make([]byte, 10)
+	_, err := rand.Read(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m.UUID = fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
 }
