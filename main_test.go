@@ -43,7 +43,7 @@ func TestEmptyTable(t *testing.T) {
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 
-	req, _ := http.NewRequest("GET", "/event/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -61,7 +61,7 @@ func TestCreateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/admin/deadbeef/event", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -88,7 +88,7 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/admin/4b1d/event", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/admins/4b1d/events", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusUnauthorized, response.Code)
@@ -113,7 +113,7 @@ func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
 
-	req, _ := http.NewRequest("GET", "/event/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -184,7 +184,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"test event - updated name","startDate":"2018-06-03 19:00", "endDate":"2018-06-03 22:00"}`)
 
-	req, _ = http.NewRequest("PUT", "/event/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/events/deadbeef", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -208,15 +208,15 @@ func TestDeleteEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
 
-	req, _ := http.NewRequest("GET", "/event/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/event/deadbeef", nil)
+	req, _ = http.NewRequest("DELETE", "/events/deadbeef", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("GET", "/event/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/events/deadbeef", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
@@ -249,7 +249,6 @@ func addEvent(uuid, name, startDate, endDate string) {
 		log.Fatal(err)
 	}
 	tx.Commit()
-
 }
 
 func addAdmin(uuid string) {

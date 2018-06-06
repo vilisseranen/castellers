@@ -34,10 +34,10 @@ func (a *App) Run(addr string) {
 
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/events", a.getEvents).Methods("GET")
-	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.getEvent).Methods("GET")
-	a.Router.HandleFunc("/admin/{uuid:[0-9a-f]+}/event", a.createEvent).Methods("POST")
-	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.updateEvent).Methods("PUT")
-	a.Router.HandleFunc("/event/{uuid:[0-9a-f]+}", a.deleteEvent).Methods("DELETE")
+	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.getEvent).Methods("GET")
+	a.Router.HandleFunc("/admins/{uuid:[0-9a-f]+}/events", a.createEvent).Methods("POST")
+	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.updateEvent).Methods("PUT")
+	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.deleteEvent).Methods("DELETE")
 }
 
 func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
