@@ -180,6 +180,23 @@ func TestGetEvent(t *testing.T) {
 	}
 }
 
+func TestGetMember(t *testing.T) {
+	clearTables()
+	addMember("deadbeef", "Clément")
+
+	req, _ := http.NewRequest("GET", "/members/deadbeef", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["name"] != "Clément" {
+		t.Errorf("Expected member name to be 'Clément'. Got '%v'", m["name"])
+	}
+}
+
 func TestGetEvents(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
@@ -267,6 +284,26 @@ func TestDeleteEvent(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
+func TestParticipateEvent(t *testing.T) {
+	clearTables()
+	addMember("deadbeef", "toto")
+	addEvent("deadbeef", "diada", "2018-06-05 22:55", "2018-06-05 23:55")
+
+	payload := []byte(`{"answer":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["answer"] != "yes" {
+		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["name"])
+	}
+}
+
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	a.Router.ServeHTTP(rr, req)
@@ -315,13 +352,33 @@ func addAdmin(uuid string) {
 	tx.Commit()
 }
 
+func addMember(uuid, name string) {
+	tx, err := a.DB.Begin()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	stmt, err := tx.Prepare("INSERT INTO members(uuid, name, extra) VALUES(?, ?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(uuid, name, "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx.Commit()
+}
+
 func ensureTablesExist() {
 	a.DB.Exec("DROP TABLE events")
 	a.DB.Exec("DROP TABLE admins")
 	a.DB.Exec("DROP TABLE members")
+	a.DB.Exec("DROP TABLE presences")
 	a.DB.Exec(main.EventsTableCreationQuery)
 	a.DB.Exec(main.AdminsTableCreationQuery)
 	a.DB.Exec(main.MembersTableCreationQuery)
+	a.DB.Exec(main.PresencesTableCreationQuery)
 }
 
 func clearTables() {
@@ -331,4 +388,6 @@ func clearTables() {
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
 	a.DB.Exec("DELETE FROM members")
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
+	a.DB.Exec("DELETE FROM presences")
+	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'presences'")
 }

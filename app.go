@@ -37,8 +37,10 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.getEvent).Methods("GET")
 	a.Router.HandleFunc("/admins/{uuid:[0-9a-f]+}/events", a.createEvent).Methods("POST")
 	a.Router.HandleFunc("/admins/{uuid:[0-9a-f]+}/members", a.createMember).Methods("POST")
+	a.Router.HandleFunc("/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", a.participateEvent).Methods("POST")
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.updateEvent).Methods("PUT")
 	a.Router.HandleFunc("/events/{uuid:[0-9a-f]+}", a.deleteEvent).Methods("DELETE")
+	a.Router.HandleFunc("/members/{uuid:[0-9a-f]+}", a.getMember).Methods("GET")
 }
 
 func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +57,22 @@ func (a *App) getEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusOK, e)
+}
+
+func (a *App) getMember(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	m := member{UUID: uuid}
+	if err := m.getMember(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusNotFound, "Member not found")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	respondWithJSON(w, http.StatusOK, m)
 }
 
 func (a *App) getEvents(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +149,24 @@ func (a *App) createMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, m)
+}
+
+func (a *App) participateEvent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	//event_uuid := vars["event_uuid"]
+	member_uuid := vars["member_uuid"]
+	//event := event{UUID: event_uuid}
+	member := member{UUID: member_uuid}
+	if err := member.getMember(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
 }
 
 func (a *App) updateEvent(w http.ResponseWriter, r *http.Request) {

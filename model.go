@@ -11,7 +11,8 @@ import (
 // Tables names
 const EVENTS_TABLE = "events"
 const MEMBERS_TABLE = "members"
-const ADMIN_TABLE = "admins"
+const ADMINS_TABLE = "admins"
+const PRESENCES_TABLE = "presences"
 
 // Tables creation queries
 const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
@@ -39,6 +40,14 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
+const PresencesTableCreationQuery = `CREATE TABLE IF NOT EXISTS presences
+(
+	member_id INTEGER NOT NULL,
+	event_id INTEGER NOT NULL,
+  answer TEXT NOT NULL,
+	PRIMARY KEY (member_id, event_id)
+);`
+
 const UUID_SIZE = 40
 
 type event struct {
@@ -59,7 +68,7 @@ type member struct {
 }
 
 func (a *admin) getAdmin(db *sql.DB) error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT uuid FROM %s WHERE uuid= ?", ADMIN_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT uuid FROM %s WHERE uuid= ?", ADMINS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,6 +164,16 @@ func (m *member) createMember(db *sql.DB) error {
 		return err
 	}
 	tx.Commit()
+	return err
+}
+
+func (m *member) getMember(db *sql.DB) error {
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra FROM %s WHERE uuid= ?", MEMBERS_TABLE))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra)
 	return err
 }
 
