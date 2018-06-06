@@ -132,6 +132,29 @@ func TestCreateMember(t *testing.T) {
 	}
 }
 
+func TestCreateMemberNoExtra(t *testing.T) {
+	clearTables()
+	addAdmin("deadbeef")
+
+	payload := []byte(`{"name":"clement","roles": ["baix", "second"]}`)
+
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["name"] != "clement" {
+		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	}
+
+	if m["extra"] != "" {
+		t.Errorf("Expected extra to be ''. Got '%v'", m["extra"])
+	}
+}
+
 func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
