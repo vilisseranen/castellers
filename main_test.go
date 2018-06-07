@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/vilisseranen/castellers"
+	"github.com/vilisseranen/castellers/model"
 )
 
 var a main.App
@@ -113,7 +114,7 @@ func TestCreateMember(t *testing.T) {
 	clearTables()
 	addAdmin("deadbeef")
 
-	payload := []byte(`{"name":"clement","roles": ["baix", "second"], "extra":"Santi"}`)
+	payload := []byte(`{"name":"clement", "extra":"Santi"}`)
 
 	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -375,10 +376,10 @@ func ensureTablesExist() {
 	a.DB.Exec("DROP TABLE admins")
 	a.DB.Exec("DROP TABLE members")
 	a.DB.Exec("DROP TABLE presences")
-	a.DB.Exec(main.EventsTableCreationQuery)
-	a.DB.Exec(main.AdminsTableCreationQuery)
-	a.DB.Exec(main.MembersTableCreationQuery)
-	a.DB.Exec(main.PresencesTableCreationQuery)
+	a.DB.Exec(model.EventsTableCreationQuery)
+	a.DB.Exec(model.AdminsTableCreationQuery)
+	a.DB.Exec(model.MembersTableCreationQuery)
+	a.DB.Exec(model.ParticipationTableCreationQuery)
 }
 
 func clearTables() {
@@ -388,6 +389,5 @@ func clearTables() {
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
 	a.DB.Exec("DELETE FROM members")
 	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
-	a.DB.Exec("DELETE FROM presences")
-	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'presences'")
+	a.DB.Exec("DELETE FROM participation")
 }
