@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,9 +16,11 @@ import (
 
 var a main.App
 
+const TEST_DB_NAME = "test_database.db"
+
 func TestMain(m *testing.M) {
 	a = main.App{}
-	a.Initialize("test_database.db")
+	a.Initialize(TEST_DB_NAME)
 
 	ensureTablesExist()
 
@@ -319,7 +322,11 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 }
 
 func addEvent(uuid, name, startDate, endDate string) {
-	tx, err := a.DB.Begin()
+	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -336,7 +343,11 @@ func addEvent(uuid, name, startDate, endDate string) {
 }
 
 func addAdmin(uuid string) {
-	tx, err := a.DB.Begin()
+	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
 
 	if err != nil {
 		log.Fatal(err)
@@ -354,7 +365,11 @@ func addAdmin(uuid string) {
 }
 
 func addMember(uuid, name string) {
-	tx, err := a.DB.Begin()
+	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
 
 	if err != nil {
 		log.Fatal(err)
@@ -372,22 +387,30 @@ func addMember(uuid, name string) {
 }
 
 func ensureTablesExist() {
-	a.DB.Exec("DROP TABLE events")
-	a.DB.Exec("DROP TABLE admins")
-	a.DB.Exec("DROP TABLE members")
-	a.DB.Exec("DROP TABLE presences")
-	a.DB.Exec(model.EventsTableCreationQuery)
-	a.DB.Exec(model.AdminsTableCreationQuery)
-	a.DB.Exec(model.MembersTableCreationQuery)
-	a.DB.Exec(model.ParticipationTableCreationQuery)
+	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.Exec("DROP TABLE events")
+	db.Exec("DROP TABLE admins")
+	db.Exec("DROP TABLE members")
+	db.Exec("DROP TABLE presences")
+	db.Exec(model.EventsTableCreationQuery)
+	db.Exec(model.AdminsTableCreationQuery)
+	db.Exec(model.MembersTableCreationQuery)
+	db.Exec(model.ParticipationTableCreationQuery)
 }
 
 func clearTables() {
-	a.DB.Exec("DELETE FROM events")
-	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'events'")
-	a.DB.Exec("DELETE FROM admins")
-	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
-	a.DB.Exec("DELETE FROM members")
-	a.DB.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
-	a.DB.Exec("DELETE FROM participation")
+	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.Exec("DELETE FROM events")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'events'")
+	db.Exec("DELETE FROM admins")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
+	db.Exec("DELETE FROM members")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
+	db.Exec("DELETE FROM participation")
 }

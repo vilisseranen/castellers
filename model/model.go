@@ -8,8 +8,10 @@ import (
 	"github.com/vilisseranen/castellers/common"
 )
 
+var db *sql.DB
+
 // Tables names
-const EventS_TABLE = "events"
+const EVENTS_TABLE = "events"
 const MEMBERS_TABLE = "members"
 const ADMINS_TABLE = "admins"
 const PARTICIPATION_TABLE = "participation"
@@ -72,10 +74,19 @@ type Participation struct {
 }
 
 type Entity interface {
-	Get(db *sql.DB) error
+	Get() error
+	GetAll() error
 }
 
-func (a *Admin) Get(db *sql.DB) error {
+func InitializeDB(dbname string) {
+	var err error
+	db, err = sql.Open("sqlite3", dbname)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (a *Admin) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT uuid FROM %s WHERE uuid= ?", ADMINS_TABLE))
 	if err != nil {
 		log.Fatal(err)
@@ -85,8 +96,8 @@ func (a *Admin) Get(db *sql.DB) error {
 	return err
 }
 
-func (e *Event) Get(db *sql.DB) error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate FROM %s WHERE uuid= ?", EventS_TABLE))
+func (e *Event) Get() error {
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate FROM %s WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,8 +107,8 @@ func (e *Event) Get(db *sql.DB) error {
 }
 
 // TODO: this needs to be implemented by Get
-func (e *Event) GetEvents(db *sql.DB, start, count int) ([]Event, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s LIMIT ? OFFSET ?", EventS_TABLE), count, start)
+func (e *Event) GetEvents(start, count int) ([]Event, error) {
+	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s LIMIT ? OFFSET ?", EVENTS_TABLE), count, start)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,8 +129,8 @@ func (e *Event) GetEvents(db *sql.DB, start, count int) ([]Event, error) {
 	return Events, nil
 }
 
-func (e *Event) UpdateEvent(db *sql.DB) error {
-	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ? WHERE uuid= ?", EventS_TABLE))
+func (e *Event) UpdateEvent() error {
+	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ? WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -128,8 +139,8 @@ func (e *Event) UpdateEvent(db *sql.DB) error {
 	return err
 }
 
-func (e *Event) DeleteEvent(db *sql.DB) error {
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", EventS_TABLE))
+func (e *Event) DeleteEvent() error {
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -138,12 +149,12 @@ func (e *Event) DeleteEvent(db *sql.DB) error {
 	return err
 }
 
-func (e *Event) CreateEvent(db *sql.DB) error {
+func (e *Event) CreateEvent() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate) VALUES (?, ?, ?, ?)", EventS_TABLE))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate) VALUES (?, ?, ?, ?)", EVENTS_TABLE))
 	if err != nil {
 		return err
 	}
@@ -157,7 +168,7 @@ func (e *Event) CreateEvent(db *sql.DB) error {
 	return err
 }
 
-func (m *Member) CreateMember(db *sql.DB) error {
+func (m *Member) CreateMember() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -176,7 +187,7 @@ func (m *Member) CreateMember(db *sql.DB) error {
 	return err
 }
 
-func (m *Member) Get(db *sql.DB) error {
+func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra FROM %s WHERE uuid= ?", MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
@@ -186,7 +197,7 @@ func (m *Member) Get(db *sql.DB) error {
 	return err
 }
 
-func (p *Participation) Participate(db *sql.DB) error {
+func (p *Participation) Participate() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
