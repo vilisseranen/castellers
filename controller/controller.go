@@ -50,7 +50,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		count = 10
 	}
 	e := model.Event{}
-	events, err := e.GetEvents(start, count)
+	events, err := e.GetAll(start, count)
 	if err != nil {
 		switch err {
 		default:
