@@ -31,19 +31,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestEmptyTable(t *testing.T) {
-	clearTables()
-
-	req, _ := http.NewRequest("GET", "/events", nil)
-	response := executeRequest(req)
-
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	if body := response.Body.String(); body != "[]" {
-		t.Errorf("Expected an empty array. Got %s", body)
-	}
-}
-
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 
@@ -63,26 +50,27 @@ func TestCreateEvent(t *testing.T) {
 	clearTables()
 	addAdmin("deadbeef")
 
-	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
+	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
 
 	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	var m map[string]interface{}
+	//var m map[string]interface{}
+	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "diada" {
-		t.Errorf("Expected event name to be 'diada'. Got '%v'", m["name"])
+	if m.Name != "diada" {
+		t.Errorf("Expected event name to be 'diada'. Got '%v'", m.Name)
 	}
 
-	if m["startDate"] != "2018-06-01 23:16" {
-		t.Errorf("Expected event start date to be '2018-06-01 23:16'. Got '%v'", m["date"])
+	if m.StartDate != 1527894960 {
+		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", m.StartDate)
 	}
 
-	if m["endDate"] != "2018-06-03 17:14" {
-		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+	if m.EndDate != 1528046040 {
+		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m.EndDate)
 	}
 }
 
@@ -161,26 +149,26 @@ func TestCreateMemberNoExtra(t *testing.T) {
 
 func TestGetEvent(t *testing.T) {
 	clearTables()
-	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
+	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var m map[string]interface{}
+	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "An event" {
-		t.Errorf("Expected event name to be 'An event'. Got '%v'", m["name"])
+	if m.Name != "An event" {
+		t.Errorf("Expected event name to be 'An event'. Got '%v'", m.Name)
 	}
 
-	if m["startDate"] != "2018-06-03 18:00" {
-		t.Errorf("Expected event start date to be '2018-06-01 23:16'. Got '%v'", m["date"])
+	if m.StartDate != 1527894960 {
+		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", m.StartDate)
 	}
 
-	if m["endDate"] != "2018-06-03 21:00" {
-		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+	if m.EndDate != 1528046040 {
+		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m.EndDate)
 	}
 }
 
@@ -203,77 +191,77 @@ func TestGetMember(t *testing.T) {
 
 func TestGetEvents(t *testing.T) {
 	clearTables()
-	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
-	addEvent("deadfeed", "Another event", "2018-06-04 18:00", "2018-06-04 21:00")
+	addEvent("deadbeef", "An event", 1527894960, 1528046040)
+	addEvent("deadfeed", "Another event", 1527994960, 1527996960)
 
 	req, _ := http.NewRequest("GET", "/events?count=2&start=0", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var m [2]map[string]interface{}
+	var m [2]model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m[0]["name"] != "An event" {
-		t.Errorf("Expected event name to be 'An event'. Got '%v'", m[0]["name"])
+	if m[0].Name != "An event" {
+		t.Errorf("Expected event name to be 'An event'. Got '%v'", m[0].Name)
 	}
 
-	if m[0]["startDate"] != "2018-06-03 18:00" {
-		t.Errorf("Expected event start date to be '2018-06-03 18:00'. Got '%v'", m[0]["date"])
+	if m[0].StartDate != 1527894960 {
+		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", m[0].StartDate)
 	}
 
-	if m[0]["endDate"] != "2018-06-03 21:00" {
-		t.Errorf("Expected event end date to be '2018-06-03 21:00'. Got '%v'", m[0]["date"])
+	if m[0].EndDate != 1528046040 {
+		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m[0].EndDate)
 	}
 
-	if m[1]["name"] != "Another event" {
-		t.Errorf("Expected event name to be 'Another event'. Got '%v'", m[1]["name"])
+	if m[1].Name != "Another event" {
+		t.Errorf("Expected event name to be 'Another event'. Got '%v'", m[1].Name)
 	}
 
-	if m[1]["startDate"] != "2018-06-04 18:00" {
-		t.Errorf("Expected event start date to be '2018-06-04 18:00'. Got '%v'", m[1]["date"])
+	if m[1].StartDate != 1527994960 {
+		t.Errorf("Expected event start date to be '1527994960'. Got '%v'", m[1].StartDate)
 	}
 
-	if m[1]["endDate"] != "2018-06-04 21:00" {
-		t.Errorf("Expected event end date to be '2018-06-04 21:00'. Got '%v'", m[1]["date"])
+	if m[1].EndDate != 1527996960 {
+		t.Errorf("Expected event end date to be '1527996960'. Got '%v'", m[1].EndDate)
 	}
 }
 
 func TestUpdateEvent(t *testing.T) {
 	clearTables()
-	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
+	addEvent("deadbeef", "An event", 1528048800, 1528059600)
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 
 	response := executeRequest(req)
-	var originalEvent map[string]interface{}
+	var originalEvent model.Event
 	json.Unmarshal(response.Body.Bytes(), &originalEvent)
 
-	payload := []byte(`{"name":"test event - updated name","startDate":"2018-06-03 19:00", "endDate":"2018-06-03 22:00"}`)
+	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
 
 	req, _ = http.NewRequest("PUT", "/events/deadbeef", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var m map[string]interface{}
+	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] == originalEvent["name"] {
-		t.Errorf("Expected the name to change from '%v' to '%v'. Got '%v'", originalEvent["name"], "test event - updated name", m["name"])
+	if m.Name == originalEvent.Name {
+		t.Errorf("Expected the name to change from '%v' to '%v'. Got '%v'", originalEvent.Name, "test event - updated name", m.Name)
 	}
 
-	if m["startDate"] == originalEvent["startDate"] {
-		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent["date"], "2018-06-03 19:00", m["startDate"])
+	if m.StartDate == originalEvent.StartDate {
+		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.StartDate, "2018-06-03 19:00", m.StartDate)
 	}
-	if m["endDate"] == originalEvent["endDate"] {
-		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent["date"], "2018-06-03 22:00", m["enDate"])
+	if m.EndDate == originalEvent.EndDate {
+		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.EndDate, "2018-06-03 22:00", m.EndDate)
 	}
 }
 
 func TestDeleteEvent(t *testing.T) {
 	clearTables()
-	addEvent("deadbeef", "An event", "2018-06-03 18:00", "2018-06-03 21:00")
+	addEvent("deadbeef", "An event", 1528048800, 1528059600)
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
@@ -291,7 +279,7 @@ func TestDeleteEvent(t *testing.T) {
 func TestParticipateEvent(t *testing.T) {
 	clearTables()
 	addMember("deadbeef", "toto")
-	addEvent("deadbeef", "diada", "2018-06-05 22:55", "2018-06-05 23:55")
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"yes"}`)
 
@@ -321,7 +309,7 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 	}
 }
 
-func addEvent(uuid, name, startDate, endDate string) {
+func addEvent(uuid, name string, startDate, endDate int) {
 	db, err := sql.Open("sqlite3", TEST_DB_NAME)
 	if err != nil {
 		log.Fatal(err)

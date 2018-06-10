@@ -14,8 +14,8 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name TEXT NOT NULL,
-	startDate TEXT NOT NULL,
-	endDate TEXT NOT NULL,
+	startDate INTEGER NOT NULL,
+	endDate INTEGER NOT NULL,
 	description TEXT,
 	uuid TEXT NOT NULL,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
@@ -24,8 +24,8 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 type Event struct {
 	UUID      string `json:"uuid"`
 	Name      string `json:"name"`
-	StartDate string `json:"startDate"`
-	EndDate   string `json:"endDate"`
+	StartDate int    `json:"startDate"`
+	EndDate   int    `json:"endDate"`
 }
 
 func (e *Event) Get() error {
