@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
+	"github.com/vilisseranen/castellers/model"
 	"net/http"
 )
 
@@ -15,4 +17,33 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func isAdmin(uuid string) (bool, error) {
+	member := model.Member{UUID: uuid}
+	if err := member.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return false, err
+		default:
+			return false, err
+		}
+		if member.Type != model.MEMBER_TYPE_ADMIN {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func isMember(uuid string) (bool, error) {
+	member := model.Member{UUID: uuid}
+	if err := member.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return false, err
+		default:
+			return false, err
+		}
+	}
+	return true, nil
 }

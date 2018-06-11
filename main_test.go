@@ -48,7 +48,7 @@ func TestGetNonExistentEvent(t *testing.T) {
 
 func TestCreateEvent(t *testing.T) {
 	clearTables()
-	addAdmin("deadbeef")
+	addMember("deadbeef", "ian", "admin")
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
 
@@ -57,7 +57,6 @@ func TestCreateEvent(t *testing.T) {
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	//var m map[string]interface{}
 	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
@@ -76,7 +75,7 @@ func TestCreateEvent(t *testing.T) {
 
 func TestCreateEventNonAdmin(t *testing.T) {
 	clearTables()
-	addAdmin("deadbeef")
+	addMember("deadbeef", "ian", "admin")
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
@@ -103,7 +102,7 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 func TestCreateMember(t *testing.T) {
 	clearTables()
-	addAdmin("deadbeef")
+	addMember("deadbeef", "ian", "admin")
 
 	payload := []byte(`{"name":"clement", "extra":"Santi"}`)
 
@@ -126,7 +125,7 @@ func TestCreateMember(t *testing.T) {
 
 func TestCreateMemberNoExtra(t *testing.T) {
 	clearTables()
-	addAdmin("deadbeef")
+	addMember("deadbeef", "ian", "admin")
 
 	payload := []byte(`{"name":"clement","roles": ["baix", "second"]}`)
 
@@ -174,7 +173,7 @@ func TestGetEvent(t *testing.T) {
 
 func TestGetMember(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "Clément")
+	addMember("deadbeef", "Clément", "member")
 
 	req, _ := http.NewRequest("GET", "/members/deadbeef", nil)
 	response := executeRequest(req)
@@ -278,7 +277,7 @@ func TestDeleteEvent(t *testing.T) {
 
 func TestParticipateEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "toto")
+	addMember("deadbeef", "toto", "member")
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"yes"}`)
@@ -330,7 +329,7 @@ func addEvent(uuid, name string, startDate, endDate int) {
 	tx.Commit()
 }
 
-func addAdmin(uuid string) {
+func addMember(uuid, name, member_type string) {
 	db, err := sql.Open("sqlite3", TEST_DB_NAME)
 	if err != nil {
 		log.Fatal(err)
@@ -340,34 +339,12 @@ func addAdmin(uuid string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare("INSERT INTO admins(uuid) VALUES(?)")
+	stmt, err := tx.Prepare("INSERT INTO members(uuid, name, extra, type) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid)
-	if err != nil {
-		log.Fatal(err)
-	}
-	tx.Commit()
-}
-
-func addMember(uuid, name string) {
-	db, err := sql.Open("sqlite3", TEST_DB_NAME)
-	if err != nil {
-		log.Fatal(err)
-	}
-	tx, err := db.Begin()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	stmt, err := tx.Prepare("INSERT INTO members(uuid, name, extra) VALUES(?, ?, ?)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(uuid, name, "")
+	_, err = stmt.Exec(uuid, name, "", member_type)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -380,11 +357,9 @@ func ensureTablesExist() {
 		log.Fatal(err)
 	}
 	db.Exec("DROP TABLE events")
-	db.Exec("DROP TABLE admins")
 	db.Exec("DROP TABLE members")
 	db.Exec("DROP TABLE presences")
 	db.Exec(model.EventsTableCreationQuery)
-	db.Exec(model.AdminsTableCreationQuery)
 	db.Exec(model.MembersTableCreationQuery)
 	db.Exec(model.ParticipationTableCreationQuery)
 }
@@ -396,8 +371,6 @@ func clearTables() {
 	}
 	db.Exec("DELETE FROM events")
 	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'events'")
-	db.Exec("DELETE FROM admins")
-	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'admins'")
 	db.Exec("DELETE FROM members")
 	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
 	db.Exec("DELETE FROM participation")

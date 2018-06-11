@@ -49,14 +49,12 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Check if admin exists
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	admin := model.Admin{UUID: uuid}
-	if err := admin.Get(); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create events.")
-		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+	admin, err := isAdmin(uuid)
+	if err == sql.ErrNoRows || admin == false {
+		respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")
+		return
+	} else if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	// Create the event

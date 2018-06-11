@@ -9,12 +9,16 @@ import (
 
 const MEMBERS_TABLE = "members"
 
+const MEMBER_TYPE_ADMIN = "admin"
+const MEMBER_TYPE_MEMBER = "member"
+
 const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	uuid TEXT NOT NULL,
 	name TEXT NOT NULL,
 	extra TEXT,
+	type TEXT NOT NULL,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
@@ -22,6 +26,7 @@ type Member struct {
 	UUID  string `json:"uuid"`
 	Name  string `json:"name"`
 	Extra string `json:"extra"`
+	Type  string `json:"type"`
 }
 
 func (m *Member) CreateMember() error {
@@ -29,13 +34,13 @@ func (m *Member) CreateMember() error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, extra) VALUES (?, ?, ?)", MEMBERS_TABLE))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, extra, type) VALUES (?, ?, ?, ?)", MEMBERS_TABLE))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 	m.UUID = common.GenerateUUID()
-	_, err = stmt.Exec(m.UUID, m.Name, m.Extra)
+	_, err = stmt.Exec(m.UUID, m.Name, m.Extra, m.Type)
 	if err != nil {
 		return err
 	}
