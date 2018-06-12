@@ -28,7 +28,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 func CreateMember(w http.ResponseWriter, r *http.Request) {
 	// Check if admin exists
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	uuid := vars["admin_uuid"]
 	admin, err := isAdmin(uuid)
 	if err == sql.ErrNoRows || admin == false {
 		respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")

@@ -229,6 +229,7 @@ func TestGetEvents(t *testing.T) {
 func TestUpdateEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
+	addMember("deadbeef", "ian", "admin")
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 
@@ -238,7 +239,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
 
-	req, _ = http.NewRequest("PUT", "/events/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/admins/deadbeef/events/deadbeef", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -261,12 +262,13 @@ func TestUpdateEvent(t *testing.T) {
 func TestDeleteEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
+	addMember("deadbeef", "ian", "admin")
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/events/deadbeef", nil)
+	req, _ = http.NewRequest("DELETE", "/admins/deadbeef/events/deadbeef", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 

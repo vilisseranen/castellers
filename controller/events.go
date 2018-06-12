@@ -48,7 +48,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Check if admin exists
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	uuid := vars["admin_uuid"]
 	admin, err := isAdmin(uuid)
 	if err == sql.ErrNoRows || admin == false {
 		respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")
@@ -73,8 +73,19 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
+	// Check if admin exists
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	uuid := vars["admin_uuid"]
+	admin, err := isAdmin(uuid)
+	if err == sql.ErrNoRows || admin == false {
+		respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")
+		return
+	} else if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// Update the event
+	uuid = vars["uuid"]
 	var e model.Event
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
@@ -91,8 +102,19 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
+	// Check if admin exists
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	uuid := vars["admin_uuid"]
+	admin, err := isAdmin(uuid)
+	if err == sql.ErrNoRows || admin == false {
+		respondWithError(w, http.StatusUnauthorized, "This admin is not authorized to create members.")
+		return
+	} else if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// Delete the event
+	uuid = vars["uuid"]
 	e := model.Event{UUID: uuid}
 	if err := e.DeleteEvent(); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
