@@ -31,6 +31,36 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestInitialize(t *testing.T) {
+	clearTables()
+	payload := []byte(`{"name":"ian", "extra":"Cap de colla"}`)
+
+	req, _ := http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	// First admin should succeed
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["name"] != "ian" {
+		t.Errorf("Expected member name to be 'ian'. Got '%v'", m["name"])
+	}
+
+	if m["type"] != "admin" {
+		t.Errorf("Expected type to be 'admin'. Got '%v'", m["type"])
+	}
+
+	// Second admin should fail
+	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles"}`)
+	req, _ = http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	response = executeRequest(req)
+
+	// First admin should succeed
+	checkResponseCode(t, http.StatusUnauthorized, response.Code)
+}
+
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 

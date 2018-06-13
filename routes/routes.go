@@ -8,7 +8,9 @@ import (
 func CreateRouter() *mux.Router {
 
 	r := mux.NewRouter()
+
 	// No auth
+	r.HandleFunc("/initialize", controller.Initialize).Methods("POST")
 	r.HandleFunc("/events", controller.GetEvents).Methods("GET")
 	r.HandleFunc("/events/{uuid:[0-9a-f]+}", controller.GetEvent).Methods("GET")
 

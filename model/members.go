@@ -57,3 +57,25 @@ func (m *Member) Get() error {
 	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra, &m.Type)
 	return err
 }
+
+func (m *Member) GetAll(start, count int) ([]Member, error) {
+	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, extra, type FROM %s LIMIT ? OFFSET ?", MEMBERS_TABLE), count, start)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	members := []Member{}
+
+	for rows.Next() {
+		var member Member
+		if err = rows.Scan(&m.UUID, &m.Name, &m.Extra, &m.Type); err != nil {
+			return nil, err
+		}
+		members = append(members, member)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return members, nil
+}
