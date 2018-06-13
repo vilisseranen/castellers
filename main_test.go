@@ -391,7 +391,28 @@ func TestParticipateEvent(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &m)
 
 	if m["answer"] != "yes" {
-		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["name"])
+		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["answer"])
+	}
+}
+
+func TestPresenceEvent(t *testing.T) {
+	clearTables()
+	addMember("baada55", "Clément", "member")
+	addMember("deadbeef", "Ian", "admin")
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"presence":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["presence"] != "yes" {
+		t.Errorf("Expected presence to be 'yes'. Got '%v'", m["presence"])
 	}
 }
 
@@ -458,7 +479,7 @@ func ensureTablesExist() {
 	}
 	db.Exec("DROP TABLE events")
 	db.Exec("DROP TABLE members")
-	db.Exec("DROP TABLE presences")
+	db.Exec("DROP TABLE participation")
 	db.Exec(model.EventsTableCreationQuery)
 	db.Exec(model.MembersTableCreationQuery)
 	db.Exec(model.ParticipationTableCreationQuery)

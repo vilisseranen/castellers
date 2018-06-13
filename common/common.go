@@ -17,3 +17,6 @@ func GenerateUUID() string {
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
 }
+
+const ANSWER_YES = "yes"
+const ANSWER_NO = "no"
