@@ -57,19 +57,19 @@ func TestCreateEvent(t *testing.T) {
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	var m model.Event
-	json.Unmarshal(response.Body.Bytes(), &m)
+	var event model.Event
+	json.Unmarshal(response.Body.Bytes(), &event)
 
-	if m.Name != "diada" {
-		t.Errorf("Expected event name to be 'diada'. Got '%v'", m.Name)
+	if event.Name != "diada" {
+		t.Errorf("Expected event name to be 'diada'. Got '%v'", event.Name)
 	}
 
-	if m.StartDate != 1527894960 {
-		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", m.StartDate)
+	if event.StartDate != 1527894960 {
+		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", event.StartDate)
 	}
 
-	if m.EndDate != 1528046040 {
-		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m.EndDate)
+	if event.EndDate != 1528046040 {
+		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", event.EndDate)
 	}
 }
 
@@ -97,6 +97,74 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 	if m["endDate"] != nil {
 		t.Errorf("Expected event end date to be '2018-06-03 17:14'. Got '%v'", m["date"])
+	}
+}
+
+func TestCreateWeeklyEvent(t *testing.T) {
+	clearTables()
+	addMember("deadbeef", "ian", "admin")
+
+	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}}`)
+
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var events = make([]model.Event, 0)
+	json.Unmarshal(response.Body.Bytes(), &events)
+
+	if len(events) != 7 {
+		t.Errorf("Expected to have %v events. Got '%v'", 7, len(events))
+	}
+
+	for i, event := range events {
+		correctTimestamp := uint(1529016300 + i*(60*60*24*7))
+		if event.Name != "diada" {
+			t.Errorf("Expected event name to be '%v'. Got '%v'", "diada", event.Name)
+		}
+		if event.StartDate != correctTimestamp {
+			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, correctTimestamp, event.StartDate)
+		}
+	}
+}
+
+func TestCreateDailyEvent(t *testing.T) {
+	clearTables()
+	addMember("deadbeef", "ian", "admin")
+
+	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}}`)
+
+	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+
+	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var events = make([]model.Event, 0)
+	json.Unmarshal(response.Body.Bytes(), &events)
+
+	if len(events) != 2 {
+		t.Errorf("Expected to have %v events. Got '%v'", 2, len(events))
+	}
+
+	for i, event := range events {
+		correctTimestamp := uint(1529157600 + i*(60*60*24))
+		if event.Name != "diada" {
+			t.Errorf("Expected event name to be '%v'. Got '%v'", "diada", event.Name)
+		}
+		if event.StartDate != correctTimestamp {
+			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, correctTimestamp, event.StartDate)
+		}
 	}
 }
 

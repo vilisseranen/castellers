@@ -21,11 +21,17 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
+type Recurring struct {
+	Interval string `json:"interval"`
+	Until    uint   `json:"until"`
+}
+
 type Event struct {
-	UUID      string `json:"uuid"`
-	Name      string `json:"name"`
-	StartDate int    `json:"startDate"`
-	EndDate   int    `json:"endDate"`
+	UUID      string    `json:"uuid"`
+	Name      string    `json:"name"`
+	StartDate uint      `json:"startDate"`
+	EndDate   uint      `json:"endDate"`
+	Recurring Recurring `json:"recurring"`
 }
 
 func (e *Event) Get() error {
