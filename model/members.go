@@ -49,11 +49,11 @@ func (m *Member) CreateMember() error {
 }
 
 func (m *Member) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra FROM %s WHERE uuid= ?", MEMBERS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra, type FROM %s WHERE uuid= ?", MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra)
+	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra, &m.Type)
 	return err
 }

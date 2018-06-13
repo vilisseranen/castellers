@@ -14,30 +14,19 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	event_uuid := vars["event_uuid"]
 	member_uuid := vars["member_uuid"]
 	event := model.Event{UUID: event_uuid}
-	member := model.Member{UUID: member_uuid}
-	if err := member.Get(); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			respondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
-		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-		return
-	}
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			respondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
+			RespondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
 		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
-
 	var p model.Participation
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&p); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
@@ -46,8 +35,8 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	p.MemberUUID = member_uuid
 
 	if err := p.Participate(); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, p)
+	RespondWithJSON(w, http.StatusCreated, p)
 }
