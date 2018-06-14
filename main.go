@@ -5,5 +5,5 @@ func main() {
 	//a.Initialize(os.Getenv("APP_DB_NAME"))
 	a.Initialize("test_database.db")
 
-	a.Run(":8080")
+	a.Run(":8080", "./castellers.log")
 }
