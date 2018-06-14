@@ -1,2 +1,0 @@
-127.0.0.1 - - [13/Jun/2018:19:27:14 -0400] "POST /initialize HTTP/1.1" 201 100 "" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0"
-127.0.0.1 - - [14/Jun/2018:12:49:25 -0400] "POST /initialize HTTP/1.1" 201 100 "" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0"

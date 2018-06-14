@@ -14,3 +14,6 @@ castellers
 
 # SQLite3 test databases
 *.db
+
+# Log files
+*.log
