@@ -30,7 +30,9 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if p.Answer != common.ANSWER_YES && p.Answer != common.ANSWER_NO {
+	if p.Answer != common.ANSWER_YES &&
+		p.Answer != common.ANSWER_NO &&
+		p.Answer != common.ANSWER_MAYBE {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}

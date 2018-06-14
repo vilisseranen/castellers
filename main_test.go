@@ -380,7 +380,7 @@ func TestParticipateEvent(t *testing.T) {
 	addMember("deadbeef", "toto", "member")
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
-	payload := []byte(`{"answer":"yes"}`)
+	payload := []byte(`{"answer":"maybe"}`)
 
 	req, _ := http.NewRequest("POST", "/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -390,8 +390,8 @@ func TestParticipateEvent(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["answer"] != "yes" {
-		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["answer"])
+	if m["answer"] != "maybe" {
+		t.Errorf("Expected answer to be 'maybe'. Got '%v'", m["answer"])
 	}
 }
 
