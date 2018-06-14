@@ -20,4 +20,12 @@ func InitializeDB(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = tx.Exec(EventsTableCreationQuery)
+	_, err = tx.Exec(MembersTableCreationQuery)
+	_, err = tx.Exec(ParticipationTableCreationQuery)
+	tx.Commit()
 }

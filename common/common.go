@@ -20,3 +20,4 @@ func GenerateUUID() string {
 
 const ANSWER_YES = "yes"
 const ANSWER_NO = "no"
+const ANSWER_MAYBE = "maybe"
