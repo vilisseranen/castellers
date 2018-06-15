@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 	"log"
-
-	"github.com/vilisseranen/castellers/common"
 )
 
 const EVENTS_TABLE = "events"
@@ -99,7 +97,6 @@ func (e *Event) CreateEvent() error {
 		return err
 	}
 	defer stmt.Close()
-	e.UUID = common.GenerateUUID()
 	_, err = stmt.Exec(e.UUID, e.Name, e.StartDate, e.EndDate, e.RecurringEvent, e.Description)
 	if err != nil {
 		return err

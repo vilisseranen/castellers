@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 	"log"
-
-	"github.com/vilisseranen/castellers/common"
 )
 
 const MEMBERS_TABLE = "members"
@@ -39,7 +37,6 @@ func (m *Member) CreateMember() error {
 		return err
 	}
 	defer stmt.Close()
-	m.UUID = common.GenerateUUID()
 	_, err = stmt.Exec(m.UUID, m.Name, m.Extra, m.Type)
 	if err != nil {
 		return err

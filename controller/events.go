@@ -67,6 +67,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Compute all events
 	var events = make([]model.Event, 0)
 	if event.Recurring.Interval == "" || event.Recurring.Until == 0 {
+		event.UUID = common.GenerateUUID()
 		events = append(events, event)
 	} else {
 		interval := intervalRegex.FindStringSubmatch(event.Recurring.Interval)
@@ -95,6 +96,10 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			// Compute the list of events
 			for date := event.StartDate; date <= event.Recurring.Until; date += intervalSeconds {
 				var anEvent model.Event
+				anEvent.UUID = common.GenerateUUID()
+				if event.UUID == "" {
+					event.UUID = anEvent.UUID
+				}
 				anEvent.Name = recurringEvent.Name
 				anEvent.Description = recurringEvent.Description
 				anEvent.StartDate = date

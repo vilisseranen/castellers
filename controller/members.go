@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -27,6 +28,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	m.UUID = common.GenerateUUID()
 	if err := m.CreateMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
