@@ -1,5 +1,7 @@
 package controller
 
+// TODO: Generate UUIDs in controller
+
 import (
 	"encoding/json"
 	"net/http"

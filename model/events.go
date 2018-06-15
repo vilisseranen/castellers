@@ -9,7 +9,6 @@ import (
 
 const EVENTS_TABLE = "events"
 
-// Tables creation queries
 const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +17,9 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 	endDate INTEGER NOT NULL,
 	description TEXT,
 	uuid TEXT NOT NULL,
-	CONSTRAINT uuid_unique UNIQUE (uuid)
+	recurringEvent TEXT,
+	CONSTRAINT uuid_unique UNIQUE (uuid),
+	FOREIGN KEY(recurringEvent) REFERENCES recurring_events(id)
 );`
 
 type Recurring struct {
@@ -27,11 +28,13 @@ type Recurring struct {
 }
 
 type Event struct {
-	UUID      string    `json:"uuid"`
-	Name      string    `json:"name"`
-	StartDate uint      `json:"startDate"`
-	EndDate   uint      `json:"endDate"`
-	Recurring Recurring `json:"recurring"`
+	UUID           string    `json:"uuid"`
+	Name           string    `json:"name"`
+	Description    string    `json:"description"`
+	StartDate      uint      `json:"startDate"`
+	EndDate        uint      `json:"endDate"`
+	Recurring      Recurring `json:"recurring"`
+	RecurringEvent string
 }
 
 func (e *Event) Get() error {
@@ -91,13 +94,13 @@ func (e *Event) CreateEvent() error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate) VALUES (?, ?, ?, ?)", EVENTS_TABLE))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description) VALUES (?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 	e.UUID = common.GenerateUUID()
-	_, err = stmt.Exec(e.UUID, e.Name, e.StartDate, e.EndDate)
+	_, err = stmt.Exec(e.UUID, e.Name, e.StartDate, e.EndDate, e.RecurringEvent, e.Description)
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -81,11 +82,24 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			case "w":
 				intervalSeconds *= INTERVAL_WEEK_SECOND
 			}
+			// Create the recurringEvent
+			var recurringEvent model.RecurringEvent
+			recurringEvent.UUID = common.GenerateUUID()
+			recurringEvent.Name = event.Name
+			recurringEvent.Description = event.Description
+			recurringEvent.Interval = event.Recurring.Interval
+			if err := recurringEvent.CreateRecurringEvent(); err != nil {
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			// Compute the list of events
 			for date := event.StartDate; date <= event.Recurring.Until; date += intervalSeconds {
 				var anEvent model.Event
-				anEvent.Name = event.Name
+				anEvent.Name = recurringEvent.Name
+				anEvent.Description = recurringEvent.Description
 				anEvent.StartDate = date
 				anEvent.EndDate = date + event.EndDate - event.StartDate
+				anEvent.RecurringEvent = recurringEvent.UUID
 				events = append(events, anEvent)
 			}
 		} else {

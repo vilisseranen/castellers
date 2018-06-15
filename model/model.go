@@ -7,8 +7,7 @@ import (
 
 var db *sql.DB
 
-// Tables names
-
+// TODO: remove this interface
 type Entity interface {
 	Get() error
 	GetAll() error
@@ -25,7 +24,20 @@ func InitializeDB(dbname string) {
 		log.Fatal(err)
 	}
 	_, err = tx.Exec(EventsTableCreationQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, err = tx.Exec(MembersTableCreationQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, err = tx.Exec(ParticipationTableCreationQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = tx.Exec(RecurringEventsTableCreationQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
 	tx.Commit()
 }
