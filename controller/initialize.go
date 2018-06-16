@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -32,6 +33,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	}
 	m.Type = model.MEMBER_TYPE_ADMIN // Make sure it's an admin
 	defer r.Body.Close()
+	m.UUID = common.GenerateUUID()
 	if err := m.CreateMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -52,6 +52,10 @@ func TestInitialize(t *testing.T) {
 		t.Errorf("Expected type to be 'admin'. Got '%v'", m["type"])
 	}
 
+	if m["uuid"] == "" {
+		t.Errorf("A uuid must be returned. Got '%v'", m["uuid"])
+	}
+
 	// Second admin should fail
 	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles"}`)
 	req, _ = http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
