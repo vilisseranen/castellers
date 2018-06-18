@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"log"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 const MEMBERS_TABLE = "members"
@@ -17,6 +19,7 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 	name TEXT NOT NULL,
 	extra TEXT,
 	type TEXT NOT NULL,
+	code TEXT NOT NULL,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
@@ -25,6 +28,7 @@ type Member struct {
 	Name  string `json:"name"`
 	Extra string `json:"extra"`
 	Type  string `json:"type"`
+	Code  string
 }
 
 func (m *Member) CreateMember() error {
@@ -32,12 +36,13 @@ func (m *Member) CreateMember() error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, extra, type) VALUES (?, ?, ?, ?)", MEMBERS_TABLE))
+	m.Code = common.GenerateCode()
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, extra, type, code) VALUES (?, ?, ?, ?, ?)", MEMBERS_TABLE))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(m.UUID, m.Name, m.Extra, m.Type)
+	_, err = stmt.Exec(m.UUID, m.Name, m.Extra, m.Type, m.Code)
 	if err != nil {
 		return err
 	}
@@ -46,12 +51,12 @@ func (m *Member) CreateMember() error {
 }
 
 func (m *Member) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra, type FROM %s WHERE uuid= ?", MEMBERS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, extra, type, code FROM %s WHERE uuid= ?", MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra, &m.Type)
+	err = stmt.QueryRow(m.UUID).Scan(&m.Name, &m.Extra, &m.Type, &m.Code)
 	return err
 }
 

@@ -8,6 +8,7 @@ import (
 )
 
 const UUID_SIZE = 40
+const CODE_SIZE = 16
 
 func GenerateUUID() string {
 	data := make([]byte, 10)
@@ -16,6 +17,15 @@ func GenerateUUID() string {
 		log.Fatal(err)
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
+}
+
+func GenerateCode() string {
+	data := make([]byte, 10)
+	_, err := rand.Read(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(data))[:CODE_SIZE]
 }
 
 const ANSWER_YES = "yes"

@@ -27,6 +27,10 @@ func checkAdmin(h Handler) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		code := r.Header.Get("X-Member-Code")
+		if code != member.Code {
+			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
+		}
 		if member.Type != model.MEMBER_TYPE_ADMIN {
 			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
 		}
@@ -48,6 +52,10 @@ func checkMember(h Handler) func(w http.ResponseWriter, r *http.Request) {
 				controller.RespondWithError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
+		}
+		code := r.Header.Get("X-Member-Code")
+		if code != member.Code {
+			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
 		}
 		h(w, r)
 	}
