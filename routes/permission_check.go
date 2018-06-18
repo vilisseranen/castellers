@@ -30,9 +30,11 @@ func checkAdmin(h Handler) func(w http.ResponseWriter, r *http.Request) {
 		code := r.Header.Get("X-Member-Code")
 		if code != member.Code {
 			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
+			return
 		}
 		if member.Type != model.MEMBER_TYPE_ADMIN {
 			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
+			return
 		}
 		h(w, r)
 	}
@@ -56,6 +58,7 @@ func checkMember(h Handler) func(w http.ResponseWriter, r *http.Request) {
 		code := r.Header.Get("X-Member-Code")
 		if code != member.Code {
 			controller.RespondWithError(w, http.StatusUnauthorized, UNAUTHORIZED_MESSAGE)
+			return
 		}
 		h(w, r)
 	}
