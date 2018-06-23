@@ -16,10 +16,10 @@ type App struct {
 	Router *mux.Router
 }
 
-func (a *App) Initialize(dbname string) {
+func (a *App) Initialize(dbname, staticDir string) {
 
 	model.InitializeDB(dbname)
-	a.Router = routes.CreateRouter()
+	a.Router = routes.CreateRouter(staticDir)
 }
 
 func (a *App) Run(addr, logFile string) {

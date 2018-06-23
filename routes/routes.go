@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/vilisseranen/castellers/controller"
 )
 
-func CreateRouter() *mux.Router {
+func CreateRouter(staticDir string) *mux.Router {
 
 	r := mux.NewRouter()
 
@@ -24,6 +26,9 @@ func CreateRouter() *mux.Router {
 	r.HandleFunc("/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkAdmin(controller.UpdateEvent)).Methods("PUT")
 	r.HandleFunc("/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkAdmin(controller.DeleteEvent)).Methods("DELETE")
 	r.HandleFunc("/admins/{admin_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.PresenceEvent)).Methods("POST")
+
+	// Static site
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(staticDir)))
 
 	return r
 }
