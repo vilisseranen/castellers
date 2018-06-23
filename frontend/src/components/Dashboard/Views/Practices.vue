@@ -58,7 +58,7 @@
         columns: tableColumns,
         data: []
       }
-      axios.get('http://localhost:8080/events')
+      axios.get('/events')
           .then(function (response) {
             table.data = response.data
             for (var i = 0; i < table.data.length; i++) {
