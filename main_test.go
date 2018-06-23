@@ -16,11 +16,11 @@ import (
 
 var a main.App
 
-const TEST_DB_NAME = "test_database.db"
+const testDbName = "test_database.db"
 
 func TestMain(m *testing.M) {
 	a = main.App{}
-	a.Initialize(TEST_DB_NAME)
+	a.Initialize(testDbName, "frontend/dist")
 
 	ensureTablesExist()
 
@@ -445,7 +445,7 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 }
 
 func addEvent(uuid, name string, startDate, endDate int) {
-	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -466,7 +466,7 @@ func addEvent(uuid, name string, startDate, endDate int) {
 }
 
 func addMember(uuid, name, member_type, code string) {
-	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -488,7 +488,7 @@ func addMember(uuid, name, member_type, code string) {
 }
 
 func ensureTablesExist() {
-	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -501,7 +501,7 @@ func ensureTablesExist() {
 }
 
 func clearTables() {
-	db, err := sql.Open("sqlite3", TEST_DB_NAME)
+	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
 	}
