@@ -26,21 +26,6 @@
   import LTable from 'src/components/UIComponents/Table.vue'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import axios from 'axios'
-  const tableColumns = ['uuid', 'name', 'startDate', 'endDate']
-  var tableTest = [{
-    uuid: 1,
-    name: 'Dakota Rice',
-    salary: '$36.738',
-    country: 'Niger',
-    city: 'Oud-Turnhout'
-  },
-  {
-    id: 2,
-    name: 'Minerva Hooper',
-    salary: '$23,789',
-    country: 'Curaçao',
-    city: 'Sinaai-Waas'
-  }]
   export default {
     components: {
       LTable,
@@ -49,10 +34,10 @@
     data () {
       var table = {
         columns: ['uuid', 'name', 'startDate', 'endDate'],
-        data: tableTest
+        data: []
       }
-      axios.get("http://localhost:8080/events")
-          .then(function(response) {
+      axios.get('http://localhost:8080/events')
+          .then(function (response) {
             table.data = response.data
             console.log(self.data)
           })

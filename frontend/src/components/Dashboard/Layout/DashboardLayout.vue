@@ -57,8 +57,8 @@
       }
 
     },
-    mounted() {
-      //this.sayHello()
+    mounted () {
+      // this.sayHello()
     }
   }
 

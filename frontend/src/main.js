@@ -26,16 +26,16 @@ new Vue({
     globalRedirect () {
       if ('next' in this.$route.query) {
         this.$router.push(this.$route.query.next)
-        console.log("Redirecting to " + this.$route.query.next)
+        console.log('Redirecting to ' + this.$route.query.next)
       }
     },
-    checkCode() {
+    checkCode () {
       if ('code' in this.$route.query) {
-        console.log("You provided the code: " + this.$route.query.code)
+        console.log('You provided the code: ' + this.$route.query.code)
       }
     }
   },
-  mounted() {
+  mounted () {
     this.globalRedirect()
     this.checkCode()
   }

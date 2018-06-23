@@ -45,7 +45,7 @@
   import LTable from 'src/components/UIComponents/Table.vue'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import axios from 'axios'
-  //const tableColumns = ['name', 'date', 'start', 'end', 'answer']
+  // const tableColumns = ['name', 'date', 'start', 'end', 'answer']
   const tableColumns = []
   export default {
     components: {
@@ -56,15 +56,15 @@
       var self = this
       var table = {
         columns: tableColumns,
-        data: [],
+        data: []
       }
-      axios.get("http://localhost:8080/events")
-          .then(function(response) {
-            table.data = response.data;
+      axios.get('http://localhost:8080/events')
+          .then(function (response) {
+            table.data = response.data
             for (var i = 0; i < table.data.length; i++) {
-              table.data[i]["date"] = self.extractDate(table.data[i]["startDate"])
-              table.data[i]["start"] = self.extractTime(table.data[i]["startDate"])
-              table.data[i]["end"] = self.extractTime(table.data[i]["endDate"])
+              table.data[i]['date'] = self.extractDate(table.data[i]['startDate'])
+              table.data[i]['start'] = self.extractTime(table.data[i]['startDate'])
+              table.data[i]['end'] = self.extractTime(table.data[i]['endDate'])
             }
           }).catch(err => console.log(err))
       return {
@@ -76,18 +76,17 @@
     },
     methods: {
       extractDate (timestamp) {
-        var options = { year: 'numeric', month: '2-digit', day: '2-digit'}
-        var date = new Date(timestamp*1000)
+        var options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+        var date = new Date(timestamp * 1000)
         return new Intl.DateTimeFormat('fr-FR', options).format(date)
       },
       extractTime (timestamp) {
-        var options = { hour: '2-digit', minute: '2-digit'}
-        var time = new Date(timestamp*1000)
+        var options = { hour: '2-digit', minute: '2-digit' }
+        var time = new Date(timestamp * 1000)
         return new Intl.DateTimeFormat('fr-FR', options).format(time)
-
       },
-      buttonClick(participation, member_id, event_name, event_id) {
-        console.log("I (" + member_id + ") will " + participation + " to the event: " + event_name + " (" + event_id+ ")")
+      buttonClick (participation, memberId, eventName, eventId) {
+        console.log('I (' + memberId + ') will ' + participation + ' to the event: ' + eventName + ' (' + eventId + ')')
       }
     }
   }
