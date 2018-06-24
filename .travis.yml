@@ -5,6 +5,6 @@
     - master
 
   sudo: required
-  dist: precise
+  dist: trusty
 
   install: ./fix_var_log_permissions.sh
