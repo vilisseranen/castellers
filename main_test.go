@@ -20,7 +20,7 @@ const testDbName = "test_database.db"
 
 func TestMain(m *testing.M) {
 	a = main.App{}
-	a.Initialize(testDbName, "frontend/dist")
+	a.Initialize(testDbName, "castellers.log")
 
 	ensureTablesExist()
 

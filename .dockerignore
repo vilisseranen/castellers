@@ -1,0 +1,6 @@
+# keep go binary
+*
+!castellers
+# keep static files
+frontend
+!frontend/dist

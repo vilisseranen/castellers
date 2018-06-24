@@ -1,4 +1,8 @@
   language: go
+
   go:
     - "1.10"
     - master
+
+  env:
+    - APP_LOG_FILE="castellers.log"

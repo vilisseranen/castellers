@@ -13,21 +13,23 @@ import (
 )
 
 type App struct {
-	Router *mux.Router
+	Router  *mux.Router
+	handler http.Handler
 }
 
-func (a *App) Initialize(dbname, staticDir string) {
+func (a *App) Initialize(dbname, logFile string) {
 
 	model.InitializeDB(dbname)
-	a.Router = routes.CreateRouter(staticDir)
-}
+	a.Router = routes.CreateRouter("static")
 
-func (a *App) Run(addr, logFile string) {
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
-	defer f.Close()
+	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
+}
 
-	log.Fatal(http.ListenAndServe(addr, handlers.CombinedLoggingHandler(f, a.Router)))
+func (a *App) Run(addr string) {
+
+	log.Fatal(http.ListenAndServe(addr, a.handler))
 }
