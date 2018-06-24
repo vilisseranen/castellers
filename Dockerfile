@@ -6,8 +6,8 @@ COPY frontend/dist /static
 
 VOLUME ["/data/", "/var/log"]
 
-ENV APP_DB_NAME castellers.db
-ENV APP_LOG_FILE castellers.log
+ENV APP_DB_NAME /data/castellers.db
+ENV APP_LOG_FILE /var/log/castellers.log
 
 EXPOSE 8080
 

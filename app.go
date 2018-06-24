@@ -22,7 +22,7 @@ func (a *App) Initialize(dbname, logFile string) {
 	model.InitializeDB(dbname)
 	a.Router = routes.CreateRouter("static")
 
-	f, err := os.OpenFile("/var/log/"+logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
