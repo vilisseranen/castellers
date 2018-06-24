@@ -1,6 +1,10 @@
   language: go
+
   go:
     - "1.10"
     - master
+
+  sudo: required
+  dist: precise
 
   install: ./fix_var_log_permissions.sh
