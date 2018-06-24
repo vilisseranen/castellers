@@ -2,3 +2,5 @@
   go:
     - "1.10"
     - master
+
+  install: ./fix_var_log_permissions.sh
