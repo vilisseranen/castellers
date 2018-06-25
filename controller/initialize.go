@@ -40,3 +40,22 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
+
+func IsInitialized(w http.ResponseWriter, r *http.Request) {
+	var m model.Member
+	members, err := m.GetAll(0, 1)
+	if err != nil {
+		switch err {
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	if len(members) > 0 {
+		RespondWithJSON(w, http.StatusOK, nil)
+		return
+	} else {
+		RespondWithJSON(w, http.StatusNoContent, nil)
+		return
+	}
+}

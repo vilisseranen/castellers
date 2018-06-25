@@ -13,6 +13,7 @@ func CreateRouter(staticDir string) *mux.Router {
 
 	// No auth
 	r.HandleFunc("/initialize", controller.Initialize).Methods("POST")
+	r.HandleFunc("/initialize", controller.IsInitialized).Methods("GET")
 	r.HandleFunc("/events", controller.GetEvents).Methods("GET")
 	r.HandleFunc("/events/{uuid:[0-9a-f]+}", controller.GetEvent).Methods("GET")
 

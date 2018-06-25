@@ -65,6 +65,16 @@ func TestInitialize(t *testing.T) {
 	checkResponseCode(t, http.StatusUnauthorized, response.Code)
 }
 
+func TestNotInitialized(t *testing.T) {
+	clearTables()
+
+	req, _ := http.NewRequest("GET", "/initialize", nil)
+	response := executeRequest(req)
+
+	// First admin should succeed
+	checkResponseCode(t, http.StatusNoContent, response.Code)
+}
+
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 
