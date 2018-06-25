@@ -17,14 +17,14 @@
     - master
     - dev
 
-before_deploy:
-  provider: script
-  script: bash build.sh dev
-  on:
-    branch: dev
+  before_deploy:
+    provider: script
+    script: bash build.sh dev
+    on:
+      branch: dev
 
-deploy:
-  provider: script
-  script: bash docker_hub_push.sh dev
-  on:
-    branch: dev
+  deploy:
+    provider: script
+    script: bash docker_hub_push.sh dev
+    on:
+      branch: dev
