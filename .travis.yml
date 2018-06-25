@@ -24,3 +24,4 @@ deploy:
   script: bash docker_hub_push.sh dev
   on:
     branch: dev
+    go: "1.10"
