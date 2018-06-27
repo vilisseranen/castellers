@@ -19,10 +19,10 @@ branches:
 
 
 before_script:
-  - npm install frontend
+  - cd frontend && npm install && cd ..
 script:
     - go test -v ./...
-    - cd frontend && npm run test
+    - cd frontend && npm run test && cd ..
 
 before_deploy: bash build.sh dev
 
