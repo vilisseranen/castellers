@@ -17,6 +17,10 @@ branches:
   - master
   - dev
 
+script:
+    - go test -v ./...
+    - cd frontend && npm run test
+
 before_deploy: bash build.sh dev
 
 deploy:
