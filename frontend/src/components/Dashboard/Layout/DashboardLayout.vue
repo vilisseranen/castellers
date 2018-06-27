@@ -2,10 +2,6 @@
   <div class="wrapper">
     <side-bar>
       <mobile-menu slot="content"></mobile-menu>
-      <sidebar-link to="/news">
-        <i class="nc-icon nc-attach-87"></i>
-        <p>News</p>
-      </sidebar-link>
       <sidebar-link to="/practices">
         <i class="nc-icon nc-refresh-02"></i>
         <p>Practices</p>

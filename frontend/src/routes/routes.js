@@ -7,6 +7,8 @@ import Login from 'src/components/Dashboard/Views/Login.vue'
 import Practices from 'src/components/Dashboard/Views/Practices.vue'
 import Events from 'src/components/Dashboard/Views/Events.vue'
 import News from 'src/components/Dashboard/Views/News.vue'
+import Initialize from 'src/components/Dashboard/Views/Initialize.vue'
+
 
 const routes = [
   {
@@ -33,6 +35,11 @@ const routes = [
         path: 'events',
         name: 'Events',
         component: Events
+      },
+      {
+        path: 'initialize',
+        name: 'Initialize',
+        component: Initialize
       }
     ]
   },
