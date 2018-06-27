@@ -22,7 +22,10 @@ before_script:
   - cd frontend && npm install && cd ..
 script:
     - go test -v ./...
-    - cd frontend && npm run test && cd ..
+    - cd frontend
+    - npm run test
+    - npm run lint
+    - cd ..
 
 before_deploy: bash build.sh dev
 
