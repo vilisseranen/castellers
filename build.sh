@@ -4,7 +4,6 @@ echo "Building go binary..."
 go build .
 cd frontend
 echo "Building vue js app..."
-npm install
 npm run build
 cd ..
 echo "Building docker image..."

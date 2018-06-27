@@ -17,6 +17,9 @@ branches:
   - master
   - dev
 
+
+before_script:
+  - cd frontend && npm install
 script:
     - go test -v ./...
     - cd frontend && npm run test
