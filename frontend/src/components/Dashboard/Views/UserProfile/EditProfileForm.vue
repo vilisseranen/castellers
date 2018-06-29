@@ -49,38 +49,40 @@
         </div>
       </div>
       <div class="text-center">
-        <button type="submit" class="btn btn-info btn-fill float-right" @click.prevent="updateProfile">
-          Update Profile
-        </button>
+        <slot name="update-button">
+          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="updateProfile">
+            Update Profile
+          </button>
+        </slot>
       </div>
       <div class="clearfix"></div>
     </form>
   </card>
 </template>
 <script>
-import Card from "src/components/UIComponents/Cards/Card.vue";
+import Card from 'src/components/UIComponents/Cards/Card.vue'
 
 export default {
   components: {
     Card
   },
-  data() {
+  data () {
     return {
       user: {
-        email: "ian@ericksen.qc",
-        firstName: "Ian",
-        lastName: "Ericksen",
-        roles: ["second"],
-        extra: "Cap de Colla"
+        email: 'ian@ericksen.qc',
+        firstName: 'Ian',
+        lastName: 'Ericksen',
+        roles: 'second',
+        extra: 'Cap de Colla'
       }
-    };
+    }
   },
   methods: {
-    updateProfile() {
-      alert("Your data: " + JSON.stringify(this.user));
+    updateProfile () {
+      alert('Your data: ' + JSON.stringify(this.user))
     }
   }
-};
+}
 </script>
 <style>
 </style>

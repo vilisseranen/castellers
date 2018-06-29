@@ -9,7 +9,6 @@ import Events from 'src/components/Dashboard/Views/Events.vue'
 import News from 'src/components/Dashboard/Views/News.vue'
 import Initialize from 'src/components/Dashboard/Views/Initialize.vue'
 
-
 const routes = [
   {
     path: '/',
