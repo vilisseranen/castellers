@@ -28,7 +28,7 @@ type Member struct {
 	Name  string `json:"name"`
 	Extra string `json:"extra"`
 	Type  string `json:"type"`
-	Code  string
+	Code  string `json:"-"`
 }
 
 func (m *Member) CreateMember() error {
