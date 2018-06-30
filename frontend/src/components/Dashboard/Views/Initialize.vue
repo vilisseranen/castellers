@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <edit-profile-form>
+          <edit-profile-form :user="user" v-if="initialized == false">
             <template slot="update-button">
               <button type="submit" class="btn btn-info btn-fill float-right" @click.prevent="initializeApp">
                 Initialize app
@@ -23,9 +23,26 @@ export default {
   components: {
     EditProfileForm
   },
+  data () {
+    var self = this
+    var initialized = true
+    var user = {
+    }
+    axios.get('http://127.0.0.1:8080/initialize').then(function (response) {
+      if (response.status === 204) {
+        self.initialized = false
+      } else {
+        alert('app already initialized')
+      }
+    })
+    return {
+      user,
+      initialized
+    }
+  },
   methods: {
     initializeApp () {
-      axios.post('/initialize', {'name': 'ian', 'extra': 'Cap de colla'}).then(function (response) {
+      axios.post('http://127.0.0.1:8080/initialize', {'name': 'ian', 'extra': 'Cap de colla'}).then(function (response) {
         alert(response)
       })
     }

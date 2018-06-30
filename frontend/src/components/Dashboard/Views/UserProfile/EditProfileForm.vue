@@ -66,16 +66,9 @@ export default {
   components: {
     Card
   },
-  data () {
-    return {
-      user: {
-        email: 'ian@ericksen.qc',
-        firstName: 'Ian',
-        lastName: 'Ericksen',
-        roles: 'second',
-        extra: 'Cap de Colla'
-      }
-    }
+  name: 'edit-profile-form',
+  props: {
+    user: Object
   },
   methods: {
     updateProfile () {

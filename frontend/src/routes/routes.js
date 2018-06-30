@@ -6,24 +6,18 @@ import NotFound from '../components/GeneralViews/NotFoundPage.vue'
 import Login from 'src/components/Dashboard/Views/Login.vue'
 import Practices from 'src/components/Dashboard/Views/Practices.vue'
 import Events from 'src/components/Dashboard/Views/Events.vue'
-import News from 'src/components/Dashboard/Views/News.vue'
 import Initialize from 'src/components/Dashboard/Views/Initialize.vue'
 
 const routes = [
   {
     path: '/',
     component: DashboardLayout,
-    redirect: '/news',
+    redirect: '/initialize',
     children: [
       {
         path: 'login',
         name: 'Login',
         component: Login
-      },
-      {
-        path: 'news',
-        name: 'News',
-        component: News
       },
       {
         path: 'practices',
