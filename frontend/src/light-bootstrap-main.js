@@ -13,6 +13,7 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'vue-notifyjs/themes/default.scss'
 import './assets/sass/light-bootstrap-dashboard.scss'
 import './assets/css/demo.css'
+import './assets/css/spinner.css'
 
 // library auto imports
 import 'es6-promise/auto'

@@ -14,14 +14,9 @@
       <div class="row">
         <div class="col-md-4">
           <fg-input type="text"
-                    label="First Name"
-                    v-model="user.firstName">
-          </fg-input>
-        </div>
-        <div class="col-md-4">
-          <fg-input type="text"
-                    label="Last Name"
-                    v-model="user.lastName">
+                    label="Name"
+                    placeholder="Name"
+                    v-model="user.name">
           </fg-input>
         </div>
         <div class="col-md-4">
@@ -31,16 +26,7 @@
                     v-model="user.email">
           </fg-input>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-md-6">
-          <fg-input type="text"
-                    label="Roles"
-                    placeholder="Baix"
-                    v-model="user.roles">
-          </fg-input>
-        </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <fg-input type="text"
                     label="Extra"
                     placeholder="Extra"
@@ -55,7 +41,12 @@
           </button>
         </slot>
       </div>
-      <div class="clearfix"></div>
+      <div class="clearfix">
+        <div class="spinner" v-if="updating == true">
+          <div class="double-bounce1"></div>
+          <div class="double-bounce2"></div>
+        </div>
+      </div>
     </form>
   </card>
 </template>
@@ -68,7 +59,8 @@ export default {
   },
   name: 'edit-profile-form',
   props: {
-    user: Object
+    user: Object,
+    updating: Boolean
   },
   methods: {
     updateProfile () {
