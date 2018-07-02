@@ -7,12 +7,6 @@ import (
 
 var db *sql.DB
 
-// TODO: remove this interface
-type Entity interface {
-	Get() error
-	GetAll() error
-}
-
 func InitializeDB(dbname string) {
 	var err error
 	db, err = sql.Open("sqlite3", dbname)
@@ -40,4 +34,15 @@ func InitializeDB(dbname string) {
 		log.Fatal(err)
 	}
 	tx.Commit()
+}
+
+// From: https://stackoverflow.com/questions/40266633/golang-insert-null-into-sql-instead-of-empty-string
+func stringOrNull(s string) sql.NullString {
+	if len(s) == 0 {
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		String: s,
+		Valid:  true,
+	}
 }

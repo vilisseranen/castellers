@@ -29,6 +29,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
+	m.Code = common.GenerateCode()
 	if err := m.CreateMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

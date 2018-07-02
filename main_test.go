@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 
 func TestInitialize(t *testing.T) {
 	clearTables()
-	payload := []byte(`{"name":"ian", "extra":"Cap de colla"}`)
+	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": "second", "email": "toto@tutu.com"}`)
 
 	req, _ := http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -44,8 +44,12 @@ func TestInitialize(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "ian" {
-		t.Errorf("Expected member name to be 'ian'. Got '%v'", m["name"])
+	if m["firstName"] != "Chimo" {
+		t.Errorf("Expected member first name to be 'Chimo'. Got '%v'", m["firstName"])
+	}
+
+	if m["lastName"] != "Anaïs" {
+		t.Errorf("Expected member last name to be 'Anaïs'. Got '%v'", m["lastName"])
 	}
 
 	if m["type"] != "admin" {
@@ -92,12 +96,12 @@ func TestGetNonExistentEvent(t *testing.T) {
 
 func TestCreateEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -120,7 +124,7 @@ func TestCreateEvent(t *testing.T) {
 
 func TestCreateEventNonAdmin(t *testing.T) {
 	clearTables()
-	addMember("deadfeed", "clement", "member", "tutu")
+	addAMember()
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
@@ -148,12 +152,12 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 func TestCreateWeeklyEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -183,12 +187,12 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 func TestCreateDailyEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -218,12 +222,18 @@ func TestCreateDailyEvent(t *testing.T) {
 
 func TestCreateMember(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	payload := []byte(`{"name":"clement", "extra":"Santi"}`)
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"extra":"Santi",
+		"roles": "second, baix",
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -231,8 +241,8 @@ func TestCreateMember(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "clement" {
-		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	if m["firstName"] != "Clément" {
+		t.Errorf("Expected member first name to be 'Clément'. Got '%v'", m["firstName"])
 	}
 
 	if m["extra"] != "Santi" {
@@ -242,12 +252,16 @@ func TestCreateMember(t *testing.T) {
 
 func TestCreateMemberNoExtra(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	payload := []byte(`{"name":"clement","roles": ["baix", "second"]}`)
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -255,12 +269,16 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "clement" {
-		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	if m["firstName"] != "Clément" {
+		t.Errorf("Expected member name to be 'Clément'. Got '%v'", m["firstName"])
 	}
 
 	if m["extra"] != "" {
 		t.Errorf("Expected extra to be ''. Got '%v'", m["extra"])
+	}
+
+	if m["roles"] != "" {
+		t.Errorf("Expected roles to be ''. Got '%v'", m["roles"])
 	}
 }
 
@@ -291,7 +309,7 @@ func TestGetEvent(t *testing.T) {
 
 func TestGetMember(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "Clément", "member", "toto")
+	addAMember()
 
 	req, _ := http.NewRequest("GET", "/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "toto")
@@ -302,8 +320,8 @@ func TestGetMember(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "Clément" {
-		t.Errorf("Expected member name to be 'Clément'. Got '%v'", m["name"])
+	if m["firstName"] != "Ramon" {
+		t.Errorf("Expected member name to be 'Ramon'. Got '%v'", m["firstName"])
 	}
 }
 
@@ -348,7 +366,7 @@ func TestGetEvents(t *testing.T) {
 func TestUpdateEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
@@ -358,8 +376,8 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
 
-	req, _ = http.NewRequest("PUT", "/admins/deadbeef/events/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ = http.NewRequest("PUT", "/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -382,14 +400,14 @@ func TestUpdateEvent(t *testing.T) {
 func TestDeleteEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/admins/deadbeef/events/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ = http.NewRequest("DELETE", "/admins/deadfeed/events/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -400,7 +418,7 @@ func TestDeleteEvent(t *testing.T) {
 
 func TestParticipateEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "toto", "member", "toto")
+	addAMember()
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"maybe"}`)
@@ -421,14 +439,14 @@ func TestParticipateEvent(t *testing.T) {
 
 func TestPresenceEvent(t *testing.T) {
 	clearTables()
-	addMember("baada55", "Clément", "member", "tutu")
-	addMember("deadbeef", "Ian", "admin", "toto")
+	addAMember()
+	addAnAdmin()
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/admins/deadfeed/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -475,7 +493,15 @@ func addEvent(uuid, name string, startDate, endDate int) {
 	tx.Commit()
 }
 
-func addMember(uuid, name, member_type, code string) {
+func addAMember() {
+	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "second", "member", "ramon@gerard.ca", "toto")
+}
+
+func addAnAdmin() {
+	addMember("deadfeed", "Romà", "Èric", "Cap de colla", "baix, second", "admin", "romà@eric.ca", "tutu")
+}
+
+func addMember(uuid, firstName, lastName, extra, roles, member_type, email, code string) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
@@ -485,12 +511,12 @@ func addMember(uuid, name, member_type, code string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare("INSERT INTO members(uuid, name, extra, type, code) VALUES(?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, roles, extra, type, email, code) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, name, "", member_type, code)
+	_, err = stmt.Exec(uuid, firstName, lastName, roles, extra, member_type, email, code)
 	if err != nil {
 		log.Fatal(err)
 	}

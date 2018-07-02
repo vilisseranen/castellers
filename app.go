@@ -26,7 +26,15 @@ func (a *App) Initialize(dbname, logFile string) {
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
+
+	// Define logger
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
+
+	// Define CORS handlers
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
+	originsOk := handlers.AllowedOrigins([]string{"*"}) // os.Getenv("ORIGIN_ALLOWED")
+	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	a.handler = handlers.CORS(originsOk, headersOk, methodsOk)(a.handler)
 }
 
 func (a *App) Run(addr string) {
