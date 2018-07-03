@@ -20,7 +20,11 @@ const testDbName = "test_database.db"
 
 func TestMain(m *testing.M) {
 	a = main.App{}
-	a.Initialize(testDbName, "castellers.log")
+	os.Setenv("APP_DB_NAME", "test_database.db")
+	os.Setenv("APP_LOG_FILE", "castellers.log")
+	os.Setenv("APP_SMTP_SERVER", "192.168.1.100:25")
+	os.Setenv("APP_DEBUG", "true")
+	a.Initialize()
 
 	ensureTablesExist()
 
@@ -33,7 +37,7 @@ func TestMain(m *testing.M) {
 
 func TestInitialize(t *testing.T) {
 	clearTables()
-	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": "second", "email": "toto@tutu.com"}`)
+	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": "second", "email": "vilisseranen@gmail.com"}`)
 
 	req, _ := http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
 	response := executeRequest(req)
