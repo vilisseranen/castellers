@@ -9,6 +9,9 @@
                 Initialize app
               </button>
             </template>
+            <template slot="message">
+              <span></span>
+            </template>
           </edit-profile-form>
         </div>
       </div>
@@ -27,12 +30,12 @@ export default {
     var self = this
     var initialized = true
     var updating = false
-    var user = {}
-    axios.get('http://127.0.0.1:8080/initialize').then(function (response) {
+    var user = { }
+    axios.get('/api/initialize').then(function (response) {
       if (response.status === 204) {
         self.initialized = false
       } else {
-        alert('app already initialized')
+        self.$router.push('login')
       }
     })
     return {
@@ -45,15 +48,16 @@ export default {
     initializeApp () {
       var self = this
       self.updating = true
-      axios.post('http://127.0.0.1:8080/initialize', self.user).then(function (response) {
+      axios.post('/api/initialize', self.user).then(function (response) {
         self.updating = false
         self.user = response.data
         if (response.status === 201) {
           self.notifyOK()
         } else {
+          self.updating = false
           self.notifyNOK()
         }
-      }).catch(err => console.log(err))
+      })
     },
     notifyOK () {
       const notification = {
@@ -63,7 +67,8 @@ export default {
         component: notification,
         icon: 'nc-icon nc-check-2',
         type: 'success',
-        timeout: null
+        timeout: null,
+        showClose: false
       })
     },
     notifyNOK () {
@@ -74,7 +79,8 @@ export default {
         component: notification,
         icon: 'nc-icon nc-simple-remove',
         type: 'danger',
-        timeout: null
+        timeout: null,
+        showClose: false
       })
     }
   }
