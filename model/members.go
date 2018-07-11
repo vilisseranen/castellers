@@ -21,6 +21,7 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 	type TEXT NOT NULL,
 	email TEXT NOT NULL,
 	code TEXT NOT NULL,
+	activated INTEGER NOT NULL DEFAULT 0,
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
@@ -33,6 +34,7 @@ type Member struct {
 	Type      string `json:"type"`
 	Email     string `json:"email"`
 	Code      string `json:"-"`
+	Activated int    `json:"activated"`
 }
 
 func (m *Member) CreateMember() error {
