@@ -1,15 +1,26 @@
 <template>
   <card>
-    <h4 slot="header" class="card-title">Enter member code</h4>
+    <h4 slot="header" class="card-title">Enter member ID</h4>
     <form>
       <div class="row">
-        <div class="col-md-10">
+        <div class="col-md-12">
           <fg-input type="text"
                     placeholder="335b9fba95a1578baa5a2b9560e3566f174ed3a7"
                     v-model="member.uuid">
           </fg-input>
         </div>
-        <div class="col-md-2">
+      </div>
+      <h4 slot="header" class="card-title">Enter member code</h4>
+      <div class="row">
+        <div class="col-md-12">
+          <fg-input type="text"
+                    placeholder="335b9fba95a1"
+                    v-model="member.code">
+          </fg-input>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
           <button type="submit" class="btn btn-info btn-fill float-right" @click.prevent="login">
           Login
           </button>
