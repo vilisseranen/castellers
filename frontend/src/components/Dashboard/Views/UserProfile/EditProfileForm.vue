@@ -14,9 +14,16 @@
       <div class="row">
         <div class="col-md-4">
           <fg-input type="text"
-                    label="Name"
-                    placeholder="Name"
-                    v-model="user.name">
+                    label="First Name"
+                    placeholder="First Name"
+                    v-model="user.firstName">
+          </fg-input>
+        </div>
+        <div class="col-md-4">
+          <fg-input type="text"
+                    label="Last Name"
+                    placeholder="Last Name"
+                    v-model="user.lastName">
           </fg-input>
         </div>
         <div class="col-md-4">
@@ -26,12 +33,31 @@
                     v-model="user.email">
           </fg-input>
         </div>
+      </div>
+      <div class="row">
+        <div class="col-md-8">
+          <fg-input type="text"
+                    label="Roles"
+                    placeholder="Second, baix"
+                    v-model="user.roles">
+          </fg-input>
+        </div>
         <div class="col-md-4">
           <fg-input type="text"
                     label="Extra"
                     placeholder="Extra"
                     v-model="user.extra">
           </fg-input>
+        </div>
+      </div>
+      <div slot="message" class="row">
+        <div class="col-md-12">
+          <div class="alert alert-success" v-if="user.activated === 1">
+            <span><b> Success - </b> This has logged in.</span>
+          </div>
+           <div class="alert alert-warning" v-if="user.activated === 0">
+            <span><b> Warning - </b> This user has not logged in yet.</span>
+          </div>
         </div>
       </div>
       <div class="text-center">
