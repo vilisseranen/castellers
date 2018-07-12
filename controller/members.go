@@ -28,6 +28,9 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if err := model.ValidateRole(m.Roles); err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	if err := m.CreateMember(); err != nil {

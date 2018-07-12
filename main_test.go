@@ -232,7 +232,7 @@ func TestCreateMember(t *testing.T) {
 		"firstName":"Clément",
 		"lastName": "Contini",
 		"extra":"Santi",
-		"roles": "second, baix",
+		"roles": "segond, baix,terç",
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
@@ -252,6 +252,25 @@ func TestCreateMember(t *testing.T) {
 	if m["extra"] != "Santi" {
 		t.Errorf("Expected extra to be 'Santi'. Got '%v'", m["extra"])
 	}
+}
+
+func TestCreateMemberInvalidRole(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"extra":"Santi",
+		"roles": "segond, baix,terç, toto",
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
 
 func TestCreateMemberNoExtra(t *testing.T) {
@@ -498,7 +517,7 @@ func addEvent(uuid, name string, startDate, endDate int) {
 }
 
 func addAMember() {
-	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "second", "member", "ramon@gerard.ca", "toto")
+	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "segond, baix, terç", "member", "ramon@gerard.ca", "toto")
 }
 
 func addAnAdmin() {
