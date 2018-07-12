@@ -39,7 +39,7 @@ func TestInitialize(t *testing.T) {
 	clearTables()
 	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": "second", "email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	// First admin should succeed
@@ -66,7 +66,7 @@ func TestInitialize(t *testing.T) {
 
 	// Second admin should fail
 	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles"}`)
-	req, _ = http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	// First admin should succeed
@@ -76,7 +76,7 @@ func TestInitialize(t *testing.T) {
 func TestNotInitialized(t *testing.T) {
 	clearTables()
 
-	req, _ := http.NewRequest("GET", "/initialize", nil)
+	req, _ := http.NewRequest("GET", "/api/initialize", nil)
 	response := executeRequest(req)
 
 	// First admin should succeed
@@ -86,7 +86,7 @@ func TestNotInitialized(t *testing.T) {
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -104,7 +104,7 @@ func TestCreateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
@@ -132,7 +132,7 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
@@ -160,13 +160,13 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -195,13 +195,13 @@ func TestCreateDailyEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -236,7 +236,7 @@ func TestCreateMember(t *testing.T) {
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
@@ -264,7 +264,7 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
@@ -290,7 +290,7 @@ func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -315,7 +315,7 @@ func TestGetMember(t *testing.T) {
 	clearTables()
 	addAMember()
 
-	req, _ := http.NewRequest("GET", "/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "toto")
 	response := executeRequest(req)
 
@@ -334,7 +334,7 @@ func TestGetEvents(t *testing.T) {
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 	addEvent("deadfeed", "Another event", 1527994960, 1527996960)
 
-	req, _ := http.NewRequest("GET", "/events?count=2&start=0", nil)
+	req, _ := http.NewRequest("GET", "/api/events?count=2&start=0", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -372,7 +372,7 @@ func TestUpdateEvent(t *testing.T) {
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
 	addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	var originalEvent model.Event
@@ -380,7 +380,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
 
-	req, _ = http.NewRequest("PUT", "/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 
@@ -406,16 +406,16 @@ func TestDeleteEvent(t *testing.T) {
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
 	addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/admins/deadfeed/events/deadbeef", nil)
+	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/events/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
@@ -427,7 +427,7 @@ func TestParticipateEvent(t *testing.T) {
 
 	payload := []byte(`{"answer":"maybe"}`)
 
-	req, _ := http.NewRequest("POST", "/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "toto")
 	response := executeRequest(req)
 
@@ -449,7 +449,7 @@ func TestPresenceEvent(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
