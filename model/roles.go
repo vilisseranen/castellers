@@ -27,20 +27,14 @@ func ValidateRole(roleString string) error {
 	if roleString == "" {
 		return nil
 	}
-	valid := true
-	roleString = strings.Replace(roleString, ", ", ",", -1)
 	roleList := strings.Split(roleString, ",")
 	for _, role := range roleList {
-		valid = false
-		for _, valideRole := range validRoleList {
-			if valideRole == role {
-				valid = true
-			}
+		if strings.Contains(","+strings.Join(validRoleList, ",")+",", ","+role+",") == false {
+			return errors.New("Invalid roles")
+		}
+		if strings.Count(strings.Join(roleList, ""), role) > 1 {
+			return errors.New("Invalid roles")
 		}
 	}
-	if valid == false {
-		return errors.New("Invalid roles")
-	} else {
-		return nil
-	}
+	return nil
 }

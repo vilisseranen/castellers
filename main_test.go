@@ -232,7 +232,7 @@ func TestCreateMember(t *testing.T) {
 		"firstName":"Clément",
 		"lastName": "Contini",
 		"extra":"Santi",
-		"roles": "segond, baix,terç",
+		"roles": "segond,baix,terç",
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
@@ -262,7 +262,7 @@ func TestCreateMemberInvalidRole(t *testing.T) {
 		"firstName":"Clément",
 		"lastName": "Contini",
 		"extra":"Santi",
-		"roles": "segond, baix,terç, toto",
+		"roles": "segond,toto,baix,terç",
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
