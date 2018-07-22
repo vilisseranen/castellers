@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/vilisseranen/castellers"
@@ -479,6 +480,61 @@ func TestPresenceEvent(t *testing.T) {
 
 	if m["presence"] != "yes" {
 		t.Errorf("Expected presence to be 'yes'. Got '%v'", m["presence"])
+	}
+}
+
+func TestGetMemberType(t *testing.T) {
+	clearTables()
+	addAMember()
+	addAnAdmin()
+
+	req, _ := http.NewRequest("GET", "/api/members/deadfeed", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["type"] != "admin" {
+		t.Errorf("Expected presence to be 'admin'. Got '%v'", m["type"])
+	}
+
+	req, _ = http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["type"] != "member" {
+		t.Errorf("Expected type to be 'member'. Got '%v'", m["type"])
+	}
+}
+
+func TestGetRoles(t *testing.T) {
+	clearTables()
+
+	req, _ := http.NewRequest("GET", "/api/roles", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m []string
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	// Check all roles
+	validRoleList := model.ValidRoleList
+
+	sort.Strings(validRoleList)
+	sort.Strings(m)
+
+	for i := range validRoleList {
+		if validRoleList[i] != m[i] {
+			t.Errorf("%v is not a valid role", m[i])
+		}
 	}
 }
 

@@ -39,3 +39,8 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
+
+func GetRoles(w http.ResponseWriter, r *http.Request) {
+	roles := model.ValidRoleList
+	RespondWithJSON(w, http.StatusOK, roles)
+}

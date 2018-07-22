@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var validRoleList = []string{
+var ValidRoleList = []string{
 	"baix",
 	"contrafort",
 	"primera mà",
@@ -29,7 +29,7 @@ func ValidateRole(roleString string) error {
 	}
 	roleList := strings.Split(roleString, ",")
 	for _, role := range roleList {
-		if strings.Contains(","+strings.Join(validRoleList, ",")+",", ","+role+",") == false {
+		if strings.Contains(","+strings.Join(ValidRoleList, ",")+",", ","+role+",") == false {
 			return errors.New("Invalid roles")
 		}
 		if strings.Count(strings.Join(roleList, ""), role) > 1 {
