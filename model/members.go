@@ -101,3 +101,13 @@ func (m *Member) GetAll() ([]Member, error) {
 	}
 	return members, nil
 }
+
+func (m *Member) DeleteMember() error {
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", MEMBERS_TABLE))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(m.UUID)
+	return err
+}

@@ -306,6 +306,27 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	}
 }
 
+func TestDeleteMember(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+	addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
 func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)

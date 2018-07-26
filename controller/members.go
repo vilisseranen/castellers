@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -14,7 +15,12 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 	uuid := vars["member_uuid"]
 	m := model.Member{UUID: uuid}
 	if err := m.Get(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		switch err {
+		case sql.ErrNoRows:
+			RespondWithError(w, http.StatusNotFound, "Member not found")
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, m)
@@ -58,6 +64,17 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
+}
+
+func DeleteMember(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["member_uuid"]
+	m := model.Member{UUID: uuid}
+	if err := m.DeleteMember(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, nil)
 }
 
 func GetRoles(w http.ResponseWriter, r *http.Request) {
