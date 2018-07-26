@@ -43,7 +43,7 @@ func (m *Member) CreateMember() error {
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
-		"INSERT INTO %s (uuid, firstName, lastName, roles, extra, type, email, code) VALUES (?, ?, ?, ?, ?, ?, ? , ?)",
+		"INSERT INTO %s (uuid, firstName, lastName, roles, extra, type, email, code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERS_TABLE))
 	if err != nil {
 		return err
@@ -59,6 +59,7 @@ func (m *Member) CreateMember() error {
 		stringOrNull(m.Email),
 		stringOrNull(m.Code))
 	if err != nil {
+		fmt.Printf("%v\n", m)
 		return err
 	}
 	tx.Commit()
@@ -77,10 +78,10 @@ func (m *Member) Get() error {
 	return err
 }
 
-func (m *Member) GetAll(start, count int) ([]Member, error) {
+func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, roles, extra, type, email, code FROM %s LIMIT ? OFFSET ?",
-		MEMBERS_TABLE), count, start)
+		"SELECT uuid, firstName, lastName, roles, extra, type, email, code FROM %s",
+		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}

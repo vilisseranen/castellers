@@ -12,7 +12,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 
 	// Only execute if it is the first member
 	var m model.Member
-	members, err := m.GetAll(0, 1)
+	members, err := m.GetAll()
 	if err != nil {
 		switch err {
 		default:
@@ -52,7 +52,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 
 func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	var m model.Member
-	members, err := m.GetAll(0, 1)
+	members, err := m.GetAll()
 	if err != nil {
 		switch err {
 		default:
