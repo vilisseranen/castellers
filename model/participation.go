@@ -10,7 +10,7 @@ const ParticipationTableCreationQuery = `CREATE TABLE IF NOT EXISTS participatio
 (
 	member_uuid INTEGER NOT NULL,
 	event_uuid INTEGER NOT NULL,
-  answer TEXT,
+    answer TEXT,
 	presence TEXT,
 	PRIMARY KEY (member_uuid, event_uuid)
 );`

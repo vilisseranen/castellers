@@ -36,13 +36,10 @@ func InitializeDB(dbname string) {
 	tx.Commit()
 }
 
-// From: https://stackoverflow.com/questions/40266633/golang-insert-null-into-sql-instead-of-empty-string
-func stringOrNull(s string) sql.NullString {
+func stringOrNull(s string) string {
 	if len(s) == 0 {
-		return sql.NullString{}
-	}
-	return sql.NullString{
-		String: s,
-		Valid:  true,
+		return ""
+	} else {
+		return s
 	}
 }

@@ -11,7 +11,7 @@ const RecurringEventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS recurring_
 (
 	uuid TEXT PRIMARY KEY,
 	name TEXT NOT NULL,
-  description TEXT,
+    description TEXT,
 	interval TEXT NOT NULL
 );`
 

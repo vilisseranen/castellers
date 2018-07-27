@@ -304,6 +304,14 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	if m["roles"] != "" {
 		t.Errorf("Expected roles to be ''. Got '%v'", m["roles"])
 	}
+
+	var member_uuid string
+	member_uuid = m["uuid"].(string)
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+member_uuid, nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
 }
 
 func TestDeleteMember(t *testing.T) {
