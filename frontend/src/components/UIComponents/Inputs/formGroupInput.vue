@@ -10,13 +10,14 @@
         <i :class="addonLeftIcon"></i>
       </span>
     </slot>
-    <input
-      :value="value"
-      @input="$emit('input',$event.target.value)"
-      v-bind="$attrs"
-      class="form-control"
-      aria-describedby="addon-right addon-left">
-    <slot></slot>
+    <slot name="input">
+      <input
+        :value="value"
+        @input="$emit('input',$event.target.value)"
+        v-bind="$attrs"
+        class="form-control"
+        aria-describedby="addon-right addon-left">
+    </slot>
     <slot name="addonRight">
       <span v-if="addonRightIcon" class="input-group-addon">
         <i :class="addonRightIcon"></i>

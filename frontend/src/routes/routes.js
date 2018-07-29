@@ -7,6 +7,8 @@ import Login from 'src/components/Dashboard/Views/Login.vue'
 import Practices from 'src/components/Dashboard/Views/Practices.vue'
 import Events from 'src/components/Dashboard/Views/Events.vue'
 import Initialize from 'src/components/Dashboard/Views/Initialize.vue'
+import Members from 'src/components/Dashboard/Views/Members.vue'
+import MemberEdit from 'src/components/Dashboard/Views/MemberEdit.vue'
 
 const routes = [
   {
@@ -33,10 +35,24 @@ const routes = [
         path: 'initialize',
         name: 'Initialize',
         component: Initialize
+      },
+      {
+        path: 'members',
+        name: 'Members',
+        component: Members
+      },
+      {
+        path: 'memberAdd',
+        name: 'MemberAdd',
+        component: MemberEdit
+      },
+      {
+        path: 'memberEdit/:uuid',
+        name: 'MemberEdit',
+        component: MemberEdit
       }
     ]
   },
-
   { path: '*', component: NotFound }
 ]
 

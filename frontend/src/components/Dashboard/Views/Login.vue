@@ -7,8 +7,11 @@
         </template>
         <div class="row">
           <div class="col-md">
-            <div class="alert alert-warning">
+            <div class="alert alert-warning" v-if="!uuid || !code">
               <span><b> You are not authenticated</b> If you want to register for events or check your profile, please enter your member code.</span>
+            </div>
+            <div class="alert alert-success" v-if="uuid && code">
+              <span><b> You are already authenticated</b> You will be able to register for events.</span>
             </div>
           </div>
         </div>
@@ -19,6 +22,7 @@
   </div>
 </template>
 <script>
+  import {mapGetters} from 'vuex'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import LoginCard from 'src/components/UIComponents/Cards/LoginCard.vue'
 
@@ -27,30 +31,8 @@
       Card,
       LoginCard
     },
-    data () {
-      return {
-        type: ['', 'info', 'success', 'warning', 'danger'],
-        notifications: {
-          topCenter: false
-        }
-      }
-    },
-    methods: {
-      notifyVue (verticalAlign, horizontalAlign) {
-        const notification = {
-          template: `<span>Welcome to <b>Light Bootstrap Dashboard</b> - a beautiful freebie for every web developer.</span>`
-        }
-
-        const color = Math.floor((Math.random() * 4) + 1)
-        this.$notifications.notify(
-          {
-            component: notification,
-            icon: 'nc-icon nc-app',
-            horizontalAlign: horizontalAlign,
-            verticalAlign: verticalAlign,
-            type: this.type[color]
-          })
-      }
+    computed: {
+      ...mapGetters(['uuid', 'code', 'type'])
     }
   }
 

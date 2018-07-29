@@ -34,6 +34,8 @@
 </template>
 <script>
   import Card from 'src/components/UIComponents/Cards/Card.vue'
+  import {mapMutations} from 'vuex'
+  import axios from 'axios'
 
   export default {
     components: {
@@ -41,14 +43,40 @@
     },
     data () {
       return {
-        member: {
-          uuid: ''
-        }
+        member: {}
       }
     },
     methods: {
+      ...mapMutations({
+        authenticate: 'authenticate'
+      }),
       login () {
-        alert('Your uuid: ' + JSON.stringify(this.member.uuid))
+        var self = this
+        console.log('uuid: ' + this.member.uuid)
+        console.log('code: ' + this.member.code)
+        axios.get(
+          '/api/members/' + this.member.uuid,
+          { headers: { 'X-Member-Code': this.member.code } }
+          ).then(function (response) {
+            console.log(self.member)
+            self.member.type = response.data.type
+            self.authenticate(self.member)
+          }).catch(err => {
+            console.log(err)
+            self.notifyNOK()
+          })
+      },
+      notifyNOK () {
+        const notification = {
+          template: `<span>There was an error during login.</span>`
+        }
+        this.$notifications.notify({
+          component: notification,
+          icon: 'nc-icon nc-simple-remove',
+          type: 'danger',
+          showClose: false,
+          timeout: null
+        })
       }
     }
   }

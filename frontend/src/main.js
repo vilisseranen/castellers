@@ -2,12 +2,14 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import App from './App.vue'
+import axios from 'axios'
 
 // LightBootstrap plugin
 import LightBootstrap from './light-bootstrap-main'
 
 // router setup
 import routes from './routes/routes'
+
 // plugin setup
 Vue.use(VueRouter)
 Vue.use(LightBootstrap)
@@ -34,6 +36,11 @@ const store = new Vuex.Store({
       state.auth.code = payload.code
       state.auth.type = payload.type
     }
+  },
+  getters: {
+    uuid: (state) => state.auth.uuid,
+    code: (state) => state.auth.code,
+    type: (state) => state.auth.type
   }
 })
 
@@ -51,13 +58,21 @@ new Vue({
       }
     },
     checkCredentials () {
+      var self = this
       if ('c' in this.$route.query && 'm' in this.$route.query) {
-        this.$store.commit('authenticate', {
-          uuid: this.$route.query.m,
-          code: this.$route.query.c,
-          type: 'admin'
+        axios.get(
+          '/api/members/' + this.$route.query.m,
+          { headers: { 'X-Member-Code': this.$route.query.c } }
+        ).then(function (response) {
+          self.$store.commit('authenticate', {
+            uuid: self.$route.query.m,
+            code: self.$route.query.c,
+            type: response.data.type
+          })
+          console.log('You are authenticated as : ' + JSON.stringify(self.$store.state.auth))
+        }).catch(err => {
+          console.log(err)
         })
-        console.log('You are authenticated as : ' + JSON.stringify(this.$store.state.auth))
       }
     }
   },

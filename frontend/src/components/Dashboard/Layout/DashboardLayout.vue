@@ -10,12 +10,10 @@
         <i class="nc-icon nc-pin-3"></i>
         <p>Events</p>
       </sidebar-link>
-      <!-- TODO: add a gallery
-      <sidebar-link to="/admin/typography">
-        <i class="nc-icon nc-satisfied"></i>
-        <p>Gallery</p>
+      <sidebar-link to="/members" v-if="type==='admin'">
+        <i class="nc-icon nc-circle-09"></i>
+        <p>Members</p>
       </sidebar-link>
-      -->
     </side-bar>
     <div class="main-panel">
       <top-navbar></top-navbar>
@@ -36,6 +34,7 @@
   import ContentFooter from './ContentFooter.vue'
   import DashboardContent from './Content.vue'
   import MobileMenu from './MobileMenu.vue'
+  import {mapGetters} from 'vuex'
   export default {
     components: {
       TopNavbar,
@@ -48,13 +47,10 @@
         if (this.$sidebar.showSidebar) {
           this.$sidebar.displaySidebar(false)
         }
-      },
-      sayHello () {
       }
-
     },
-    mounted () {
-      // this.sayHello()
+    computed: {
+      ...mapGetters(['uuid', 'code', 'type'])
     }
   }
 

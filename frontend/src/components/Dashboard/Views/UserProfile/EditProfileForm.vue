@@ -37,9 +37,16 @@
       <div class="row">
         <div class="col-md-8">
           <fg-input type="text"
-                    label="Roles"
-                    placeholder="Second, baix"
-                    v-model="user.roles">
+                    label="Roles">
+            <template slot="input">
+              <multiselect
+                v-model="user.roles"
+                :options="available_roles"
+                :multiple="true"
+                :placeholder="''"
+                :closeOnSelect="false">
+              </multiselect>
+            </template>
           </fg-input>
         </div>
         <div class="col-md-4">
@@ -62,8 +69,8 @@
       </div>
       <div class="text-center">
         <slot name="update-button">
-          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="updateProfile">
-            Update Profile
+          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
+            Edit Member
           </button>
         </slot>
       </div>
@@ -78,20 +85,96 @@
 </template>
 <script>
 import Card from 'src/components/UIComponents/Cards/Card.vue'
+import axios from 'axios'
+import {mapGetters} from 'vuex'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 
 export default {
   components: {
-    Card
+    Card,
+    Multiselect
   },
   name: 'edit-profile-form',
   props: {
-    user: Object,
-    updating: Boolean
+    user: Object
+  },
+  computed: {
+    ...mapGetters(['uuid', 'code', 'type'])
+  },
+  data () {
+    return {
+      updating: false,
+      available_roles: []
+    }
+  },
+  mounted () {
+    var self = this
+    this.selected_roles = this.user.roles
+    axios.get('/api/roles').then(function (response) {
+      self.available_roles = response.data.sort()
+    }).catch(err => console.log(err))
   },
   methods: {
-    updateProfile () {
-      alert('Your data: ' + JSON.stringify(this.user))
+    memberEdit () {
+      this.user.type = 'member'
+      var self = this
+      self.updating = true
+      console.log(JSON.stringify(self.user))
+      if (self.user.uuid !== undefined) {
+        axios.put(
+          `/api/admins/${self.uuid}/members/${this.user.uuid}`,
+          this.user,
+          { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.updating = false
+          self.user = response.data
+          self.notifyOK()
+        }).catch(function (error) {
+          self.updating = false
+          self.notifyNOK()
+          console.log(error)
+        })
+      } else {
+        axios.post(
+          `/api/admins/${this.uuid}/members`,
+          this.user,
+          { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.updating = false
+          self.notifyOK()
+        }).catch(function (error) {
+          self.updating = false
+          self.notifyNOK()
+          console.log(error)
+        })
+      }
+    },
+    notifyOK () {
+      const notification = {
+        template: `<span>The member was successfully added ! He or she will receive an email with infos to connect.</span>`
+      }
+      this.$notifications.notify({
+        component: notification,
+        icon: 'nc-icon nc-check-2',
+        type: 'success',
+        timeout: null,
+        showClose: false
+      })
+    },
+    notifyNOK () {
+      const notification = {
+        template: `<span>There was an error during the member registration.</span>`
+      }
+      this.$notifications.notify({
+        component: notification,
+        icon: 'nc-icon nc-simple-remove',
+        type: 'danger',
+        timeout: null,
+        showClose: false
+      })
     }
+
   }
 }
 </script>

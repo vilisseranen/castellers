@@ -255,7 +255,6 @@ func TestCreateMember(t *testing.T) {
 	}
 }
 
-/*
 func TestCreateMemberInvalidRole(t *testing.T) {
 	clearTables()
 	addAnAdmin()
@@ -274,7 +273,6 @@ func TestCreateMemberInvalidRole(t *testing.T) {
 
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
-
 
 func TestCreateMemberNoExtra(t *testing.T) {
 	clearTables()
@@ -303,8 +301,8 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		t.Errorf("Expected extra to be ''. Got '%v'", m["extra"])
 	}
 
-	if m["roles"] != "" {
-		t.Errorf("Expected roles to be ''. Got '%v'", m["roles"])
+	if m["roles"] != nil {
+		t.Errorf("Expected roles to be nil. Got '%v'", m["roles"])
 	}
 
 	var member_uuid string
@@ -315,7 +313,7 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 }
-*/
+
 func TestUpdateMember(t *testing.T) {
 	clearTables()
 	addAnAdmin()
