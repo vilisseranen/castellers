@@ -2,7 +2,7 @@ package model
 
 import (
 	"errors"
-	"strings"
+	"sort"
 )
 
 var ValidRoleList = []string{
@@ -23,16 +23,15 @@ var ValidRoleList = []string{
 	"pinya",
 }
 
-func ValidateRole(roleString string) error {
-	if roleString == "" {
-		return nil
-	}
-	roleList := strings.Split(roleString, ",")
-	for _, role := range roleList {
-		if strings.Contains(","+strings.Join(ValidRoleList, ",")+",", ","+role+",") == false {
-			return errors.New("Invalid roles")
-		}
-		if strings.Count(strings.Join(roleList, ""), role) > 1 {
+func ValidateRoles(roles []string) error {
+	sort.Strings(roles)
+	sort.Strings(ValidRoleList)
+	validRoles := ValidRoleList[:]
+	index := 0
+	for _, roleToTest := range roles {
+		validRoles = validRoles[index+1 : len(validRoles)]
+		index = sort.SearchStrings(validRoles, roleToTest)
+		if roleToTest != validRoles[index] {
 			return errors.New("Invalid roles")
 		}
 	}

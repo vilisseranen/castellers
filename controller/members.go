@@ -47,7 +47,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	if err := model.ValidateRole(m.Roles); err != nil {
+	if err := model.ValidateRoles(m.Roles); err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 	}
 	m.UUID = common.GenerateUUID()
@@ -64,6 +64,24 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
+}
+
+func EditMember(w http.ResponseWriter, r *http.Request) {
+	var m model.Member
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+	if err := model.ValidateRoles(m.Roles); err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+	}
+	if err := m.EditMember(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondWithJSON(w, http.StatusAccepted, m)
 }
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {

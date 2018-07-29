@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 const MEMBERS_TABLE = "members"
@@ -26,26 +27,28 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 );`
 
 type Member struct {
-	UUID      string `json:"uuid"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Roles     string `json:"roles"`
-	Extra     string `json:"extra"`
-	Type      string `json:"type"`
-	Email     string `json:"email"`
-	Code      string `json:"-"`
-	Activated int    `json:"activated"`
+	UUID      string   `json:"uuid"`
+	FirstName string   `json:"firstName"`
+	LastName  string   `json:"lastName"`
+	Roles     []string `json:"roles"`
+	Extra     string   `json:"extra"`
+	Type      string   `json:"type"`
+	Email     string   `json:"email"`
+	Code      string   `json:"-"`
+	Activated int      `json:"activated"`
 }
 
 func (m *Member) CreateMember() error {
 	tx, err := db.Begin()
 	if err != nil {
+		fmt.Printf("%v\n", m)
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, roles, extra, type, email, code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERS_TABLE))
 	if err != nil {
+		fmt.Printf("%v\n", m)
 		return err
 	}
 	defer stmt.Close()
@@ -53,11 +56,39 @@ func (m *Member) CreateMember() error {
 		stringOrNull(m.UUID),
 		stringOrNull(m.FirstName),
 		stringOrNull(m.LastName),
-		stringOrNull(m.Roles),
+		stringOrNull(strings.Join(m.Roles, ",")),
 		stringOrNull(m.Extra),
 		stringOrNull(m.Type),
 		stringOrNull(m.Email),
 		stringOrNull(m.Code))
+	if err != nil {
+		fmt.Printf("%v\n", m)
+		return err
+	}
+	tx.Commit()
+	return err
+}
+
+func (m *Member) EditMember() error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Prepare(fmt.Sprintf(
+		"UPDATE %s SET firstName=?, lastName=?, roles=?, extra=?, type=?, email=? WHERE uuid=?",
+		MEMBERS_TABLE))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(
+		stringOrNull(m.FirstName),
+		stringOrNull(m.LastName),
+		stringOrNull(strings.Join(m.Roles, ",")),
+		stringOrNull(m.Extra),
+		stringOrNull(m.Type),
+		stringOrNull(m.Email),
+		stringOrNull(m.UUID))
 	if err != nil {
 		fmt.Printf("%v\n", m)
 		return err
@@ -74,7 +105,9 @@ func (m *Member) Get() error {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Roles, &m.Extra, &m.Type, &m.Email, &m.Code)
+	var rolesAsString string
+	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code)
+	m.Roles = strings.Split(rolesAsString, ",")
 	return err
 }
 
@@ -91,9 +124,11 @@ func (m *Member) GetAll() ([]Member, error) {
 
 	for rows.Next() {
 		var m Member
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Roles, &m.Extra, &m.Type, &m.Email, &m.Code); err != nil {
+		var rolesAsString string
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code); err != nil {
 			return nil, err
 		}
+		m.Roles = strings.Split(rolesAsString, ",")
 		members = append(members, m)
 	}
 	if err = rows.Err(); err != nil {
