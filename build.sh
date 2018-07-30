@@ -7,4 +7,4 @@ echo "Building vue js app..."
 npm run build
 cd ..
 echo "Building docker image..."
-sudo docker build -t test .
+sudo docker build -t vilisseranen/castellers:$1 .

@@ -1,8 +1,38 @@
-  language: go
+language: go
 
-  go:
-    - "1.10"
-    - master
+go:
+  - "1.10"
+  - master
 
-  env:
-    - APP_LOG_FILE="castellers.log"
+sudo: required
+
+services:
+  - docker
+
+env:
+  - APP_LOG_FILE="castellers.log"
+
+branches:
+  only:
+  - master
+  - dev
+
+
+before_script:
+  - cd frontend && npm install && cd ..
+script:
+    - go test -v ./...
+    - cd frontend
+    - npm run test
+    - npm run lint
+    - cd ..
+
+before_deploy: bash build.sh dev
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash docker_hub_push.sh dev
+  on:
+    branch: dev
+    go: "1.10"

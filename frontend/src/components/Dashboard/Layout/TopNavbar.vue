@@ -14,8 +14,8 @@
         <span class="navbar-toggler-bar burger-lines"></span>
       </button>
       <div class="collapse navbar-collapse justify-content-end">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
+        <ul class="navbar-nav ml-auto" v-if="this.$store.state.auth.uuid">
+          <li class="nav-item" v-if="this.$store.state.auth.type === 'admin'">
             <a class="nav-link" href="#">
               Admin
             </a>

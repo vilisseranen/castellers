@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/vilisseranen/castellers"
@@ -20,7 +21,11 @@ const testDbName = "test_database.db"
 
 func TestMain(m *testing.M) {
 	a = main.App{}
-	a.Initialize(testDbName, "castellers.log")
+	os.Setenv("APP_DB_NAME", "test_database.db")
+	os.Setenv("APP_LOG_FILE", "castellers.log")
+	os.Setenv("APP_SMTP_SERVER", "192.168.1.100:25")
+	os.Setenv("APP_DEBUG", "true")
+	a.Initialize()
 
 	ensureTablesExist()
 
@@ -33,9 +38,9 @@ func TestMain(m *testing.M) {
 
 func TestInitialize(t *testing.T) {
 	clearTables()
-	payload := []byte(`{"name":"ian", "extra":"Cap de colla"}`)
+	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": ["second"], "email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	// First admin should succeed
@@ -44,8 +49,12 @@ func TestInitialize(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "ian" {
-		t.Errorf("Expected member name to be 'ian'. Got '%v'", m["name"])
+	if m["firstName"] != "Chimo" {
+		t.Errorf("Expected member first name to be 'Chimo'. Got '%v'", m["firstName"])
+	}
+
+	if m["lastName"] != "Anaïs" {
+		t.Errorf("Expected member last name to be 'Anaïs'. Got '%v'", m["lastName"])
 	}
 
 	if m["type"] != "admin" {
@@ -58,17 +67,27 @@ func TestInitialize(t *testing.T) {
 
 	// Second admin should fail
 	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles"}`)
-	req, _ = http.NewRequest("POST", "/initialize", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	// First admin should succeed
 	checkResponseCode(t, http.StatusUnauthorized, response.Code)
 }
 
+func TestNotInitialized(t *testing.T) {
+	clearTables()
+
+	req, _ := http.NewRequest("GET", "/api/initialize", nil)
+	response := executeRequest(req)
+
+	// First admin should succeed
+	checkResponseCode(t, http.StatusNoContent, response.Code)
+}
+
 func TestGetNonExistentEvent(t *testing.T) {
 	clearTables()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -82,12 +101,12 @@ func TestGetNonExistentEvent(t *testing.T) {
 
 func TestCreateEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -110,11 +129,11 @@ func TestCreateEvent(t *testing.T) {
 
 func TestCreateEventNonAdmin(t *testing.T) {
 	clearTables()
-	addMember("deadfeed", "clement", "member", "tutu")
+	addAMember()
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
@@ -138,17 +157,17 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 func TestCreateWeeklyEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -173,17 +192,17 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 func TestCreateDailyEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -208,12 +227,18 @@ func TestCreateDailyEvent(t *testing.T) {
 
 func TestCreateMember(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	payload := []byte(`{"name":"clement", "extra":"Santi"}`)
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"extra":"Santi",
+		"roles": ["segond","baix","terç"],
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -221,8 +246,8 @@ func TestCreateMember(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "clement" {
-		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	if m["firstName"] != "Clément" {
+		t.Errorf("Expected member first name to be 'Clément'. Got '%v'", m["firstName"])
 	}
 
 	if m["extra"] != "Santi" {
@@ -230,14 +255,37 @@ func TestCreateMember(t *testing.T) {
 	}
 }
 
+func TestCreateMemberInvalidRole(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"extra":"Santi",
+		"roles": "segond,toto,baix,terç",
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+
 func TestCreateMemberNoExtra(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	payload := []byte(`{"name":"clement","roles": ["baix", "second"]}`)
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"type": "member",
+		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/members", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -245,20 +293,85 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "clement" {
-		t.Errorf("Expected member name to be 'clement'. Got '%v'", m["name"])
+	if m["firstName"] != "Clément" {
+		t.Errorf("Expected member name to be 'Clément'. Got '%v'", m["firstName"])
 	}
 
 	if m["extra"] != "" {
 		t.Errorf("Expected extra to be ''. Got '%v'", m["extra"])
 	}
+
+	if m["roles"] != nil {
+		t.Errorf("Expected roles to be nil. Got '%v'", m["roles"])
+	}
+
+	var member_uuid string
+	member_uuid = m["uuid"].(string)
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+member_uuid, nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+}
+
+func TestUpdateMember(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+	addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	m["extra"] = "Cap de pinya"
+	payload, error := json.Marshal(m)
+	if error != nil {
+		t.Errorf(error.Error())
+	}
+
+	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusAccepted, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["extra"] != "Cap de pinya" {
+		t.Errorf("Expected extra to be 'Cap de pinya'. Got '%v'", m["extra"])
+	}
+}
+
+func TestDeleteMember(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+	addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
 func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -281,9 +394,9 @@ func TestGetEvent(t *testing.T) {
 
 func TestGetMember(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "Clément", "member", "toto")
+	addAMember()
 
-	req, _ := http.NewRequest("GET", "/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "toto")
 	response := executeRequest(req)
 
@@ -292,8 +405,8 @@ func TestGetMember(t *testing.T) {
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m["name"] != "Clément" {
-		t.Errorf("Expected member name to be 'Clément'. Got '%v'", m["name"])
+	if m["firstName"] != "Ramon" {
+		t.Errorf("Expected member name to be 'Ramon'. Got '%v'", m["firstName"])
 	}
 }
 
@@ -302,7 +415,7 @@ func TestGetEvents(t *testing.T) {
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 	addEvent("deadfeed", "Another event", 1527994960, 1527996960)
 
-	req, _ := http.NewRequest("GET", "/events?count=2&start=0", nil)
+	req, _ := http.NewRequest("GET", "/api/events?count=2&start=0", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -338,9 +451,9 @@ func TestGetEvents(t *testing.T) {
 func TestUpdateEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 
 	var originalEvent model.Event
@@ -348,8 +461,8 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
 
-	req, _ = http.NewRequest("PUT", "/admins/deadbeef/events/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -372,30 +485,30 @@ func TestUpdateEvent(t *testing.T) {
 func TestDeleteEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	addMember("deadbeef", "ian", "admin", "toto")
+	addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/admins/deadbeef/events/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/events/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("GET", "/events/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
 func TestParticipateEvent(t *testing.T) {
 	clearTables()
-	addMember("deadbeef", "toto", "member", "toto")
+	addAMember()
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"maybe"}`)
 
-	req, _ := http.NewRequest("POST", "/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "toto")
 	response := executeRequest(req)
 
@@ -411,14 +524,14 @@ func TestParticipateEvent(t *testing.T) {
 
 func TestPresenceEvent(t *testing.T) {
 	clearTables()
-	addMember("baada55", "Clément", "member", "tutu")
-	addMember("deadbeef", "Ian", "admin", "toto")
+	addAMember()
+	addAnAdmin()
 	addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/admins/deadbeef/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -428,6 +541,61 @@ func TestPresenceEvent(t *testing.T) {
 
 	if m["presence"] != "yes" {
 		t.Errorf("Expected presence to be 'yes'. Got '%v'", m["presence"])
+	}
+}
+
+func TestGetMemberType(t *testing.T) {
+	clearTables()
+	addAMember()
+	addAnAdmin()
+
+	req, _ := http.NewRequest("GET", "/api/members/deadfeed", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["type"] != "admin" {
+		t.Errorf("Expected presence to be 'admin'. Got '%v'", m["type"])
+	}
+
+	req, _ = http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["type"] != "member" {
+		t.Errorf("Expected type to be 'member'. Got '%v'", m["type"])
+	}
+}
+
+func TestGetRoles(t *testing.T) {
+	clearTables()
+
+	req, _ := http.NewRequest("GET", "/api/roles", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m []string
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	// Check all roles
+	validRoleList := model.ValidRoleList
+
+	sort.Strings(validRoleList)
+	sort.Strings(m)
+
+	for i := range validRoleList {
+		if validRoleList[i] != m[i] {
+			t.Errorf("%v is not a valid role", m[i])
+		}
 	}
 }
 
@@ -465,7 +633,15 @@ func addEvent(uuid, name string, startDate, endDate int) {
 	tx.Commit()
 }
 
-func addMember(uuid, name, member_type, code string) {
+func addAMember() {
+	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "segond,baix,terç", "member", "ramon@gerard.ca", "toto")
+}
+
+func addAnAdmin() {
+	addMember("deadfeed", "Romà", "Èric", "Cap de colla", "baix,second", "admin", "romà@eric.ca", "tutu")
+}
+
+func addMember(uuid, firstName, lastName, extra, roles, member_type, email, code string) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
@@ -475,12 +651,12 @@ func addMember(uuid, name, member_type, code string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare("INSERT INTO members(uuid, name, extra, type, code) VALUES(?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, roles, extra, type, email, code) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, name, "", member_type, code)
+	_, err = stmt.Exec(uuid, firstName, lastName, roles, extra, member_type, email, code)
 	if err != nil {
 		log.Fatal(err)
 	}

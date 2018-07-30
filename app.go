@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 	"github.com/vilisseranen/castellers/routes"
 	"log"
@@ -17,19 +18,27 @@ type App struct {
 	handler http.Handler
 }
 
-func (a *App) Initialize(dbname, logFile string) {
+func (a *App) Initialize() {
 
-	model.InitializeDB(dbname)
+	common.ReadConfig()
+	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
 
-	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(common.GetConfigString("log_file"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
+
+	// Define logger
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
+
+	// Define CORS handlers
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
+	originsOk := handlers.AllowedOrigins([]string{common.GetConfigString("domain")})
+	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	a.handler = handlers.CORS(originsOk, headersOk, methodsOk)(a.handler)
 }
 
 func (a *App) Run(addr string) {
-
 	log.Fatal(http.ListenAndServe(addr, a.handler))
 }

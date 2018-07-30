@@ -7,12 +7,6 @@ import (
 
 var db *sql.DB
 
-// TODO: remove this interface
-type Entity interface {
-	Get() error
-	GetAll() error
-}
-
 func InitializeDB(dbname string) {
 	var err error
 	db, err = sql.Open("sqlite3", dbname)
@@ -40,4 +34,12 @@ func InitializeDB(dbname string) {
 		log.Fatal(err)
 	}
 	tx.Commit()
+}
+
+func stringOrNull(s string) string {
+	if len(s) == 0 {
+		return ""
+	} else {
+		return s
+	}
 }
