@@ -1,14 +1,22 @@
 <template>
   <card>
-    <h4 slot="header" class="card-title">Edit Profile</h4>
+    <h4 slot="header" class="card-title">{{actionLabel}}</h4>
     <form>
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-8">
           <fg-input type="text"
                     label="ID"
                     :disabled="true"
-                    v-model="user.uuid">
+                    v-model="current_user.uuid">
           </fg-input>
+        </div>
+        <div class="col-md-4">
+        <fg-input label="type" type="radio">
+          <form slot="input" id="test">
+              <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">Member</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">Admin</PrettyRadio>
+          </form>
+        </fg-input>
         </div>
       </div>
       <div class="row">
@@ -16,21 +24,21 @@
           <fg-input type="text"
                     label="First Name"
                     placeholder="First Name"
-                    v-model="user.firstName">
+                    v-model="current_user.firstName">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="text"
                     label="Last Name"
                     placeholder="Last Name"
-                    v-model="user.lastName">
+                    v-model="current_user.lastName">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="email"
                     label="Email"
                     placeholder="Email"
-                    v-model="user.email">
+                    v-model="current_user.email">
           </fg-input>
         </div>
       </div>
@@ -40,7 +48,7 @@
                     label="Roles">
             <template slot="input">
               <multiselect
-                v-model="user.roles"
+                v-model="current_user.roles"
                 :options="available_roles"
                 :multiple="true"
                 :placeholder="''"
@@ -53,16 +61,16 @@
           <fg-input type="text"
                     label="Extra"
                     placeholder="Extra"
-                    v-model="user.extra">
+                    v-model="current_user.extra">
           </fg-input>
         </div>
       </div>
       <div slot="message" class="row">
         <div class="col-md-12">
-          <div class="alert alert-success" v-if="user.activated === 1">
+          <div class="alert alert-success" v-if="current_user.activated === 1">
             <span><b> Success - </b> This has logged in.</span>
           </div>
-           <div class="alert alert-warning" v-if="user.activated === 0">
+           <div class="alert alert-warning" v-if="current_user.activated === 0">
             <span><b> Warning - </b> This user has not logged in yet.</span>
           </div>
         </div>
@@ -70,7 +78,7 @@
       <div class="text-center">
         <slot name="update-button">
           <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
-            Edit Member
+            {{actionLabel}}
           </button>
         </slot>
       </div>
@@ -89,18 +97,32 @@ import axios from 'axios'
 import {mapGetters} from 'vuex'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
+import PrettyRadio from 'pretty-checkbox-vue/radio';
+import 'pretty-checkbox/dist/pretty-checkbox.min.css'
 
 export default {
   components: {
     Card,
-    Multiselect
+    Multiselect,
+    PrettyRadio
   },
   name: 'edit-profile-form',
   props: {
     user: Object
   },
   computed: {
-    ...mapGetters(['uuid', 'code', 'type'])
+    ...mapGetters(['uuid', 'code', 'type']),
+    actionLabel: function () {
+      return this.current_user.uuid ? "Update user" : "Create user"
+    },
+    current_user: {
+      get: function () {
+        return this.user
+      },
+      set: function (response) {
+        return response
+      }
+    }
   },
   data () {
     return {
@@ -110,25 +132,23 @@ export default {
   },
   mounted () {
     var self = this
-    this.selected_roles = this.user.roles
+    this.selected_roles = this.current_user.roles
     axios.get('/api/roles').then(function (response) {
       self.available_roles = response.data.sort()
     }).catch(err => console.log(err))
   },
   methods: {
     memberEdit () {
-      this.user.type = 'member'
       var self = this
       self.updating = true
-      console.log(JSON.stringify(self.user))
-      if (self.user.uuid !== undefined) {
+      if (self.current_user.uuid !== undefined) {
         axios.put(
-          `/api/admins/${self.uuid}/members/${this.user.uuid}`,
-          this.user,
+          `/api/admins/${self.uuid}/members/${this.current_user.uuid}`,
+          this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.user = response.data
+          self.current_user = response.data
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false
@@ -138,7 +158,7 @@ export default {
       } else {
         axios.post(
           `/api/admins/${this.uuid}/members`,
-          this.user,
+          this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
@@ -158,7 +178,7 @@ export default {
         component: notification,
         icon: 'nc-icon nc-check-2',
         type: 'success',
-        timeout: null,
+        timeout: 10000,
         showClose: false
       })
     },

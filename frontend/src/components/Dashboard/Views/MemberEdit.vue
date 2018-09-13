@@ -35,7 +35,6 @@ export default {
         `/api/admins/${this.uuid}/members/${this.$route.params.uuid}`,
         { headers: { 'X-Member-Code': this.code } }
       ).then(function (response) {
-        console.log(response.data.roles)
         self.user = response.data
       }).catch(err => console.log(err))
     }

@@ -14,7 +14,7 @@ var ValidRoleList = []string{
 	"vent",
 	"agulla",
 	"crossa",
-	"segond",
+	"segon",
 	"terç",
 	"quart",
 	"dosos",

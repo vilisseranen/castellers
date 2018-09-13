@@ -233,7 +233,7 @@ func TestCreateMember(t *testing.T) {
 		"firstName":"Clément",
 		"lastName": "Contini",
 		"extra":"Santi",
-		"roles": ["segond","baix","terç"],
+		"roles": ["segon","baix","terç"],
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
@@ -634,7 +634,7 @@ func addEvent(uuid, name string, startDate, endDate int) {
 }
 
 func addAMember() {
-	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "segond,baix,terç", "member", "ramon@gerard.ca", "toto")
+	addMember("deadbeef", "Ramon", "Gerard", "Cap de rengla", "segon,baix,terç", "member", "ramon@gerard.ca", "toto")
 }
 
 func addAnAdmin() {
