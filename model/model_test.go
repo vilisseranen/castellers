@@ -6,9 +6,9 @@ import (
 
 func TestRoles(t *testing.T) {
 	var emptyRoles []string
-	validRoles := []string{"segond", "baix", "primera mà", "segona mà"}
-	invalidRoles := []string{"segond", "toto", "baix"}
-	invalidRoles2 := []string{"segond", "segond", "baix"}
+	validRoles := []string{"segon", "baix", "primera mà", "segona mà"}
+	invalidRoles := []string{"segon", "toto", "baix"}
+	invalidRoles2 := []string{"segon", "segon", "baix"}
 
 	testEmpty := ValidateRoles(emptyRoles)
 	if testEmpty != nil {
