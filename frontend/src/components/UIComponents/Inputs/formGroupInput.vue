@@ -34,7 +34,7 @@
       value: [String, Number],
       addonRightIcon: String,
       addonLeftIcon: String,
-      required: Boolean
+      required: String
     },
     computed: {
       hasIcon () {

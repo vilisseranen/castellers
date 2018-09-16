@@ -149,7 +149,6 @@ export default {
   },
   mounted () {
     var self = this
-    this.selected_roles = this.current_user.roles
     axios.get('/api/roles').then(function (response) {
       self.available_roles = response.data.sort()
     }).catch(err => console.log(err))
