@@ -1,76 +1,89 @@
 <template>
   <card>
-    <h4 slot="header" class="card-title">Edit Profile</h4>
+    <h4 slot="header" class="card-title">{{ $t('members.' + actionLabel) }}</h4>
     <form>
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-8">
           <fg-input type="text"
                     label="ID"
                     :disabled="true"
-                    v-model="user.uuid">
+                    v-model="current_user.uuid">
           </fg-input>
+        </div>
+        <div class="col-md-4">
+        <fg-input label="type" type="radio">
+          <form slot="input" id="test">
+              <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">{{ $t('members.type_member') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">{{ $t('members.type_admin') }}</PrettyRadio>
+          </form>
+        </fg-input>
         </div>
       </div>
       <div class="row">
         <div class="col-md-4">
           <fg-input type="text"
-                    label="First Name"
-                    placeholder="First Name"
-                    v-model="user.firstName">
+                    :label="$t('members.first_name')"
+                    :placeholder="$t('members.first_name')"
+                    v-model="current_user.firstName">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="text"
-                    label="Last Name"
-                    placeholder="Last Name"
-                    v-model="user.lastName">
+                    :label="$t('members.last_name')"
+                    :placeholder="$t('members.last_name')"
+                    v-model="current_user.lastName">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="email"
-                    label="Email"
-                    placeholder="Email"
-                    v-model="user.email">
+                    :label="$t('members.email')"
+                    :placeholder="$t('members.email')"
+                    v-model="current_user.email">
           </fg-input>
         </div>
       </div>
       <div class="row">
         <div class="col-md-8">
           <fg-input type="text"
-                    label="Roles">
+                    :label="$t('members.roles')">
             <template slot="input">
               <multiselect
-                v-model="user.roles"
+                v-model="current_user.roles"
                 :options="available_roles"
                 :multiple="true"
                 :placeholder="''"
-                :closeOnSelect="false">
+                :closeOnSelect="false"
+                :selectLabel="$t('multiselect.selectLabel')"
+                :selectGroupLabel="$t('multiselect.selectGroupLabel')"
+                :deselectLabel="$t('multiselect.deselectLabel')"
+                :deselectGroupLabel="$t('multiselect.deselectGroupLabel')"
+                :selectedLabel="$t('multiselect.selectedLabel')">
               </multiselect>
             </template>
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="text"
-                    label="Extra"
-                    placeholder="Extra"
-                    v-model="user.extra">
+                    :label="$t('members.extra')"
+                    :placeholder="$t('members.extra')"
+                    v-model="current_user.extra">
           </fg-input>
         </div>
       </div>
       <div slot="message" class="row">
         <div class="col-md-12">
-          <div class="alert alert-success" v-if="user.activated === 1">
-            <span><b> Success - </b> This has logged in.</span>
+          <div class="alert alert-success" v-if="current_user.activated === 1">
+            <span>{{ $t('members.already_logged_in') }}</span>
           </div>
-           <div class="alert alert-warning" v-if="user.activated === 0">
-            <span><b> Warning - </b> This user has not logged in yet.</span>
+           <div class="alert alert-warning" v-if="current_user.activated === 0">
+            <span>{{ $t('members.never_logged_in') }}</span>
           </div>
         </div>
       </div>
       <div class="text-center">
         <slot name="update-button">
           <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
-            Edit Member
+            {{ $t('members.' + actionLabel + '_button') }}
           </button>
         </slot>
       </div>
@@ -83,24 +96,42 @@
     </form>
   </card>
 </template>
+
+<i18n src='assets/translations/members.json'></i18n>
+<i18n src='assets/translations/multiselect.json'></i18n>
+
 <script>
 import Card from 'src/components/UIComponents/Cards/Card.vue'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
+import PrettyRadio from 'pretty-checkbox-vue/radio'
+import 'pretty-checkbox/dist/pretty-checkbox.min.css'
 
 export default {
   components: {
     Card,
-    Multiselect
+    Multiselect,
+    PrettyRadio
   },
   name: 'edit-profile-form',
   props: {
     user: Object
   },
   computed: {
-    ...mapGetters(['uuid', 'code', 'type'])
+    ...mapGetters(['uuid', 'code', 'type']),
+    actionLabel: function () {
+      return this.current_user.uuid ? 'update' : 'create'
+    },
+    current_user: {
+      get: function () {
+        return this.user
+      },
+      set: function (response) {
+        return response
+      }
+    }
   },
   data () {
     return {
@@ -110,25 +141,23 @@ export default {
   },
   mounted () {
     var self = this
-    this.selected_roles = this.user.roles
+    this.selected_roles = this.current_user.roles
     axios.get('/api/roles').then(function (response) {
       self.available_roles = response.data.sort()
     }).catch(err => console.log(err))
   },
   methods: {
     memberEdit () {
-      this.user.type = 'member'
       var self = this
       self.updating = true
-      console.log(JSON.stringify(self.user))
-      if (self.user.uuid !== undefined) {
+      if (self.current_user.uuid !== undefined) {
         axios.put(
-          `/api/admins/${self.uuid}/members/${this.user.uuid}`,
-          this.user,
+          `/api/admins/${self.uuid}/members/${this.current_user.uuid}`,
+          this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.user = response.data
+          self.current_user = response.data
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false
@@ -138,7 +167,7 @@ export default {
       } else {
         axios.post(
           `/api/admins/${this.uuid}/members`,
-          this.user,
+          this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
@@ -152,19 +181,19 @@ export default {
     },
     notifyOK () {
       const notification = {
-        template: `<span>The member was successfully added ! He or she will receive an email with infos to connect.</span>`
+        template: '<span>' + this.$i18n.t('members.notify_success') + '</span>'
       }
       this.$notifications.notify({
         component: notification,
         icon: 'nc-icon nc-check-2',
         type: 'success',
-        timeout: null,
+        timeout: 10000,
         showClose: false
       })
     },
     notifyNOK () {
       const notification = {
-        template: `<span>There was an error during the member registration.</span>`
+        template: '<span>' + this.$i18n.t('members.notify_error') + '</span>'
       }
       this.$notifications.notify({
         component: notification,

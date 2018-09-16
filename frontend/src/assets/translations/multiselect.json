@@ -1,0 +1,11 @@
+{
+    "fr": {
+        "multiselect": {
+            "selectLabel": "Appuyer sur entrer pour sélectionner",
+            "selectGroupLabel": "Appuyer sur entrer pour sélectionner le groupe",
+            "selectedLabel": "Selectionné",
+            "deselectLabel": "Appuyer sur entrer pour déselectionner",
+            "deselectGroupLabel": "Appuyer sur entrer pour déselectionner le groupe"
+        }
+    }
+}

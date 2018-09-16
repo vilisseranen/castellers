@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">{{routeName}}</a>
+      <a class="navbar-brand" href="#">{{ $t(routeName + '.category') }}</a>
       <button type="button"
               class="navbar-toggler navbar-toggler-right"
               :class="{toggled: $sidebar.showSidebar}"
@@ -30,12 +30,15 @@
     </div>
   </nav>
 </template>
+
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
   export default {
     computed: {
       routeName () {
-        const {name} = this.$route
-        return this.capitalizeFirstLetter(name)
+        const {path} = this.$route
+        return path.substring(1) // This removes the leading '/'
       }
     },
     data () {

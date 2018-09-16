@@ -5,41 +5,42 @@
         <div class="col-12">
           <card>
             <template slot="header">
-              <h4 class="card-title">Members</h4>
-              <p class="text-right card-category" v-on:click="addMember">Click here to add a new Member</p>
+              <h4 class="card-title">{{ $t('members.title') }}</h4>
+              <p class="text-right card-category" v-on:click="addMember">{{ $t('members.add_a_member') }} <i class="fa fa-user-plus member-icon"></i></p>
             </template>
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
-                       :columns="table.columns"
+                       :columns="columns.map(x => $t('members.' + x))"
                        :data="table.data">
                 <template slot="columns"></template>
                 <template slot-scope="{row}">
                   <td>{{row.firstName}}</td>
                   <td>{{row.lastName}}</td>
-                  <td>{{row.roles}}</td>
+                  <td>{{row.roles.join(", ")}}</td>
                   <td>{{row.extra}}</td>
                   <td>{{row.type}}</td>
                   <td class="td-actions text-right" style="width: 40px">
-                    <button type="button" class="btn-simple btn btn-xs btn-sucess" v-tooltip.top-center="editMember"
+                    <button type="button" class="btn-simple btn btn-xs btn-info" v-tooltip.top-center="$t('members.edit')"
                             v-on:click="editMemberUuid(row.uuid)">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <button type="button" class="btn-simple btn btn-xs btn-sucess" v-tooltip.top-center="removeMember"
+                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('members.remove')"
                             v-on:click="deleteMemberUuid(row.uuid)">
-                      <i class=" 	fa fa-remove"></i>
+                      <i class="fa fa-remove"></i>
                     </button>
                   </td>
                 </template>
               </l-table>
             </div>
           </card>
-
         </div>
-
       </div>
     </div>
   </div>
 </template>
+
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
   import LTable from 'src/components/UIComponents/Table.vue'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
@@ -52,17 +53,17 @@
       Card
     },
     computed: {
-      ...mapGetters(['uuid', 'code', 'type'])
+      ...mapGetters(['uuid', 'code', 'type']),
+      columns: function () {
+        return ['first_name', 'last_name', 'roles', 'extra', 'type', 'actions']
+      }
     },
     data () {
       var table = {
-        columns: ['firstName', 'lastName', 'roles', 'extra', 'type', 'actions'],
         data: []
       }
       return {
-        table,
-        editMember: 'Edit',
-        removeMember: 'Remove'
+        table
       }
     },
     mounted () {

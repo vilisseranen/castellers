@@ -20,9 +20,11 @@
     "es6-promise": "^4.1.1",
     "google-maps": "^3.2.1",
     "jquery": "~> 3.0.0",
+    "pretty-checkbox-vue": "^1.1.9",
     "v-tooltip": "^2.0.0-rc.1",
     "vue": "^2.5.2",
     "vue-clickaway": "^2.1.0",
+    "vue-i18n": "8.0.0",
     "vue-multiselect": "^2.0.0-beta.15",
     "vue-notifyjs": "^0.4.3",
     "vue-router": "^3.0.1",
@@ -30,6 +32,7 @@
     "vuex": "^3.0.1"
   },
   "devDependencies": {
+    "@kazupon/vue-i18n-loader": "^0.2.0",
     "autoprefixer": "^7.1.2",
     "babel-core": "^6.22.1",
     "babel-eslint": "^7.1.1",
@@ -85,7 +88,7 @@
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "url-loader": "^0.5.8",
-    "vue-loader": "^13.0.4",
+    "vue-loader": "^13.0.2",
     "vue-style-loader": "^3.0.1",
     "vue-template-compiler": "^2.5.2",
     "vue-test-utils": "^1.0.0-beta.3",

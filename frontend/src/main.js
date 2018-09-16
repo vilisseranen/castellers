@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 import App from './App.vue'
 import axios from 'axios'
+import VueI18n from 'vue-i18n'
 
 // LightBootstrap plugin
 import LightBootstrap from './light-bootstrap-main'
@@ -14,6 +15,7 @@ import routes from './routes/routes'
 Vue.use(VueRouter)
 Vue.use(LightBootstrap)
 Vue.use(Vuex)
+Vue.use(VueI18n)
 
 // configure router
 const router = new VueRouter({
@@ -44,12 +46,19 @@ const store = new Vuex.Store({
   }
 })
 
+// Configure i18n
+const i18n = new VueI18n({
+  locale: 'fr', // set locale
+  messages: {}
+})
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   render: h => h(App),
   router,
   store,
+  i18n,
   methods: {
     globalRedirect () {
       if ('next' in this.$route.query) {

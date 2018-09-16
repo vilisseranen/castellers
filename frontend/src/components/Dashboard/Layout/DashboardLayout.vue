@@ -12,7 +12,8 @@
       </sidebar-link>
       <sidebar-link to="/members" v-if="type==='admin'">
         <i class="nc-icon nc-circle-09"></i>
-        <p>Members</p>
+        <p>{{ $t('members.category') }}</p>
+
       </sidebar-link>
     </side-bar>
     <div class="main-panel">
@@ -27,8 +28,10 @@
   </div>
 </template>
 <style lang="scss">
-
 </style>
+
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
   import TopNavbar from './TopNavbar.vue'
   import ContentFooter from './ContentFooter.vue'

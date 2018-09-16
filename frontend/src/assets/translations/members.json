@@ -1,0 +1,28 @@
+{
+    "fr": {
+        "members": {
+            "category": "Membres",
+            "title": "Liste des membres",
+            "update": "Modifier le profil d'un membre existant",
+            "create": "Créer le profil d'un nouveau membre",
+            "add_a_member": "Ajouter un nouveau membre",
+            "first_name": "Prénom",
+            "last_name": "Nom de famille",
+            "roles": "Rôles",
+            "type": "Type",
+            "extra": "Extra",
+            "actions": "Actions",
+            "edit": "Modifier",
+            "remove": "Supprimer",
+            "type_member": "Régulier",
+            "type_admin": "Administrateur",
+            "email": "Courriel",
+            "create_button": "Créer le membre",
+            "update_button": "Mettre à jour le profil",
+            "already_logged_in": "Ce membre s'est déjà connecté.",
+            "never_logged_in": "Ce membre ne s'est jamais connecté.",
+            "notify_success": "L'opération s'est complétée avec succès.",
+            "notify_error": "Un problème est survenu. Veuillez vérifier les informations fournies."
+        }
+    }
+}
