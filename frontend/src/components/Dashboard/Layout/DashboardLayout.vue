@@ -12,7 +12,7 @@
       </sidebar-link>
       <sidebar-link to="/members" v-if="type==='admin'">
         <i class="nc-icon nc-circle-09"></i>
-        <p>{{ $t('members.category') }}</p>
+        <p>{{ $t('routes.members') }}</p>
 
       </sidebar-link>
     </side-bar>
@@ -30,7 +30,7 @@
 <style lang="scss">
 </style>
 
-<i18n src='assets/translations/members.json'></i18n>
+<i18n src='assets/translations/routes.json'></i18n>
 
 <script>
   import TopNavbar from './TopNavbar.vue'

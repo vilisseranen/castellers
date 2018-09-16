@@ -1,7 +1,6 @@
 {
     "fr": {
         "members": {
-            "category": "Membres",
             "title": "Liste des membres",
             "update": "Modifier le profil d'un membre existant",
             "create": "Créer le profil d'un nouveau membre",
