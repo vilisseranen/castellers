@@ -38,7 +38,7 @@
     computed: {
       routeName () {
         const {path} = this.$route
-        return path.split("/")[1].toLowerCase()
+        return path.split('/')[1].toLowerCase()
       }
     },
     data () {
