@@ -16,7 +16,6 @@ import './assets/css/demo.css'
 import './assets/css/spinner.css'
 import './assets/css/prettyradio.css'
 
-
 // library auto imports
 import 'es6-promise/auto'
 

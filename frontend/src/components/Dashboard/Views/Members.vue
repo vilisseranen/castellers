@@ -5,12 +5,12 @@
         <div class="col-12">
           <card>
             <template slot="header">
-              <h4 class="card-title">Members</h4>
-              <p class="text-right card-category" v-on:click="addMember">{{ $t('test.test') }} <i class="fa fa-user-plus"></i></p>
+              <h4 class="card-title">{{ $t('members.title') }}</h4>
+              <p class="text-right card-category" v-on:click="addMember">{{ $t('members.add_a_member') }} <i class="fa fa-user-plus member-icon"></i></p>
             </template>
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
-                       :columns="columns"
+                       :columns="columns.map(x => $t('members.' + x))"
                        :data="table.data">
                 <template slot="columns"></template>
                 <template slot-scope="{row}">
@@ -20,11 +20,11 @@
                   <td>{{row.extra}}</td>
                   <td>{{row.type}}</td>
                   <td class="td-actions text-right" style="width: 40px">
-                    <button type="button" class="btn-simple btn btn-xs btn-info" v-tooltip.top-center="editMember"
+                    <button type="button" class="btn-simple btn btn-xs btn-info" v-tooltip.top-center="$t('members.edit')"
                             v-on:click="editMemberUuid(row.uuid)">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="removeMember"
+                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('members.remove')"
                             v-on:click="deleteMemberUuid(row.uuid)">
                       <i class="fa fa-remove"></i>
                     </button>
@@ -39,6 +39,8 @@
   </div>
 </template>
 
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
   import LTable from 'src/components/UIComponents/Table.vue'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
@@ -46,15 +48,6 @@
   import {mapGetters} from 'vuex'
 
   export default {
-    i18n: {
-      messages: {
-    fr: {
-      test: {
-        test: "Hello from component"
-      }
-    }
-  }
-    },
     components: {
       LTable,
       Card
@@ -62,7 +55,7 @@
     computed: {
       ...mapGetters(['uuid', 'code', 'type']),
       columns: function () {
-        return ['First name', 'Last name', 'Roles', 'Extra', 'Type', 'Actions']
+        return ['first_name', 'last_name', 'roles', 'extra', 'type', 'actions']
       }
     },
     data () {
@@ -70,9 +63,7 @@
         data: []
       }
       return {
-        table,
-        editMember: 'Edit',
-        removeMember: 'Remove'
+        table
       }
     },
     mounted () {

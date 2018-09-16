@@ -49,13 +49,7 @@ const store = new Vuex.Store({
 // Configure i18n
 const i18n = new VueI18n({
   locale: 'fr', // set locale
-  messages: {
-    fr: {
-      test: {
-        test: "Hello Test"
-      }
-    }
-  },
+  messages: {}
 })
 
 /* eslint-disable no-new */
