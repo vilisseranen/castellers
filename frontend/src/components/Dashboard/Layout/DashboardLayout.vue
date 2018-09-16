@@ -13,6 +13,7 @@
       <sidebar-link to="/members" v-if="type==='admin'">
         <i class="nc-icon nc-circle-09"></i>
         <p>{{ $t('members.category') }}</p>
+
       </sidebar-link>
     </side-bar>
     <div class="main-panel">
