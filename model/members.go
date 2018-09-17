@@ -108,7 +108,7 @@ func (m *Member) Get() error {
 	var rolesAsString string
 	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code)
 	m.Roles = strings.Split(rolesAsString, ",")
-	m.Roles = sanitizeEmptyRoles(m.Roles)
+	m.sanitizeEmptyRoles()
 	return err
 }
 
@@ -130,7 +130,7 @@ func (m *Member) GetAll() ([]Member, error) {
 			return nil, err
 		}
 		m.Roles = strings.Split(rolesAsString, ",")
-		m.Roles = sanitizeEmptyRoles(m.Roles)
+		m.sanitizeEmptyRoles()
 		members = append(members, m)
 	}
 	if err = rows.Err(); err != nil {
@@ -149,9 +149,9 @@ func (m *Member) DeleteMember() error {
 	return err
 }
 
-func sanitizeEmptyRoles(r []string) []string {
-	if len(r) == 1 && r[0] == "" {
-		r = []string{}
+func (m *Member) sanitizeEmptyRoles() {
+	if len(m.Roles) == 1 && m.Roles[0] == "" {
+		m.Roles = []string{}
 	}
-	return r
+	return
 }
