@@ -5,5 +5,19 @@
             "memberadd": "Les membres",
             "memberedit": "Les membres"
         }
+    },
+    "en": {
+        "routes": {
+            "members": "Members",
+            "memberadd": "Members",
+            "memberedit": "Members"
+        }
+    },
+    "cat": {
+        "routes": {
+            "members": "Membres",
+            "memberadd": "Membres",
+            "memberedit": "Membres"
+        }
     }
 }

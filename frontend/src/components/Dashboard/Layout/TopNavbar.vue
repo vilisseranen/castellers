@@ -17,12 +17,12 @@
         <ul class="navbar-nav ml-auto" v-if="this.$store.state.auth.uuid">
           <li class="nav-item" v-if="this.$store.state.auth.type === 'admin'">
             <a class="nav-link" href="#">
-              Admin
+              {{ $t('general.admin_zone') }}
             </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link">
-              Profile
+              {{ $t('general.profile_zone') }}
             </a>
           </li>
         </ul>
@@ -32,6 +32,7 @@
 </template>
 
 <i18n src='assets/translations/routes.json'></i18n>
+<i18n src='assets/translations/general.json'></i18n>
 
 <script>
   export default {

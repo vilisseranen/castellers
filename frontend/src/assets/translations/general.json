@@ -1,7 +1,26 @@
 {
     "fr": {
         "general": {
-            "required_fields": "Les champs marqués d'un astérisque rouge sont obligatoires."
+            "required_fields": "Les champs marqués d'un astérisque rouge sont obligatoires.",
+            "admin_zone": "Admin",
+            "profile_zone": "Profil",
+            "for_castellers": "Créé pour les Castellers par "
+        }
+    },
+    "en": {
+        "general": {
+            "required_fields": "The fields marked with an asterisk are mandatory.",
+            "admin_zone": "Admin",
+            "profile_zone": "Profile",
+            "for_castellers": "Created for the Castellers by "
+        }
+    },
+    "cat": {
+        "general": {
+            "required_fields": "Els camps indicats amb un asterisc són obligatoris.",
+            "admin_zone": "Admin",
+            "profile_zone": "Perfil",
+            "for_castellers": "Creat per als Castellers per "
         }
     }
 }
