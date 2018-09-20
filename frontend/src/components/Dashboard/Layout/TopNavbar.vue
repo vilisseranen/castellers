@@ -63,7 +63,7 @@
       },
       editMemberUuid (memberUuid) {
         this.$router.push({path: `/MemberEdit/${memberUuid}`})
-      },
+      }
     }
   }
 
