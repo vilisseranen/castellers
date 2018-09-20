@@ -11,7 +11,7 @@
           </fg-input>
         </div>
         <div class="col-md-4">
-        <fg-input label="type" type="radio">
+        <fg-input label="type" type="radio" required="true">
           <form slot="input" id="test">
               <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">{{ $t('members.type_member') }}</PrettyRadio>
               <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">{{ $t('members.type_admin') }}</PrettyRadio>
@@ -24,21 +24,24 @@
           <fg-input type="text"
                     :label="$t('members.first_name')"
                     :placeholder="$t('members.first_name')"
-                    v-model="current_user.firstName">
+                    v-model="current_user.firstName"
+                    required="true">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="text"
                     :label="$t('members.last_name')"
                     :placeholder="$t('members.last_name')"
-                    v-model="current_user.lastName">
+                    v-model="current_user.lastName"
+                    required="true">
           </fg-input>
         </div>
         <div class="col-md-4">
           <fg-input type="email"
                     :label="$t('members.email')"
                     :placeholder="$t('members.email')"
-                    v-model="current_user.email">
+                    v-model="current_user.email"
+                    required="true">
           </fg-input>
         </div>
       </div>
@@ -94,11 +97,16 @@
         </div>
       </div>
     </form>
+    <div slot="footer" class="stats">
+      <slot name="footer"><span class=required></span>{{ $t('general.required_fields') }}
+      </slot>
+    </div>
   </card>
 </template>
 
 <i18n src='assets/translations/members.json'></i18n>
 <i18n src='assets/translations/multiselect.json'></i18n>
+<i18n src='assets/translations/general.json'></i18n>
 
 <script>
 import Card from 'src/components/UIComponents/Cards/Card.vue'
@@ -141,7 +149,6 @@ export default {
   },
   mounted () {
     var self = this
-    this.selected_roles = this.current_user.roles
     axios.get('/api/roles').then(function (response) {
       self.available_roles = response.data.sort()
     }).catch(err => console.log(err))

@@ -47,6 +47,10 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if missingRequiredFields(m) {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 	}
@@ -74,6 +78,10 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if missingRequiredFields(m) {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 	}
@@ -98,4 +106,8 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 func GetRoles(w http.ResponseWriter, r *http.Request) {
 	roles := model.ValidRoleList
 	RespondWithJSON(w, http.StatusOK, roles)
+}
+
+func missingRequiredFields(m model.Member) bool {
+	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "")
 }

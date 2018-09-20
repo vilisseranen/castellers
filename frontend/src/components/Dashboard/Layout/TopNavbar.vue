@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">{{ $t(routeName + '.category') }}</a>
+      <a class="navbar-brand" href="#">{{ $t('routes.' + routeName) }}</a>
       <button type="button"
               class="navbar-toggler navbar-toggler-right"
               :class="{toggled: $sidebar.showSidebar}"
@@ -17,12 +17,12 @@
         <ul class="navbar-nav ml-auto" v-if="this.$store.state.auth.uuid">
           <li class="nav-item" v-if="this.$store.state.auth.type === 'admin'">
             <a class="nav-link" href="#">
-              Admin
+              {{ $t('general.admin_zone') }}
             </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link">
-              Profile
+              {{ $t('general.profile_zone') }}
             </a>
           </li>
         </ul>
@@ -31,14 +31,15 @@
   </nav>
 </template>
 
-<i18n src='assets/translations/members.json'></i18n>
+<i18n src='assets/translations/routes.json'></i18n>
+<i18n src='assets/translations/general.json'></i18n>
 
 <script>
   export default {
     computed: {
       routeName () {
         const {path} = this.$route
-        return path.substring(1) // This removes the leading '/'
+        return path.split('/')[1].toLowerCase()
       }
     },
     data () {

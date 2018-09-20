@@ -1,7 +1,6 @@
 {
     "fr": {
         "members": {
-            "category": "Membres",
             "title": "Liste des membres",
             "update": "Modifier le profil d'un membre existant",
             "create": "Créer le profil d'un nouveau membre",
@@ -23,6 +22,56 @@
             "never_logged_in": "Ce membre ne s'est jamais connecté.",
             "notify_success": "L'opération s'est complétée avec succès.",
             "notify_error": "Un problème est survenu. Veuillez vérifier les informations fournies."
+        }
+    },
+    "en": {
+        "members": {
+            "title": "Member list",
+            "update": "Edit the profile of an existing member",
+            "create": "Create the profile of a new member",
+            "add_a_member": "Add a new member",
+            "first_name": "First name",
+            "last_name": "Last name",
+            "roles": "Roles",
+            "type": "Type",
+            "extra": "Extra",
+            "actions": "Actions",
+            "edit": "Edit",
+            "remove": "Remove",
+            "type_member": "Regular",
+            "type_admin": "Administrator",
+            "email": "Email",
+            "create_button": "Create member",
+            "update_button": "Update profile",
+            "already_logged_in": "This member has logged in before.",
+            "never_logged_in": "This member has never logged in.",
+            "notify_success": "The operation was successful.",
+            "notify_error": "There was a problem. Please check the informations entered."
+        }
+    },
+    "cat": {
+        "members": {
+            "title": "Llista dels membres",
+            "update": "Editar el perfil d'un membre",
+            "create": "Crear el perfil d'un nou membre",
+            "add_a_member": "Afegir un nou membre",
+            "first_name": "Nom",
+            "last_name": "Cognom",
+            "roles": "Rols",
+            "type": "Tipus",
+            "extra": "Extra",
+            "actions": "Accions",
+            "edit": "Modificar",
+            "remove": "Suprimir",
+            "type_member": "Normal",
+            "type_admin": "Administrador",
+            "email": "Mail",
+            "create_button": "Crear el membre",
+            "update_button": "Actualitzar el perfil",
+            "already_logged_in": "El membre ja s'ha connectat.",
+            "never_logged_in": "El membre no s'ha connectat mai.",
+            "notify_success": "L'opéració s'ha completat correctament.",
+            "notify_error": "Hi ha hagut un problema. Comproveu les dades entrades."
         }
     }
 }

@@ -6,11 +6,17 @@ body,
 }
 a{
   color: $info-color;
-
   &:hover, &:focus{
      color: $info-states-color;
      text-decoration: none;
   }
+}
+
+a.inactive{
+    color: $link-disabled-color;
+}
+a.active{
+    color: $primary-color;
 }
 
 a:focus, a:active,

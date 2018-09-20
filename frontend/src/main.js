@@ -30,7 +30,8 @@ const store = new Vuex.Store({
       uuid: '',
       code: '',
       type: ''
-    }
+    },
+    locale: ''
   },
   mutations: {
     authenticate (state, payload) {
@@ -49,6 +50,7 @@ const store = new Vuex.Store({
 // Configure i18n
 const i18n = new VueI18n({
   locale: 'fr', // set locale
+  fallbackLocale: 'fr',
   messages: {}
 })
 
@@ -60,6 +62,9 @@ new Vue({
   store,
   i18n,
   methods: {
+    setLocale: function (locale) {
+      this.$i18n.locale = locale
+    },
     globalRedirect () {
       if ('next' in this.$route.query) {
         this.$router.push(this.$route.query.next)

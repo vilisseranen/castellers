@@ -1,7 +1,7 @@
 <template>
   <div class="form-group" :class="{'input-group': hasIcon}">
     <slot name="label">
-      <label v-if="label" class="control-label">
+      <label v-if="label" class="control-label" v-bind:class="{ required: required }">
         {{label}}
       </label>
     </slot>
@@ -33,7 +33,8 @@
       label: String,
       value: [String, Number],
       addonRightIcon: String,
-      addonLeftIcon: String
+      addonLeftIcon: String,
+      required: String
     },
     computed: {
       hasIcon () {

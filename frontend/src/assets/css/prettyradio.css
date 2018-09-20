@@ -9,3 +9,9 @@
 .member-icon {
     margin-left: 8px;
 }
+
+.required:after {
+    content:" *";
+    color:#c91414;
+    margin-right: 5px;
+}
