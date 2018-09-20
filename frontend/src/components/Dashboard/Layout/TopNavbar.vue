@@ -14,16 +14,11 @@
         <span class="navbar-toggler-bar burger-lines"></span>
       </button>
       <div class="collapse navbar-collapse justify-content-end">
-        <ul class="navbar-nav ml-auto" v-if="this.$store.state.auth.uuid">
-          <li class="nav-item" v-if="this.$store.state.auth.type === 'admin'">
-            <a class="nav-link" href="#">
-              {{ $t('general.admin_zone') }}
-            </a>
-          </li>
+        <ul class="navbar-nav ml-auto" v-if="this.uuid">
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link class="nav-link" :to="{ name: 'MemberEdit', params: { uuid: uuid}}">
               {{ $t('general.profile_zone') }}
-            </a>
+            </router-link>
           </li>
         </ul>
       </div>
@@ -35,8 +30,11 @@
 <i18n src='assets/translations/general.json'></i18n>
 
 <script>
+  import {mapGetters} from 'vuex'
+
   export default {
     computed: {
+      ...mapGetters(['uuid', 'code', 'type']),
       routeName () {
         const {path} = this.$route
         return path.split('/')[1].toLowerCase()
@@ -62,6 +60,9 @@
       },
       hideSidebar () {
         this.$sidebar.displaySidebar(false)
+      },
+      editMemberUuid (memberUuid) {
+        this.$router.push({path: `/MemberEdit/${memberUuid}`})
       }
     }
   }
