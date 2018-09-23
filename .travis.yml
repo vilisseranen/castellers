@@ -12,12 +12,6 @@ services:
 env:
   - APP_LOG_FILE="castellers.log"
 
-branches:
-  only:
-  - master
-  - dev
-
-
 before_script:
   - cd frontend && npm install && cd ..
 script:
