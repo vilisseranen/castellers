@@ -9,4 +9,16 @@ Event planning for Montreal castellers
 `./build.sh` (you need passwordless sudo to build docker image)
 
 ### How to run
-`sudo docker run --name app -d -e APP_LOG_FILE=castellers.log -v app_var_log:/var/log -v app_data:/data -p 127.0.0.1:8080:8080/tcp test`
+
+- Create a file config.yaml in the volume `app_etc` to be mounted at `/etc/castellers` with the following content (change the values between `<` and `>`):
+```
+--- 
+db_name: castellers.db
+debug: false
+domain: http://<DOMAIN_NAME>:8080
+log_file: castellers.log
+smtp_server: <SMTP_SERVER>:<SMTP_PORT>
+mail_from: <MAIL_FROM>
+```
+
+- `sudo docker run --name app -d -e APP_LOG_FILE=castellers.log -v app_var_log:/var/log -v app_data:/data -v app_etc:/etc/castellers -p 127.0.0.1:8080:8080/tcp test`
