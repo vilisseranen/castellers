@@ -68,7 +68,6 @@ new Vue({
     globalRedirect () {
       if ('next' in this.$route.query) {
         this.$router.push(this.$route.query.next)
-        console.log('Redirecting to ' + this.$route.query.next)
       }
     },
     checkCredentials () {
@@ -83,15 +82,16 @@ new Vue({
             code: self.$route.query.c,
             type: response.data.type
           })
-          console.log('You are authenticated as : ' + JSON.stringify(self.$store.state.auth))
+          self.globalRedirect()
         }).catch(err => {
           console.log(err)
         })
+      } else {
+        self.globalRedirect()
       }
     }
   },
   mounted () {
     this.checkCredentials() // this must be the first thing to do
-    this.globalRedirect()   // you redirect after being authenticated
   }
 })
