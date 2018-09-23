@@ -29,3 +29,4 @@ deploy:
   script: bash deploy.sh latest
   on:
     go: "1.10"
+    all_branches: true
