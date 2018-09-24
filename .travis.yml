@@ -1,32 +1,30 @@
 language: go
-
 go:
-  - "1.10"
-  - master
-
+- '1.10'
+- master
 sudo: required
-
 services:
-  - docker
-
+- docker
 env:
-  - APP_LOG_FILE="castellers.log"
-
+- APP_LOG_FILE="castellers.log"
 before_script:
-  - cd frontend && npm install && cd ..
+- cd frontend && npm install && cd ..
 script:
-    - go test -v ./...
-    - cd frontend
-    - npm run test
-    - npm run lint
-    - cd ..
-
+- go test -v ./...
+- cd frontend
+- npm run test
+- npm run lint
+- cd ..
+before_install:
+- openssl aes-256-cbc -K $encrypted_7eca150e901f_key -iv $encrypted_7eca150e901f_iv -in travis-deploy.enc -out travis-deploy -d
+- eval "$(ssh-agent -s)"
+- chmod 600 travis-deploy
+- ssh-add travis-deploy
 before_deploy: bash build.sh dev
-
 deploy:
   skip_cleanup: true
   provider: script
   script: bash deploy.sh latest
   on:
-    go: "1.10"
+    go: '1.10'
     all_branches: true
