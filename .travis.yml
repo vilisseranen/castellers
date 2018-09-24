@@ -20,7 +20,7 @@ before_install:
 - eval "$(ssh-agent -s)"
 - chmod 600 travis-deploy
 - ssh-add travis-deploy
-before_deploy: bash build.sh dev
+before_deploy: bash build.sh latest
 deploy:
   skip_cleanup: true
   provider: script
