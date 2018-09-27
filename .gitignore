@@ -29,3 +29,6 @@ test/unit/coverage
 
 # vscode preferences
 .vscode
+
+# vim swp files
+*.swp
