@@ -32,3 +32,6 @@ test/unit/coverage
 
 # vim swp files
 *.swp
+
+# Configuration file
+config.yml
