@@ -31,7 +31,7 @@ func ReadConfig() config {
 	// read config file
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal reading error config file: %s \n", err))
+		fmt.Println("WARN: cannot read config file")
 	}
 
 	// read environment variables

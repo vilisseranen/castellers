@@ -41,8 +41,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		to := []string{m.Email}
-		if err := common.SendMail("initialization", "Salut "+m.FirstName+". Ton code est: "+m.Code, to); err != nil {
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, "", "", "", ""); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

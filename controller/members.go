@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -40,6 +41,7 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMember(w http.ResponseWriter, r *http.Request) {
+	// Decode info to create member
 	var m model.Member
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&m); err != nil {
@@ -56,13 +58,27 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
+	// We will need admin info later for the email
+	vars := mux.Vars(r)
+	uuid := vars["admin_uuid"]
+	a := model.Member{UUID: uuid}
+	if err := a.Get(); err != nil {
+		fmt.Println("Failed to get admin for CreateMember.")
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// Create the Member now
 	if err := m.CreateMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// Send the email
 	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		to := []string{m.Email}
-		if err := common.SendMail("Welcome", "Salut "+m.FirstName+". Ton code est: "+m.Code, to); err != nil {
+		loginLink := common.GetConfigString("domain") + "/#/login?" +
+			"m=" + m.UUID +
+			"&c=" + m.Code
+		profileLink := loginLink + "&next=memberEdit/" + m.UUID
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

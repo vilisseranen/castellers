@@ -1,7 +1,0 @@
---- 
-db_name: castellers.db
-debug: false
-domain: http://localhost:8080
-log_file: castellers.log
-smtp_server: 192.168.1.100:25
-mail_from: clement@clemissa.info
