@@ -34,4 +34,4 @@ test/unit/coverage
 *.swp
 
 # Configuration file
-config.yml
+config.yaml
