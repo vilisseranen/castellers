@@ -4,6 +4,7 @@
             "required_fields": "Les champs marqués d'un astérisque rouge sont obligatoires.",
             "admin_zone": "Admin",
             "profile_zone": "Profil",
+            "login": "Se connecter",
             "for_castellers": "Créé pour les Castellers par "
         }
     },
@@ -12,6 +13,7 @@
             "required_fields": "The fields marked with an asterisk are mandatory.",
             "admin_zone": "Admin",
             "profile_zone": "Profile",
+            "login": "Log in",
             "for_castellers": "Created for the Castellers by "
         }
     },
@@ -20,6 +22,7 @@
             "required_fields": "Els camps indicats amb un asterisc són obligatoris.",
             "admin_zone": "Admin",
             "profile_zone": "Perfil",
+            "login": "Iniciar Sessió",
             "for_castellers": "Creat per als Castellers per "
         }
     }

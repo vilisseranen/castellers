@@ -14,10 +14,15 @@
         <span class="navbar-toggler-bar burger-lines"></span>
       </button>
       <div class="collapse navbar-collapse justify-content-end">
-        <ul class="navbar-nav ml-auto" v-if="this.uuid">
-          <li class="nav-item">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item"  v-if="this.uuid">
             <router-link class="nav-link" :to="{ name: 'MemberEdit', params: { uuid: uuid}}">
               {{ $t('general.profile_zone') }}
+            </router-link>
+          </li>
+          <li class="nav-item"  v-if="!this.uuid">
+            <router-link class="nav-link" :to="{ name: 'Login'}">
+              {{ $t('general.login') }}
             </router-link>
           </li>
         </ul>

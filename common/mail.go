@@ -11,7 +11,8 @@ func SendRegistrationEmail(to, memberName, adminName, adminExtra, activateLink, 
 	// Prepare header
 	header := "Subject: Inscription\r\n" +
 		"To: " + to + "\r\n" +
-		"From: " + GetConfigString("mail_from") + "\r\n" +
+		"From: Castellers de Montréal <" + GetConfigString("mail_from") + ">\r\n" +
+		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"\r\n"

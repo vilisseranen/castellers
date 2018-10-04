@@ -2,6 +2,7 @@
   <div class="wrapper">
     <side-bar>
       <mobile-menu slot="content"></mobile-menu>
+      <!--
       <sidebar-link to="/practices">
         <i class="nc-icon nc-refresh-02"></i>
         <p>Practices</p>
@@ -10,8 +11,9 @@
         <i class="nc-icon nc-pin-3"></i>
         <p>Events</p>
       </sidebar-link>
+      -->
       <sidebar-link to="/members" v-if="type==='admin'">
-        <i class="nc-icon nc-circle-09"></i>
+        <i class="nc-icon nc-bullet-list-67"></i>
         <p>{{ $t('routes.members') }}</p>
 
       </sidebar-link>

@@ -3,21 +3,24 @@
         "routes": {
             "members": "Les membres",
             "memberadd": "Les membres",
-            "memberedit": "Les membres"
+            "memberedit": "Les membres",
+            "login": "Se connecter"
         }
     },
     "en": {
         "routes": {
             "members": "Members",
             "memberadd": "Members",
-            "memberedit": "Members"
+            "memberedit": "Members",
+            "login": "Log in"
         }
     },
     "cat": {
         "routes": {
             "members": "Membres",
             "memberadd": "Membres",
-            "memberedit": "Membres"
+            "memberedit": "Membres",
+            "login": "Iniciar Sessió"
         }
     }
 }

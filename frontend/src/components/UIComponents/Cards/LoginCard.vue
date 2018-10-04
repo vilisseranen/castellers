@@ -1,6 +1,8 @@
 <template>
   <card>
-    <h4 slot="header" class="card-title">Enter member ID</h4>
+    <h4 slot="header">{{ $t('login.how_to_log_in') }}</h4>
+    <p>{{ $t('login.instructions') }}</p>
+    <h4 class="card-title">{{ $t('login.id') }}</h4>
     <form>
       <div class="row">
         <div class="col-md-12">
@@ -10,7 +12,7 @@
           </fg-input>
         </div>
       </div>
-      <h4 slot="header" class="card-title">Enter member code</h4>
+      <h4 class="card-title">{{ $t('login.code') }}</h4>
       <div class="row">
         <div class="col-md-12">
           <fg-input type="text"
@@ -22,16 +24,16 @@
       <div class="row">
         <div class="col-md-12">
           <button type="submit" class="btn btn-info btn-fill float-right" @click.prevent="login">
-          Login
+          {{ $t('login.button') }}
           </button>
         </div>
       </div>
-      <h4 class="text-primary">
-        You can also simply click on the link you received by email ;-)
-      </h4>
     </form>
   </card>
 </template>
+
+<i18n src='assets/translations/login.json'></i18n>
+
 <script>
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import {mapMutations} from 'vuex'
@@ -52,13 +54,10 @@
       }),
       login () {
         var self = this
-        console.log('uuid: ' + this.member.uuid)
-        console.log('code: ' + this.member.code)
         axios.get(
           '/api/members/' + this.member.uuid,
           { headers: { 'X-Member-Code': this.member.code } }
           ).then(function (response) {
-            console.log(self.member)
             self.member.type = response.data.type
             self.authenticate(self.member)
           }).catch(err => {
