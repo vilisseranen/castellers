@@ -4,7 +4,8 @@
             "members": "Les membres",
             "memberadd": "Les membres",
             "memberedit": "Les membres",
-            "login": "Se connecter"
+            "login": "Se connecter",
+            "initialize": "Initialiser"
         }
     },
     "en": {
@@ -12,7 +13,8 @@
             "members": "Members",
             "memberadd": "Members",
             "memberedit": "Members",
-            "login": "Log in"
+            "login": "Log in",
+            "initialize": "Initialize"
         }
     },
     "cat": {
