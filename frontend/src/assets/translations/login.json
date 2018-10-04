@@ -26,7 +26,7 @@
             "not_logged_in_text": "If you want to register for an event or update your profile, please log in first.",
             "logged_in_text": "You can now register for events or update your profile",
             "how_to_log_in": "How to log in",
-            "instructions": "The easiest way to log in is to click on the link in the registration email. After clicking it, you will be brought back on this page and be automatically logged in,",
+            "instructions": "The easiest way to log in is to click on the link in the registration email. After clicking it, you will be brought back on this page and be automatically logged in.",
             "id": "ID",
             "code": "Code",
             "button": "Log in",
@@ -39,21 +39,21 @@
     },
     "cat": {
         "login": {
-            "status": "",
-            "not_logged_in": "",
-            "logged_in": "",
-            "not_logged_in_text": "",
-            "logged_in_text": "",
-            "how_to_log_in": "",
-            "instructions": "",
-            "id": "",
-            "code": "",
-            "button": "",
-            "now": "",
-            "logged_in_instructions": "",
-            "bookmark_site": "",
-            "update_profile": "",
-            "register_events": ""
+            "status": "Estat",
+            "not_logged_in": "Encara no has iniciat sessió.",
+            "logged_in": "Ja has iniciat sessión.",
+            "not_logged_in_text": "Si vulls registrar-te a un esdeveniment o actualitzar el teu perfil, has d'iniciar sessió.",
+            "logged_in_text": "Ara pots registrar-te per a esdeveniments o actualitzar el teu perfil.",
+            "how_to_log_in": "Com iniciar sessió",
+            "instructions": "La forma més senzilla d'iniciar sessió és fent clic a l'enllaç del correu electrònic de registre. Tornaràs a aquesta pàgina i iniciaràs la sessió automàticament.",
+            "id": "Identificació",
+            "code": "Codi",
+            "button": "Inicia sessió",
+            "now": "Ara que fem?",
+            "logged_in_instructions": "Ara que has iniciat sessión, pots fer diverses coses: ",
+            "bookmark_site": "Guarda la pàgina dins dels teus favorits per tornar-hi fàcilment ",
+            "update_profile": "Actualitza el teu perfil",
+            "register_events": "Resgistra't per a esdeveniments"
         }
     }
 }
