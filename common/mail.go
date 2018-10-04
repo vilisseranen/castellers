@@ -19,20 +19,20 @@ func SendRegistrationEmail(to, memberName, adminName, adminExtra, activateLink, 
 	// Parse body
 	t, err := template.ParseFiles("templates/email_register_fr.html")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error parsing template: " + err.Error())
 		return err
 	}
 	buf := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailRegisterInfo{memberName, adminName, adminExtra, activateLink, profileLink, imageSource}
 	if err = t.Execute(buf, emailInfo); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error generating template: " + err.Error())
 		return err
 	}
 	body := header + buf.String()
 	// Send mail
 	if err = sendMail([]string{to}, body); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil
