@@ -131,20 +131,13 @@ export default {
     ...mapGetters(['uuid', 'code', 'type']),
     actionLabel: function () {
       return this.current_user.uuid ? 'update' : 'create'
-    },
-    current_user: {
-      get: function () {
-        return this.user
-      },
-      set: function (response) {
-        return response
-      }
     }
   },
   data () {
     return {
       updating: false,
-      available_roles: []
+      available_roles: [],
+      current_user: this.user
     }
   },
   mounted () {
@@ -178,6 +171,7 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
+          self.current_user = response.data
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false

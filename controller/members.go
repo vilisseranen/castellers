@@ -54,7 +54,9 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
+		fmt.Println("Error validating roles: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
@@ -99,7 +101,10 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
+		fmt.Println("Error validating roles: " + err.Error())
+		fmt.Println(m.Roles)
 		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	if err := m.EditMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())

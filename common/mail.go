@@ -11,27 +11,28 @@ func SendRegistrationEmail(to, memberName, adminName, adminExtra, activateLink, 
 	// Prepare header
 	header := "Subject: Inscription\r\n" +
 		"To: " + to + "\r\n" +
-		"From: " + GetConfigString("mail_from") + "\r\n" +
+		"From: Castellers de Montréal <" + GetConfigString("mail_from") + ">\r\n" +
+		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"\r\n"
 	// Parse body
 	t, err := template.ParseFiles("templates/email_register_fr.html")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error parsing template: " + err.Error())
 		return err
 	}
 	buf := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailRegisterInfo{memberName, adminName, adminExtra, activateLink, profileLink, imageSource}
 	if err = t.Execute(buf, emailInfo); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error generating template: " + err.Error())
 		return err
 	}
 	body := header + buf.String()
 	// Send mail
 	if err = sendMail([]string{to}, body); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil

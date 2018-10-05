@@ -1,0 +1,59 @@
+{
+    "fr": {
+        "login": {
+            "status": "Statut",
+            "not_logged_in": "Tu n'es pas encore authentifié",
+            "logged_in": "Tu es maintenant authentifié",
+            "not_logged_in_text": "Si tu veux t'enregistrer pour un évènement ou modifier ton profil, tu dois d'abord t'authentifier.",
+            "logged_in_text": "Tu peux maintenant t'enregistrer pour un évènement ou modifier ton profil.",
+            "how_to_log_in": "Comment s'authentifier",
+            "instructions": "La façon la plus simple de s'authentifier est de cliquer sur le lien dans le courriel que tu as reçu lors de l'activation de ton compte: il va t'amener sur cette page et te connecter automatiquement.",
+            "id": "Identifiant",
+            "code": "Code",
+            "button": "S'authentifier",
+            "now": "Maintenant on fait quoi ?",
+            "logged_in_instructions": "Maintenant que tu es authentifié, tu peux faire plusieurs choses :",
+            "bookmark_site": "Mettre la page en favori, pour pouvoir y revenir facilement",
+            "update_profile": "Mettre à jour ton profil",
+            "register_events": "T'inscrire à des évènements"
+        }
+    },
+    "en": {
+        "login": {
+            "status": "State",
+            "not_logged_in": "You are not currently logged in",
+            "logged_in": "You are now logged in",
+            "not_logged_in_text": "If you want to register for an event or update your profile, please log in first.",
+            "logged_in_text": "You can now register for events or update your profile",
+            "how_to_log_in": "How to log in",
+            "instructions": "The easiest way to log in is to click on the link in the registration email. After clicking it, you will be brought back on this page and be automatically logged in.",
+            "id": "ID",
+            "code": "Code",
+            "button": "Log in",
+            "now": "Now what?",
+            "logged_in_instructions": "Now that you are authenticated, you can do all of these things:",
+            "bookmark_site": "Save the page in your bookmarks, to come back here easily",
+            "update_profile": "Update your profile",
+            "register_events": "Register for events"
+        }
+    },
+    "cat": {
+        "login": {
+            "status": "Estat",
+            "not_logged_in": "Encara no has iniciat sessió.",
+            "logged_in": "Ja has iniciat sessión.",
+            "not_logged_in_text": "Si vulls registrar-te a un esdeveniment o actualitzar el teu perfil, has d'iniciar sessió.",
+            "logged_in_text": "Ara pots registrar-te per a esdeveniments o actualitzar el teu perfil.",
+            "how_to_log_in": "Com iniciar sessió",
+            "instructions": "La forma més senzilla d'iniciar sessió és fent clic a l'enllaç del correu electrònic de registre. Tornaràs a aquesta pàgina i iniciaràs la sessió automàticament.",
+            "id": "Identificació",
+            "code": "Codi",
+            "button": "Inicia sessió",
+            "now": "Ara que fem?",
+            "logged_in_instructions": "Ara que has iniciat sessión, pots fer diverses coses: ",
+            "bookmark_site": "Guarda la pàgina dins dels teus favorits per tornar-hi fàcilment ",
+            "update_profile": "Actualitza el teu perfil",
+            "register_events": "Resgistra't per a esdeveniments"
+        }
+    }
+}
