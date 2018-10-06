@@ -130,14 +130,16 @@ export default {
   computed: {
     ...mapGetters(['uuid', 'code', 'type']),
     actionLabel: function () {
-      return this.current_user.uuid ? 'update' : 'create'
+      return this.user.uuid ? 'update' : 'create'
+    },
+    current_user: function() {
+      return this.user
     }
   },
   data () {
     return {
       updating: false,
-      available_roles: [],
-      current_user: this.user
+      available_roles: []
     }
   },
   mounted () {
@@ -157,7 +159,6 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.current_user = response.data
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false
@@ -171,7 +172,6 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.current_user = response.data
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false
@@ -179,6 +179,7 @@ export default {
           console.log(error)
         })
       }
+      this.$emit('updateUser')
     },
     notifyOK () {
       const notification = {

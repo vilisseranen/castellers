@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <edit-profile-form :user="user" :updating="updating">
+          <edit-profile-form :user="user" :updating="updating" v-on:updateUser="loadUser">
             <template slot="message">
               <span></span>
             </template>
@@ -29,7 +29,14 @@ export default {
     }
   },
   mounted () {
-    if (this.$route.params.uuid !== undefined) {
+    this.loadUser()
+  },
+  computed: {
+    ...mapGetters(['uuid', 'code', 'type'])
+  },
+  methods: {
+    loadUser () {
+      if (this.$route.params.uuid !== undefined) {
       var self = this
       axios.get(
         `/api/admins/${this.uuid}/members/${this.$route.params.uuid}`,
@@ -38,9 +45,7 @@ export default {
         self.user = response.data
       }).catch(err => console.log(err))
     }
-  },
-  computed: {
-    ...mapGetters(['uuid', 'code', 'type'])
+    }
   }
 }
 </script>
