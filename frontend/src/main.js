@@ -4,6 +4,9 @@ import Vuex from 'vuex'
 import App from './App.vue'
 import axios from 'axios'
 import VueI18n from 'vue-i18n'
+import VuejsDialog from 'vuejs-dialog';
+
+import 'vuejs-dialog/dist/vuejs-dialog.min.css';
 
 // LightBootstrap plugin
 import LightBootstrap from './light-bootstrap-main'
@@ -16,6 +19,7 @@ Vue.use(VueRouter)
 Vue.use(LightBootstrap)
 Vue.use(Vuex)
 Vue.use(VueI18n)
+Vue.use(VuejsDialog)
 
 // configure router
 const router = new VueRouter({

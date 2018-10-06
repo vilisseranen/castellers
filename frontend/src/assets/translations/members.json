@@ -21,7 +21,10 @@
             "already_logged_in": "Ce membre s'est déjà connecté.",
             "never_logged_in": "Ce membre ne s'est jamais connecté.",
             "notify_success": "L'opération s'est complétée avec succès.",
-            "notify_error": "Un problème est survenu. Veuillez vérifier les informations fournies."
+            "notify_error": "Un problème est survenu. Veuillez vérifier les informations fournies.",
+            "confirm_delete": "Veux-tu vraiment retirer ce membre",
+            "ok_delete": "Oui",
+            "cancel_delete": "Non"
         }
     },
     "en": {
@@ -46,7 +49,10 @@
             "already_logged_in": "This member has logged in before.",
             "never_logged_in": "This member has never logged in.",
             "notify_success": "The operation was successful.",
-            "notify_error": "There was a problem. Please check the informations entered."
+            "notify_error": "There was a problem. Please check the informations entered.",
+            "confirm_delete": "Do you really want to remove this member",
+            "ok_delete": "Yes",
+            "cancel_delete": "No"
         }
     },
     "cat": {
@@ -71,7 +77,10 @@
             "already_logged_in": "El membre ja s'ha connectat.",
             "never_logged_in": "El membre no s'ha connectat mai.",
             "notify_success": "L'opéració s'ha completat correctament.",
-            "notify_error": "Hi ha hagut un problema. Comproveu les dades entrades."
+            "notify_error": "Hi ha hagut un problema. Comproveu les dades entrades.",
+            "confirm_delete": "Segur que voleu eliminar aquest membre",
+            "ok_delete": "Si",
+            "cancel_delete": "No"
         }
     }
 }

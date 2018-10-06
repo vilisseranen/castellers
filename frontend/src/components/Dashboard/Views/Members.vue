@@ -25,7 +25,7 @@
                       <i class="fa fa-edit"></i>
                     </button>
                     <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('members.remove')"
-                            v-on:click="deleteMemberUuid(row.uuid)">
+                            v-on:click="deleteMemberUuid(row.uuid, row.firstName, row.lastName)">
                       <i class="fa fa-remove"></i>
                     </button>
                   </td>
@@ -85,14 +85,19 @@
       editMemberUuid (memberUuid) {
         this.$router.push({path: `MemberEdit/${memberUuid}`})
       },
-      deleteMemberUuid (memberUuid) {
+      deleteMemberUuid (memberUuid, memberFirstName, memberLastName) {
         var self = this
-        axios.delete(
-          `api/admins/${this.uuid}/members/${memberUuid}`,
-          { headers: { 'X-Member-Code': this.code } }
-        ).then(function (response) {
-          self.listMembers()
-        }).catch(err => console.log(err))
+        this.$dialog
+        .confirm(this.$i18n.t('members.confirm_delete') + ' ' + memberFirstName + ' ' + memberLastName + ' ?',
+                 {okText: this.$i18n.t('members.ok_delete'), cancelText: this.$i18n.t('members.cancel_delete')})
+        .then(function(dialog) {
+          axios.delete(
+            `api/admins/${self.uuid}/members/${memberUuid}`,
+            { headers: { 'X-Member-Code': self.code } }
+          ).then(function (response) {
+            self.listMembers()
+          }).catch(err => console.log(err))
+        });
       }
     }
   }
