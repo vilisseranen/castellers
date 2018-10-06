@@ -155,3 +155,13 @@ func (m *Member) sanitizeEmptyRoles() {
 	}
 	return
 }
+
+func (m *Member) Activate() error {
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERS_TABLE))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(m.UUID)
+	return err
+}
