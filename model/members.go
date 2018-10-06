@@ -99,14 +99,14 @@ func (m *Member) EditMember() error {
 
 func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
-		"SELECT firstName, lastName, roles, extra, type, email, code FROM %s WHERE uuid= ?",
+		"SELECT firstName, lastName, roles, extra, type, email, code, activated FROM %s WHERE uuid= ?",
 		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
 	var rolesAsString string
-	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code)
+	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated)
 	m.Roles = strings.Split(rolesAsString, ",")
 	m.sanitizeEmptyRoles()
 	return err
@@ -114,7 +114,7 @@ func (m *Member) Get() error {
 
 func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, roles, extra, type, email, code FROM %s",
+		"SELECT uuid, firstName, lastName, roles, extra, type, email, code, activated FROM %s",
 		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
@@ -126,7 +126,7 @@ func (m *Member) GetAll() ([]Member, error) {
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated); err != nil {
 			return nil, err
 		}
 		m.Roles = strings.Split(rolesAsString, ",")
