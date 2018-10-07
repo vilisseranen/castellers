@@ -13,7 +13,7 @@
         <div class="col-md-4">
         <fg-input label="type" type="radio" required="true">
           <form slot="input">
-              <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">{{ $t('members.type_member') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type" checked>{{ $t('members.type_member') }}</PrettyRadio>
               <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">{{ $t('members.type_admin') }}</PrettyRadio>
           </form>
         </fg-input>
