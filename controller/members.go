@@ -58,6 +58,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := model.ValidateLanguage(m.Language); err != nil {
+		fmt.Println("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
@@ -103,7 +108,11 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
 		fmt.Println("Error validating roles: " + err.Error())
-		fmt.Println(m.Roles)
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := model.ValidateLanguage(m.Language); err != nil {
+		fmt.Println("Error validating language: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -131,5 +140,5 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 func missingRequiredFields(m model.Member) bool {
-	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "")
+	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
 }

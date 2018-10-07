@@ -29,7 +29,7 @@ export default {
   },
   data () {
     return {
-      user: {roles: [], type: 'member'},
+      user: {roles: [], type: 'member', language: 'fr'}, // defaults are set here
       updating: false
     }
   },

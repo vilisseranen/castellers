@@ -3,7 +3,7 @@
     <h4 slot="header" class="card-title">{{ $t('members.' + actionLabel) }}</h4>
     <form>
       <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-4">
           <fg-input type="text"
                     label="ID"
                     :disabled="true"
@@ -11,10 +11,19 @@
           </fg-input>
         </div>
         <div class="col-md-4">
-        <fg-input label="type" type="radio" required="true">
+        <fg-input :label="$t('members.type')" type="radio" required="true">
           <form slot="input">
               <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">{{ $t('members.type_member') }}</PrettyRadio>
               <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">{{ $t('members.type_admin') }}</PrettyRadio>
+          </form>
+        </fg-input>
+        </div>
+        <div class="col-md-4">
+        <fg-input :label="$t('members.language')" type="radio" required="true">
+          <form slot="input">
+              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="fr" v-model="current_user.language">{{ $t('members.lang_fr') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="en" v-model="current_user.language">{{ $t('members.lang_en') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="cat" v-model="current_user.language">{{ $t('members.lang_cat') }}</PrettyRadio>
           </form>
         </fg-input>
         </div>

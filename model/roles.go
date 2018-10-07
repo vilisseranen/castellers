@@ -31,7 +31,7 @@ func ValidateRoles(roles []string) error {
 	for _, roleToTest := range roles {
 		validRoles = validRoles[index+1 : len(validRoles)]
 		index = sort.SearchStrings(validRoles, roleToTest)
-		if roleToTest != validRoles[index] {
+		if index == len(validRoles) || roleToTest != validRoles[index] {
 			return errors.New("Invalid roles")
 		}
 	}

@@ -25,7 +25,11 @@
             "confirm_delete": "Veux-tu vraiment retirer ce membre",
             "ok_delete": "Oui",
             "cancel_delete": "Non",
-            "delete_button": "Supprimer le membre"
+            "delete_button": "Supprimer le membre",
+            "language": "Langue",
+            "lang_fr": "Français",
+            "lang_en": "Anglais",
+            "lang_cat": "Catalan"
         }
     },
     "en": {
@@ -54,7 +58,11 @@
             "confirm_delete": "Do you really want to remove this member",
             "ok_delete": "Yes",
             "cancel_delete": "No",
-            "delete_button": "Remove member"
+            "delete_button": "Remove member",
+            "language": "Language",
+            "lang_fr": "French",
+            "lang_en": "English",
+            "lang_cat": "Catalan"
         }
     },
     "cat": {
@@ -83,7 +91,11 @@
             "confirm_delete": "Segur que voleu eliminar aquest membre",
             "ok_delete": "Si",
             "cancel_delete": "No",
-            "delete_button": "Suprimeix membre"
+            "delete_button": "Suprimeix membre",
+            "language": "Idioma",
+            "lang_fr": "Francès",
+            "lang_en": "Anglès",
+            "lang_cat": "Català"
         }
     }
 }

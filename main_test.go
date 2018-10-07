@@ -235,7 +235,8 @@ func TestCreateMember(t *testing.T) {
 		"extra":"Santi",
 		"roles": ["segon","baix","terç"],
 		"type": "member",
-		"email": "vilisseranen@gmail.com"}`)
+		"email": "vilisseranen@gmail.com",
+		"language": "fr"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
@@ -282,7 +283,8 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		"firstName":"Clément",
 		"lastName": "Contini",
 		"type": "member",
-		"email": "vilisseranen@gmail.com"}`)
+		"email": "vilisseranen@gmail.com",
+		"language": "cat"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
