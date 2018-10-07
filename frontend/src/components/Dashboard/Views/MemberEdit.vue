@@ -18,9 +18,9 @@
 
 <script>
 import EditProfileForm from './UserProfile/EditProfileForm.vue'
-import {memberMixin} from 'src/components/mixins/members.js'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
+import {memberMixin} from 'src/components/mixins/members.js'
 
 export default {
   mixins: [memberMixin],

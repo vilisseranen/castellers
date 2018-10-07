@@ -25,7 +25,7 @@
                       <i class="fa fa-edit"></i>
                     </button>
                     <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('members.remove')"
-                            v-on:click="deleteMemberUuid(row.uuid, row.firstName, row.lastName)">
+                            v-on:click="removeUser(row)">
                       <i class="fa fa-remove"></i>
                     </button>
                   </td>
@@ -46,8 +46,10 @@
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import axios from 'axios'
   import {mapGetters} from 'vuex'
+  import {memberMixin} from 'src/components/mixins/members.js'
 
   export default {
+    mixins: [memberMixin],
     components: {
       LTable,
       Card
@@ -88,19 +90,11 @@
       editMemberUuid (memberUuid) {
         this.$router.push({path: `/memberEdit/${memberUuid}`})
       },
-      deleteMemberUuid (memberUuid, memberFirstName, memberLastName) {
+      removeUser (member) {
         var self = this
-        this.$dialog
-        .confirm(this.$i18n.t('members.confirm_delete') + ' ' + memberFirstName + ' ' + memberLastName + ' ?',
-                 {okText: this.$i18n.t('members.ok_delete'), cancelText: this.$i18n.t('members.cancel_delete')})
-        .then(function(dialog) {
-          axios.delete(
-            `api/admins/${self.uuid}/members/${memberUuid}`,
-            { headers: { 'X-Member-Code': self.code } }
-          ).then(function (response) {
-            self.listMembers()
-          }).catch(err => console.log(err))
-        });
+        this.deleteUser(member)
+          .then(function() { self.listMembers() })
+          .catch(function(error) { console.log(error) })
       }
     }
   }
