@@ -30,6 +30,7 @@
   
 
   &.btn-fill {
+    margin-left: 10px;
     color: $white-color;
     background-color: $btn-color;
     @include opacity(1);  

@@ -69,6 +69,9 @@
     mounted () {
       this.listMembers()
     },
+    watch: {
+      '$route': 'listMembers'
+    },
     methods: {
       listMembers () {
         var self = this
@@ -83,7 +86,7 @@
         this.$router.push('memberAdd')
       },
       editMemberUuid (memberUuid) {
-        this.$router.push({path: `MemberEdit/${memberUuid}`})
+        this.$router.push({path: `memberEdit/${memberUuid}`})
       },
       deleteMemberUuid (memberUuid, memberFirstName, memberLastName) {
         var self = this

@@ -89,6 +89,11 @@
             {{ $t('members.' + actionLabel + '_button') }}
           </button>
         </slot>
+        <slot name="delete-button">
+          <button type="submit" class="btn btn-danger btn-fill float-right" @click.prevent="memberDelete" v-if="current_user.uuid">
+            {{ $t('members.delete_button') }}
+          </button>
+        </slot>
       </div>
       <div class="clearfix">
         <div class="spinner" v-if="updating == true">
@@ -132,8 +137,13 @@ export default {
     actionLabel: function () {
       return this.user.uuid ? 'update' : 'create'
     },
-    current_user: function() {
-      return this.user
+    current_user: {
+      get: function() {
+        return this.user
+      },
+      set: function (newUuid) {
+        this.current_user.uuid = newUuid
+      }
     }
   },
   data () {
@@ -172,6 +182,7 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
+          self.current_user = response.data.uuid
           self.notifyOK()
         }).catch(function (error) {
           self.updating = false
@@ -179,7 +190,10 @@ export default {
           console.log(error)
         })
       }
-      this.$emit('updateUser')
+      this.$emit('updateUser', this.current_user.uuid)
+    },
+    memberDelete () {
+      this.$emit('deleteUser', this.current_user)
     },
     notifyOK () {
       const notification = {

@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <edit-profile-form :user="user" :updating="updating" v-on:updateUser="loadUser">
+          <edit-profile-form :user="user" :updating="updating" v-on:updateUser="loadUser" v-on:deleteUser="removeUser">
             <template slot="message">
               <span></span>
             </template>
@@ -13,12 +13,17 @@
     </div>
   </div>
 </template>
+
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
 import EditProfileForm from './UserProfile/EditProfileForm.vue'
+import {memberMixin} from 'src/components/mixins/members.js'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
 
 export default {
+  mixins: [memberMixin],
   components: {
     EditProfileForm
   },
@@ -29,22 +34,26 @@ export default {
     }
   },
   mounted () {
-    this.loadUser()
+    this.loadUser(this.$route.params.uuid)
   },
   computed: {
     ...mapGetters(['uuid', 'code', 'type'])
   },
   methods: {
-    loadUser () {
-      if (this.$route.params.uuid !== undefined) {
+    loadUser (uuid) {
       var self = this
       axios.get(
-        `/api/admins/${this.uuid}/members/${this.$route.params.uuid}`,
+        `/api/admins/${this.uuid}/members/${uuid}`,
         { headers: { 'X-Member-Code': this.code } }
       ).then(function (response) {
         self.user = response.data
       }).catch(err => console.log(err))
-    }
+    },
+    removeUser (member) {
+      var self = this
+      this.deleteUser(member)
+        .then(function() { self.$router.push({path: `/members`})})
+        .catch(function(error) { console.log(error) })
     }
   }
 }
