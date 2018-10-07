@@ -42,7 +42,7 @@ const routes = [
         component: Members
       },
       {
-        path: 'memberAdd',
+        path: 'memberEdit',
         name: 'MemberAdd',
         component: MemberEdit
       },

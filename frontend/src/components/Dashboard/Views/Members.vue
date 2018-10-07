@@ -83,10 +83,10 @@
         }).catch(err => console.log(err))
       },
       addMember () {
-        this.$router.push('memberAdd')
+        this.$router.push({ name: 'MemberAdd' })
       },
       editMemberUuid (memberUuid) {
-        this.$router.push({path: `memberEdit/${memberUuid}`})
+        this.$router.push({path: `/memberEdit/${memberUuid}`})
       },
       deleteMemberUuid (memberUuid, memberFirstName, memberLastName) {
         var self = this

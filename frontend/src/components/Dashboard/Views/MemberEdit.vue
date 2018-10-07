@@ -29,7 +29,7 @@ export default {
   },
   data () {
     return {
-      user: {roles: []},
+      user: {roles: [], type: 'member'},
       updating: false
     }
   },
@@ -41,13 +41,16 @@ export default {
   },
   methods: {
     loadUser (uuid) {
-      var self = this
-      axios.get(
-        `/api/admins/${this.uuid}/members/${uuid}`,
-        { headers: { 'X-Member-Code': this.code } }
-      ).then(function (response) {
-        self.user = response.data
-      }).catch(err => console.log(err))
+      if (uuid) {
+        var self = this
+        axios.get(
+          `/api/admins/${this.uuid}/members/${uuid}`,
+          { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.user = response.data
+          self.$router.push({path: `/memberEdit/${self.user.uuid}`})
+        }).catch(err => console.log(err))
+      }
     },
     removeUser (member) {
       var self = this
