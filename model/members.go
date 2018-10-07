@@ -23,6 +23,8 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 	email TEXT NOT NULL,
 	code TEXT NOT NULL,
 	activated INTEGER NOT NULL DEFAULT 0,
+	deleted INTEGER NOT NULL DEFAULT 0,
+	language TEXT NOT NULL DEFAULT 'fr',
 	CONSTRAINT uuid_unique UNIQUE (uuid)
 );`
 
@@ -36,6 +38,8 @@ type Member struct {
 	Email     string   `json:"email"`
 	Code      string   `json:"-"`
 	Activated int      `json:"activated"`
+	Deleted   int      `json:"-"`
+	Language  string   `json:"language"`
 }
 
 func (m *Member) CreateMember() error {
@@ -99,7 +103,7 @@ func (m *Member) EditMember() error {
 
 func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
-		"SELECT firstName, lastName, roles, extra, type, email, code, activated FROM %s WHERE uuid= ?",
+		"SELECT firstName, lastName, roles, extra, type, email, code, activated FROM %s WHERE uuid= ? AND deleted=0",
 		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
@@ -114,7 +118,7 @@ func (m *Member) Get() error {
 
 func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, roles, extra, type, email, code, activated FROM %s",
+		"SELECT uuid, firstName, lastName, roles, extra, type, email, code, activated FROM %s WHERE deleted=0",
 		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
@@ -140,7 +144,8 @@ func (m *Member) GetAll() ([]Member, error) {
 }
 
 func (m *Member) DeleteMember() error {
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", MEMBERS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
+		MEMBERS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
