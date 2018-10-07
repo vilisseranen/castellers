@@ -21,9 +21,9 @@
         <div class="col-md-4">
         <fg-input :label="$t('members.language')" type="radio" required="true">
           <form slot="input">
-              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="fr" v-model="current_user.language">{{ $t('members.lang_fr') }}</PrettyRadio>
-              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="en" v-model="current_user.language">{{ $t('members.lang_en') }}</PrettyRadio>
-              <PrettyRadio class="p-default p-curve p-pulse" name="type" value="cat" v-model="current_user.language">{{ $t('members.lang_cat') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" value="fr" v-model="current_user.language">{{ $t('members.lang_fr') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" value="en" v-model="current_user.language">{{ $t('members.lang_en') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" value="cat" v-model="current_user.language">{{ $t('members.lang_cat') }}</PrettyRadio>
           </form>
         </fg-input>
         </div>

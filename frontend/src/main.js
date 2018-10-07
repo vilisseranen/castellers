@@ -42,12 +42,14 @@ const store = new Vuex.Store({
       state.auth.uuid = payload.uuid
       state.auth.code = payload.code
       state.auth.type = payload.type
+      state.locale = payload.language
     }
   },
   getters: {
     uuid: (state) => state.auth.uuid,
     code: (state) => state.auth.code,
-    type: (state) => state.auth.type
+    type: (state) => state.auth.type,
+    language: (state) => state.locale,
   }
 })
 
@@ -82,10 +84,12 @@ new Vue({
           { headers: { 'X-Member-Code': this.$route.query.c } }
         ).then(function (response) {
           self.$store.commit('authenticate', {
-            uuid: self.$route.query.m,
+            uuid: response.data.uuid,
             code: self.$route.query.c,
-            type: response.data.type
+            type: response.data.type,
+            language: response.data.language
           })
+          self.setLocale(response.data.language)
           self.globalRedirect()
         }).catch(err => {
           console.log(err)
