@@ -55,8 +55,8 @@ export default {
     removeUser (member) {
       var self = this
       this.deleteUser(member)
-        .then(function() { self.$router.push({path: `/members`})})
-        .catch(function(error) { console.log(error) })
+        .then(function () { self.$router.push({path: `/members`}) })
+        .catch(function (error) { console.log(error) })
     }
   }
 }

@@ -93,8 +93,8 @@
       removeUser (member) {
         var self = this
         this.deleteUser(member)
-          .then(function() { self.listMembers() })
-          .catch(function(error) { console.log(error) })
+          .then(function () { self.listMembers() })
+          .catch(function (error) { console.log(error) })
       }
     }
   }

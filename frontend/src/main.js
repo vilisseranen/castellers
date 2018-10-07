@@ -4,9 +4,9 @@ import Vuex from 'vuex'
 import App from './App.vue'
 import axios from 'axios'
 import VueI18n from 'vue-i18n'
-import VuejsDialog from 'vuejs-dialog';
+import VuejsDialog from 'vuejs-dialog'
 
-import 'vuejs-dialog/dist/vuejs-dialog.min.css';
+import 'vuejs-dialog/dist/vuejs-dialog.min.css'
 
 // LightBootstrap plugin
 import LightBootstrap from './light-bootstrap-main'
@@ -49,7 +49,7 @@ const store = new Vuex.Store({
     uuid: (state) => state.auth.uuid,
     code: (state) => state.auth.code,
     type: (state) => state.auth.type,
-    language: (state) => state.locale,
+    language: (state) => state.locale
   }
 })
 

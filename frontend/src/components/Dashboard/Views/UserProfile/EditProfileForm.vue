@@ -147,7 +147,7 @@ export default {
       return this.user.uuid ? 'update' : 'create'
     },
     current_user: {
-      get: function() {
+      get: function () {
         return this.user
       },
       set: function (newUuid) {

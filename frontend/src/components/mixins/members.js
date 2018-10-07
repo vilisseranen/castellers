@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('axios')
 
 export var memberMixin = {
   methods: {
@@ -22,8 +22,8 @@ export var memberMixin = {
           })
           .catch(function (err) {
             reject(err)
-          });
-      });
+          })
+      })
     }
   }
 }
