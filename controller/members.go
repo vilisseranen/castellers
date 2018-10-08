@@ -116,6 +116,11 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	code := r.Header.Get("X-Member-Code")
+	if !validateChangeRole(m, code) {
+		RespondWithError(w, http.StatusForbidden, "Cannot change role.")
+		return
+	}
 	if err := m.EditMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -191,4 +196,39 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 
 func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+}
+
+// Returns true if it's valid, false otherwise
+func validateChangeRole(m model.Member, code string) bool {
+	// There are 2 cases when we cannot allow to change a role:
+	// - a regular user wants to promote itself
+	// - the last admin wants to demote itself
+	current_user := model.Member{UUID: m.UUID}
+	if err := current_user.Get(); err != nil {
+		return false
+	}
+	// There are only problems when changes are made on ourselves
+	if current_user.Code != code {
+		return true
+	}
+	if current_user.Type == "member" {
+		if m.Type == "admin" {
+			return false
+		}
+	} else {
+		all_users, err := m.GetAll()
+		if err != nil {
+			return false
+		}
+		var count_admins = 0
+		for _, user := range all_users {
+			if user.Type == "admin" {
+				count_admins += 1
+			}
+		}
+		if count_admins > 0 {
+			return true
+		}
+	}
+	return false
 }

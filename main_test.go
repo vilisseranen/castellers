@@ -348,6 +348,57 @@ func TestUpdateMember(t *testing.T) {
 	}
 }
 
+func TestPromoteSelf(t *testing.T) {
+	clearTables()
+	addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	m["type"] = "admin"
+	payload, error := json.Marshal(m)
+	if error != nil {
+		t.Errorf(error.Error())
+	}
+
+	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "toto")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusForbidden, response.Code)
+}
+
+func TestPromoteByAdmin(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+	addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	m["type"] = "admin"
+	payload, error := json.Marshal(m)
+	if error != nil {
+		t.Errorf(error.Error())
+	}
+
+	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusAccepted, response.Code)
+}
+
 func TestDeleteMember(t *testing.T) {
 	clearTables()
 	addAnAdmin()
