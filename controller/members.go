@@ -139,6 +139,41 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusOK, roles)
 }
 
+func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["member_uuid"]
+	m := model.Member{UUID: uuid}
+	if err := m.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			RespondWithError(w, http.StatusNotFound, "Member not found")
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	vars = mux.Vars(r)
+	uuid = vars["admin_uuid"]
+	a := model.Member{UUID: uuid}
+	if err := a.Get(); err != nil {
+		fmt.Println("Failed to get admin.")
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if common.GetConfigBool("debug") == false { // Don't send email in debug
+		loginLink := common.GetConfigString("domain") + "/#/login?" +
+			"m=" + m.UUID +
+			"&c=" + m.Code
+		profileLink := loginLink + "&next=memberEdit/" + m.UUID
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	RespondWithJSON(w, http.StatusOK, nil)
+
+}
+
 func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
 }

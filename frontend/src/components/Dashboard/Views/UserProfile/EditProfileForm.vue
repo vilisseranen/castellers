@@ -98,8 +98,13 @@
             {{ $t('members.' + actionLabel + '_button') }}
           </button>
         </slot>
+        <slot name="email-button">
+          <button type="submit" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
+            {{ $t('members.email_button') }}
+          </button>
+        </slot>
         <slot name="delete-button">
-          <button type="submit" class="btn btn-danger btn-fill float-right" @click.prevent="memberDelete" v-if="current_user.uuid">
+          <button type="submit" class="btn btn-danger btn-fill float-left" @click.prevent="memberDelete" v-if="current_user.uuid">
             {{ $t('members.delete_button') }}
           </button>
         </slot>
@@ -168,6 +173,21 @@ export default {
     }).catch(err => console.log(err))
   },
   methods: {
+    resendEmail() {
+      var self = this
+      self.updating = true
+      axios.get(
+          `/api/admins/${self.uuid}/members/${this.current_user.uuid}/registration`,
+          { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.updating = false
+          self.notifyOK()
+        }).catch(function (error) {
+          self.updating = false
+          self.notifyNOK()
+          console.log(error)
+        })
+    },
     memberEdit () {
       var self = this
       self.updating = true

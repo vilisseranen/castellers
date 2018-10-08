@@ -29,7 +29,8 @@
             "language": "Langue",
             "lang_fr": "Français",
             "lang_en": "Anglais",
-            "lang_cat": "Catalan"
+            "lang_cat": "Catalan",
+            "email_button": "Renvoyer le courriel d'inscription"
         }
     },
     "en": {
@@ -62,7 +63,8 @@
             "language": "Language",
             "lang_fr": "French",
             "lang_en": "English",
-            "lang_cat": "Catalan"
+            "lang_cat": "Catalan",
+            "email_button": "Resend registration email"
         }
     },
     "cat": {
@@ -95,7 +97,8 @@
             "language": "Idioma",
             "lang_fr": "Francès",
             "lang_en": "Anglès",
-            "lang_cat": "Català"
+            "lang_cat": "Català",
+            "email_button": ""
         }
     }
 }
