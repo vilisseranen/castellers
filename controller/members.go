@@ -126,7 +126,22 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["member_uuid"]
+	admin_uuid := vars["admin_uuid"]
 	m := model.Member{UUID: uuid}
+	// Cannot delete self if admin
+	if err := m.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			RespondWithError(w, http.StatusNotFound, "Member not found")
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	if admin_uuid == uuid && m.Type == "admin" {
+		RespondWithError(w, http.StatusLocked, "Cannot remove yourself if admin")
+		return
+	}
 	if err := m.DeleteMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

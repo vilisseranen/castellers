@@ -369,6 +369,16 @@ func TestDeleteMember(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
+func TestDeleteSelfAdmin(t *testing.T) {
+	clearTables()
+	addAnAdmin()
+
+	req, _ := http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadfeed", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusLocked, response.Code)
+}
+
 func TestGetEvent(t *testing.T) {
 	clearTables()
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
