@@ -30,7 +30,7 @@ export default {
     var self = this
     var initialized = true
     var updating = false
-    var user = { }
+    var user = {roles: [], type: 'admin', language: 'fr'}
     axios.get('/api/initialize').then(function (response) {
       if (response.status === 204) {
         self.initialized = false
