@@ -3,7 +3,7 @@
     <h4 slot="header" class="card-title">{{ $t('members.' + actionLabel) }}</h4>
     <form>
       <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-4">
           <fg-input type="text"
                     label="ID"
                     :disabled="true"
@@ -11,10 +11,19 @@
           </fg-input>
         </div>
         <div class="col-md-4">
-        <fg-input label="type" type="radio" required="true">
+        <fg-input :label="$t('members.type')" type="radio" required="true">
           <form slot="input">
               <PrettyRadio class="p-default p-curve" name="type" color="primary-o" value="member" v-model="current_user.type">{{ $t('members.type_member') }}</PrettyRadio>
               <PrettyRadio class="p-default p-curve" name="type" color="success-o" value="admin" v-model="current_user.type">{{ $t('members.type_admin') }}</PrettyRadio>
+          </form>
+        </fg-input>
+        </div>
+        <div class="col-md-4">
+        <fg-input :label="$t('members.language')" type="radio" required="true">
+          <form slot="input">
+              <PrettyRadio class="p-default p-curve" name="type" value="fr" v-model="current_user.language">{{ $t('members.lang_fr') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" value="en" v-model="current_user.language">{{ $t('members.lang_en') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="type" value="cat" v-model="current_user.language">{{ $t('members.lang_cat') }}</PrettyRadio>
           </form>
         </fg-input>
         </div>
@@ -89,6 +98,16 @@
             {{ $t('members.' + actionLabel + '_button') }}
           </button>
         </slot>
+        <slot name="email-button">
+          <button type="submit" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
+            {{ $t('members.email_button') }}
+          </button>
+        </slot>
+        <slot name="delete-button">
+          <button type="submit" class="btn btn-danger btn-fill float-left" @click.prevent="memberDelete" v-if="current_user.uuid">
+            {{ $t('members.delete_button') }}
+          </button>
+        </slot>
       </div>
       <div class="clearfix">
         <div class="spinner" v-if="updating == true">
@@ -130,14 +149,21 @@ export default {
   computed: {
     ...mapGetters(['uuid', 'code', 'type']),
     actionLabel: function () {
-      return this.current_user.uuid ? 'update' : 'create'
+      return this.user.uuid ? 'update' : 'create'
+    },
+    current_user: {
+      get: function () {
+        return this.user
+      },
+      set: function (newUuid) {
+        this.current_user.uuid = newUuid
+      }
     }
   },
   data () {
     return {
       updating: false,
-      available_roles: [],
-      current_user: this.user
+      available_roles: []
     }
   },
   mounted () {
@@ -147,18 +173,39 @@ export default {
     }).catch(err => console.log(err))
   },
   methods: {
+    resendEmail () {
+      var self = this
+      self.updating = true
+      axios.get(
+          `/api/admins/${self.uuid}/members/${this.current_user.uuid}/registration`,
+          { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.updating = false
+          self.notifyOK()
+        }).catch(function (error) {
+          self.updating = false
+          self.notifyNOK()
+          console.log(error)
+        })
+    },
     memberEdit () {
       var self = this
       self.updating = true
       if (self.current_user.uuid !== undefined) {
+        var url
+        if (self.type === 'admin') {
+          url = `/api/admins/${self.uuid}/members/${this.current_user.uuid}`
+        } else {
+          url = `/api/members/${this.current_user.uuid}`
+        }
         axios.put(
-          `/api/admins/${self.uuid}/members/${this.current_user.uuid}`,
+          url,
           this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.current_user = response.data
           self.notifyOK()
+          self.$emit('updateUser', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
           self.notifyNOK()
@@ -171,14 +218,17 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.current_user = response.data
           self.notifyOK()
+          self.$emit('updateUser', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
           self.notifyNOK()
           console.log(error)
         })
       }
+    },
+    memberDelete () {
+      this.$emit('deleteUser', this.current_user)
     },
     notifyOK () {
       const notification = {

@@ -60,6 +60,7 @@
           ).then(function (response) {
             self.member.type = response.data.type
             self.authenticate(self.member)
+            self.$root.setLocale(response.data.language)
           }).catch(err => {
             console.log(err)
             self.notifyNOK()

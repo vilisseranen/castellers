@@ -61,6 +61,12 @@ func checkMember(h handler) func(w http.ResponseWriter, r *http.Request) {
 			controller.RespondWithError(w, http.StatusUnauthorized, unauthorizedMessage)
 			return
 		}
+		if member.Activated == 0 {
+			if err := member.Activate(); err != nil {
+				controller.RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
 		h(w, r)
 	}
 }

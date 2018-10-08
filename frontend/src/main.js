@@ -4,6 +4,9 @@ import Vuex from 'vuex'
 import App from './App.vue'
 import axios from 'axios'
 import VueI18n from 'vue-i18n'
+import VuejsDialog from 'vuejs-dialog'
+
+import 'vuejs-dialog/dist/vuejs-dialog.min.css'
 
 // LightBootstrap plugin
 import LightBootstrap from './light-bootstrap-main'
@@ -16,6 +19,7 @@ Vue.use(VueRouter)
 Vue.use(LightBootstrap)
 Vue.use(Vuex)
 Vue.use(VueI18n)
+Vue.use(VuejsDialog)
 
 // configure router
 const router = new VueRouter({
@@ -38,12 +42,14 @@ const store = new Vuex.Store({
       state.auth.uuid = payload.uuid
       state.auth.code = payload.code
       state.auth.type = payload.type
+      state.locale = payload.language
     }
   },
   getters: {
     uuid: (state) => state.auth.uuid,
     code: (state) => state.auth.code,
-    type: (state) => state.auth.type
+    type: (state) => state.auth.type,
+    language: (state) => state.locale
   }
 })
 
@@ -78,10 +84,12 @@ new Vue({
           { headers: { 'X-Member-Code': this.$route.query.c } }
         ).then(function (response) {
           self.$store.commit('authenticate', {
-            uuid: self.$route.query.m,
+            uuid: response.data.uuid,
             code: self.$route.query.c,
-            type: response.data.type
+            type: response.data.type,
+            language: response.data.language
           })
+          self.setLocale(response.data.language)
           self.globalRedirect()
         }).catch(err => {
           console.log(err)

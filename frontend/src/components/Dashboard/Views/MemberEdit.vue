@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <edit-profile-form :user="user" :updating="updating">
+          <edit-profile-form :user="user" :updating="updating" v-on:updateUser="loadUser" v-on:deleteUser="removeUser">
             <template slot="message">
               <span></span>
             </template>
@@ -13,34 +13,56 @@
     </div>
   </div>
 </template>
+
+<i18n src='assets/translations/members.json'></i18n>
+
 <script>
 import EditProfileForm from './UserProfile/EditProfileForm.vue'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
+import {memberMixin} from 'src/components/mixins/members.js'
 
 export default {
+  mixins: [memberMixin],
   components: {
     EditProfileForm
   },
   data () {
     return {
-      user: {roles: []},
+      user: {roles: [], type: 'member', language: 'fr'}, // defaults are set here
       updating: false
     }
   },
   mounted () {
-    if (this.$route.params.uuid !== undefined) {
-      var self = this
-      axios.get(
-        `/api/admins/${this.uuid}/members/${this.$route.params.uuid}`,
-        { headers: { 'X-Member-Code': this.code } }
-      ).then(function (response) {
-        self.user = response.data
-      }).catch(err => console.log(err))
-    }
+    this.loadUser(this.$route.params.uuid)
   },
   computed: {
     ...mapGetters(['uuid', 'code', 'type'])
+  },
+  methods: {
+    loadUser (uuid) {
+      if (uuid) {
+        var self = this
+        var url
+        if (self.type === 'admin') {
+          url = `/api/admins/${this.uuid}/members/${uuid}`
+        } else {
+          url = `/api/members/${this.uuid}`
+        }
+        axios.get(
+          url, { headers: { 'X-Member-Code': this.code } }
+        ).then(function (response) {
+          self.user = response.data
+          self.$router.push({path: `/memberEdit/${self.user.uuid}`})
+        }).catch(err => console.log(err))
+      }
+    },
+    removeUser (member) {
+      var self = this
+      this.deleteUser(member)
+        .then(function () { self.$router.push({path: `/members`}) })
+        .catch(function (error) { console.log(error) })
+    }
   }
 }
 </script>
