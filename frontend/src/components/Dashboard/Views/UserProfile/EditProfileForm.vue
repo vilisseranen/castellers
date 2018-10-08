@@ -173,7 +173,7 @@ export default {
     }).catch(err => console.log(err))
   },
   methods: {
-    resendEmail() {
+    resendEmail () {
       var self = this
       self.updating = true
       axios.get(
