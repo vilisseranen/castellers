@@ -192,8 +192,14 @@ export default {
       var self = this
       self.updating = true
       if (self.current_user.uuid !== undefined) {
+        var url
+        if (self.type === 'admin') {
+          url = `/api/admins/${self.uuid}/members/${this.current_user.uuid}`
+        } else {
+          url = `/api/members/${this.current_user.uuid}`
+        }
         axios.put(
-          `/api/admins/${self.uuid}/members/${this.current_user.uuid}`,
+          url,
           this.current_user,
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {

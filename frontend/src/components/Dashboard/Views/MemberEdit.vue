@@ -43,9 +43,14 @@ export default {
     loadUser (uuid) {
       if (uuid) {
         var self = this
+        var url
+        if (self.type === 'admin') {
+          url = `/api/admins/${this.uuid}/members/${uuid}`
+        } else {
+          url = `/api/members/${this.uuid}`
+        }
         axios.get(
-          `/api/admins/${this.uuid}/members/${uuid}`,
-          { headers: { 'X-Member-Code': this.code } }
+          url, { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.user = response.data
           self.$router.push({path: `/memberEdit/${self.user.uuid}`})
