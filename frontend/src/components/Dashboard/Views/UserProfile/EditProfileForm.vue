@@ -92,22 +92,27 @@
           </div>
         </div>
       </div>
-      <div class="text-center">
-        <slot name="update-button">
-          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
-            {{ $t('members.' + actionLabel + '_button') }}
-          </button>
-        </slot>
-        <slot name="email-button">
-          <button type="submit" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
-            {{ $t('members.email_button') }}
-          </button>
-        </slot>
+      <div class="row">
+        <div class="col-md-2">
         <slot name="delete-button">
           <button type="submit" class="btn btn-danger btn-fill float-left" @click.prevent="memberDelete" v-if="current_user.uuid">
             {{ $t('members.delete_button') }}
           </button>
         </slot>
+        </div>
+        <div class="col-md-10">
+        <slot name="update-button">
+          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
+            {{ $t('members.' + actionLabel + '_button') }}
+          </button>
+        </slot>
+        <div style="width:10px; height: 1px; float: right;"></div>
+        <slot name="email-button">
+          <button type="submit" style="text-align: center" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
+            {{ $t('members.email_button') }}
+          </button>
+        </slot>
+        </div>
       </div>
       <div class="clearfix">
         <div class="spinner" v-if="updating == true">

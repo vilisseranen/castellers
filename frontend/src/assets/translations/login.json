@@ -41,7 +41,7 @@
         "login": {
             "status": "Estat",
             "not_logged_in": "Encara no has iniciat sessió.",
-            "logged_in": "Ja has iniciat sessión.",
+            "logged_in": "Ja has iniciat sessió.",
             "not_logged_in_text": "Si vulls registrar-te a un esdeveniment o actualitzar el teu perfil, has d'iniciar sessió.",
             "logged_in_text": "Ara pots registrar-te per a esdeveniments o actualitzar el teu perfil.",
             "how_to_log_in": "Com iniciar sessió",
@@ -49,7 +49,7 @@
             "id": "Identificació",
             "code": "Codi",
             "button": "Inicia sessió",
-            "now": "Ara que fem?",
+            "now": "Ara què fem?",
             "logged_in_instructions": "Ara que has iniciat sessión, pots fer diverses coses: ",
             "bookmark_site": "Guarda la pàgina dins dels teus favorits per tornar-hi fàcilment ",
             "update_profile": "Actualitza el teu perfil",
