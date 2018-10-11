@@ -7,7 +7,7 @@ import (
 	"net/smtp"
 )
 
-func SendRegistrationEmail(to, memberName, adminName, adminExtra, activateLink, profileLink string) error {
+func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, activateLink, profileLink string) error {
 	// Prepare header
 	header := "Subject: Inscription\r\n" +
 		"To: " + to + "\r\n" +
@@ -17,7 +17,7 @@ func SendRegistrationEmail(to, memberName, adminName, adminExtra, activateLink, 
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"\r\n"
 	// Parse body
-	t, err := template.ParseFiles("templates/email_register_fr.html")
+	t, err := template.ParseFiles("templates/email_register_" + language + ".html")
 	if err != nil {
 		fmt.Println("Error parsing template: " + err.Error())
 		return err

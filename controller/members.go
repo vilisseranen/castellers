@@ -85,7 +85,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 			"m=" + m.UUID +
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 			m.DeleteMember()
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -185,7 +185,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 			"m=" + m.UUID +
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
