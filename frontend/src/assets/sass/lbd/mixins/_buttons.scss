@@ -12,7 +12,7 @@
     color: $btn-states-color;
     border-color: $btn-states-color;
   }
-  
+
   &.disabled,
   &:disabled,
   &[disabled],
@@ -27,10 +27,9 @@
           border-color: $btn-color;
     }
   }
-  
 
   &.btn-fill {
-    margin-left: 10px;
+    margin-top: 5px;
     color: $white-color;
     background-color: $btn-color;
     @include opacity(1);  
@@ -52,6 +51,7 @@
   .caret{
       border-top-color: $btn-color;
   }
+
 }
 
 
