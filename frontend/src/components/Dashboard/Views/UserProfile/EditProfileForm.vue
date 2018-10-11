@@ -102,13 +102,13 @@
         </div>
         <div class="col-md-10">
         <slot name="update-button">
-          <button slot="update_button" style="width: 180px" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
+          <button slot="update_button" type="submit" class="btn btn-info btn-fill float-right" @click.prevent="memberEdit">
             {{ $t('members.' + actionLabel + '_button') }}
           </button>
         </slot>
         <div style="width:10px; height: 1px; float: right;"></div>
         <slot name="email-button">
-          <button type="submit" style="text-align: center; width: 260px" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
+          <button type="submit" style="text-align: center" class="btn btn-warning btn-fill float-right" @click.prevent="resendEmail" v-if="current_user.uuid && this.type === 'admin'">
             {{ $t('members.email_button') }}
           </button>
         </slot>
