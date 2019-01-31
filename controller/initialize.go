@@ -47,7 +47,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 			"m=" + m.UUID +
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, "Yourself", "The first admin", loginLink, profileLink, m.Language); err != nil {
+		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
 			m.DeleteMember()
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
