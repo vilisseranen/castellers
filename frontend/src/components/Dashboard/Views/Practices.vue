@@ -5,12 +5,12 @@
         <div class="col-12">
           <card>
             <template slot="header">
-              <h4 class="card-title">Upcoming practices</h4>
-              <p class="card-category">You can find here a list of upcoming practices</p>
+              <h4 class="card-title">{{ $t('practices.title') }}</h4>
+              <p class="text-right card-category" v-if="type == 'admin'" v-on:click="addPractice">{{ $t('practices.create') }} <i class="nc-icon nc-notification-70"></i></p>
             </template>
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
-                       :columns="table.columns"
+                       :columns="columns.map(x => $t('practices.' + x))"
                        :data="table.data">
                 <template slot="columns"></template>
                 <template slot-scope="{row}">
@@ -18,16 +18,23 @@
                   <td>{{row.date}}</td>
                   <td>{{row.start}}</td>
                   <td>{{row.end}}</td>
-                  <td class="td-actions text-right" style="width: 20px">
-                    <button type="button" class="btn-simple btn btn-xs btn-sucess" v-tooltip.top-center="participateYes"
-                            v-on:click="buttonClick('participate', row.member_uuid, row.name, row.uuid)">
+                  <td v-if="type == 'admin'" class="td-actions text-center" style="width: 40px">
+                    <button type="button" class="btn-simple btn btn-xs btn-info" v-tooltip.top-center="$t('practices.edit')"
+                            v-on:click="editPracticeUuid(row.uuid)">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('practices.remove')"
+                            v-on:click="removePractice(row)">
+                      <i class="fa fa-remove"></i>
+                    </button>
+                  </td>
+                  <td v-if="uuid" class="td-actions text-right" style="width: 40px">
+                    <button type="button" class="btn-simple btn btn-xs btn-sucess" v-tooltip.top-center="$t('practices.participate_yes')"
+                            v-on:click="buttonClick('participate', this.topuuid, row.name, row.uuid)">
                       <i class="fa fa-thumbs-o-up"></i>
                     </button>
-                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="participateNo" v-on:click="buttonClick()">
+                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('practices.participate_no')" v-on:click="buttonClick()">
                       <i class="fa fa-thumbs-down"></i>
-                    </button>
-                    <button type="button" class="btn-simple btn btn-xs btn-primary" v-tooltip.top-center="participateMaybe" v-on:click="buttonClick()">
-                      <i class="fa fa-question-circle-o"></i>
                     </button>
                   </td>
                 </template>
@@ -41,40 +48,59 @@
     </div>
   </div>
 </template>
+
+<i18n src='assets/translations/practices.json'></i18n>
+
 <script>
   import LTable from 'src/components/UIComponents/Table.vue'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import axios from 'axios'
-  // const tableColumns = ['name', 'date', 'start', 'end', 'answer']
-  const tableColumns = []
+  import {mapGetters} from 'vuex'
+  import {practiceMixin} from 'src/components/mixins/practices.js'
+
   export default {
+    mixins: [practiceMixin],
     components: {
       LTable,
       Card
     },
+    computed: {
+      ...mapGetters(['uuid', 'code', 'type']),
+      columns: function () {
+        var baseColumns = ['name', 'date', 'start', 'end']
+        if (this.type === 'admin') {
+          baseColumns.push('actions')
+        }
+        if (this.uuid) {
+          baseColumns.push('participation')
+        }
+        return baseColumns
+      }
+    },
+    mounted () {
+      this.listPractices()
+    },
     data () {
-      var self = this
       var table = {
-        columns: tableColumns,
         data: []
       }
-      axios.get('/events')
-          .then(function (response) {
-            table.data = response.data
-            for (var i = 0; i < table.data.length; i++) {
-              table.data[i]['date'] = self.extractDate(table.data[i]['startDate'])
-              table.data[i]['start'] = self.extractTime(table.data[i]['startDate'])
-              table.data[i]['end'] = self.extractTime(table.data[i]['endDate'])
-            }
-          }).catch(err => console.log(err))
       return {
-        table,
-        participateYes: 'Participate',
-        participateNo: 'Do not participate',
-        participateMaybe: 'May or may not participate'
+        table
       }
     },
     methods: {
+      listPractices () {
+        var self = this
+        axios.get('/api/events')
+          .then(function (response) {
+            self.table.data = response.data
+            for (var i = 0; i < self.table.data.length; i++) {
+              self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
+              self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
+              self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])
+            }
+          }).catch(err => console.log(err))
+      },
       extractDate (timestamp) {
         var options = { year: 'numeric', month: '2-digit', day: '2-digit' }
         var date = new Date(timestamp * 1000)
@@ -87,6 +113,18 @@
       },
       buttonClick (participation, memberId, eventName, eventId) {
         console.log('I (' + memberId + ') will ' + participation + ' to the event: ' + eventName + ' (' + eventId + ')')
+      },
+      addPractice () {
+        this.$router.push({name: 'PracticeAdd'})
+      },
+      editPracticeUuid (practiceUuid) {
+        this.$router.push({path: `/practiceEdit/${practiceUuid}`})
+      },
+      removePractice (practice) {
+        var self = this
+        this.deletePractice(practice)
+          .then(function () { self.listPractices() })
+          .catch(function (error) { console.log(error) })
       }
     }
   }

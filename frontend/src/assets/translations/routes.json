@@ -5,7 +5,9 @@
             "memberadd": "Les membres",
             "memberedit": "Les membres",
             "login": "Se connecter",
-            "initialize": "Initialiser"
+            "initialize": "Initialiser",
+            "practices": "Les pratiques",
+            "practiceedit": "Les pratiques"
         }
     },
     "en": {
@@ -14,7 +16,8 @@
             "memberadd": "Members",
             "memberedit": "Members",
             "login": "Log in",
-            "initialize": "Initialize"
+            "initialize": "Initialize",
+            "practices": "Practices"
         }
     },
     "cat": {

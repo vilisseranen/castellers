@@ -1,0 +1,33 @@
+{
+    "fr": {
+        "practices": {
+            "title": "Liste des pratiques à venir",
+            "edit": "Modifier les informations sur une pratique",
+            "create": "Planifier une nouvelle pratique",
+            "name": "Nom de la pratique",
+            "name_description": "Donner un nom à la pratique (exemple: pratique hebdomadaire à Brébeuf)",
+            "start": "Début",
+            "end": "Fin",
+            "create_button": "Créer la pratique",
+            "update_button": "Modifier la pratique",
+            "notify_success": "L'opération s'est complétée avec succès.",
+            "notify_error": "Un problème est survenu. Veuillez vérifier les informations fournies.",
+            "date": "Date",
+            "actions": "Actions",
+            "participation": "Participation",
+            "remove": "Supprimer cette pratique",
+            "participate_yes": "Je participe",
+            "participate_no": "Je ne suis pas disponible",
+            "confirm_delete": "Veux-tu vraiment supprimer la pratique",
+            "cancel_delete": "Non",
+            "ok_delete": "Oui"
+        }
+    },
+    "en": {
+        "practices": {
+            "title": "Upcoming practices list",
+            "update": "Update information about a practice",
+            "create": "Schedule a new practice"
+        }
+    }
+}
