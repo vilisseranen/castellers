@@ -265,3 +265,29 @@ func TestDeleteEvent(t *testing.T) {
 	response = h.executeRequest(req)
 	h.checkResponseCode(t, http.StatusNotFound, response.Code)
 }
+
+func TestCreateEventEndBeforeBeginning(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{"name":"diada","startDate":1528046040, "endDate":1527894960}`)
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+
+func TestCreateEventEmptyName(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{"name":"","startDate":1527894960, "endDate":1528046040}`)
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
