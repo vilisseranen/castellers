@@ -20,7 +20,9 @@
             "participate_no": "Je ne suis pas disponible",
             "confirm_delete": "Veux-tu vraiment supprimer la pratique",
             "cancel_delete": "Non",
-            "ok_delete": "Oui"
+            "ok_delete": "Oui",
+            "participation_ok": "C'est noté !",
+            "participation_nok": "Un problème est survenu."
         }
     },
     "en": {

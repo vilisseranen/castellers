@@ -25,20 +25,35 @@ type Participation struct {
 // A member will say if he or she participes BEFORE the event:
 // We always insert in the table
 func (p *Participation) Participate() error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (event_uuid, member_uuid, answer) VALUES (?, ?, ?)", PARTICIPATION_TABLE))
-	if err != nil {
-		return err
-	}
+	// Check if a participation already exists
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT count(*) FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
 	defer stmt.Close()
-	_, err = stmt.Exec(p.EventUUID, p.MemberUUID, p.Answer)
+	c := 0
+	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&c)
 	if err != nil {
 		return err
 	}
-	tx.Commit()
+	if c == 0 {
+		stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (event_uuid, member_uuid, answer) VALUES (?, ?, ?)", PARTICIPATION_TABLE))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(p.EventUUID, p.MemberUUID, p.Answer)
+		if err != nil {
+			return err
+		}
+	} else if c == 1 {
+		stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET answer = ? WHERE event_uuid= ? AND member_uuid= ?", PARTICIPATION_TABLE))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(p.Answer, p.EventUUID, p.MemberUUID)
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 

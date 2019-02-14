@@ -30,10 +30,11 @@
                   </td>
                   <td v-if="uuid" class="td-actions text-right" style="width: 40px">
                     <button type="button" class="btn-simple btn btn-xs btn-sucess" v-tooltip.top-center="$t('practices.participate_yes')"
-                            v-on:click="buttonClick('participate', this.topuuid, row.name, row.uuid)">
+                            v-on:click="participation(row.uuid, 'yes')">
                       <i class="fa fa-thumbs-o-up"></i>
                     </button>
-                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('practices.participate_no')" v-on:click="buttonClick()">
+                    <button type="button" class="btn-simple btn btn-xs btn-danger" v-tooltip.top-center="$t('practices.participate_no')"
+                            v-on:click="participation(row.uuid, 'no')">
                       <i class="fa fa-thumbs-down"></i>
                     </button>
                   </td>
@@ -57,9 +58,10 @@
   import axios from 'axios'
   import {mapGetters} from 'vuex'
   import {practiceMixin} from 'src/components/mixins/practices.js'
+  import {notificationMixin} from 'src/components/mixins/notifications.js'
 
   export default {
-    mixins: [practiceMixin],
+    mixins: [practiceMixin, notificationMixin],
     components: {
       LTable,
       Card
@@ -111,8 +113,17 @@
         var time = new Date(timestamp * 1000)
         return new Intl.DateTimeFormat('fr-FR', options).format(time)
       },
-      buttonClick (participation, memberId, eventName, eventId) {
-        console.log('I (' + memberId + ') will ' + participation + ' to the event: ' + eventName + ' (' + eventId + ')')
+      participation (eventuuid, participation) {
+        var self = this
+        axios.post(
+          `/api/events/${eventuuid}/members/${this.uuid}`,
+          {'answer':participation},
+          { headers: { 'X-Member-Code': this.code } }
+          ).then(function () {
+            self.notifyOK(self.$t('practices.participation_ok'))
+          }).catch( function() {
+            self.notifyNOK(self.$t('practices.participation_nok'))
+          })
       },
       addPractice () {
         this.$router.push({name: 'PracticeAdd'})
