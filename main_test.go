@@ -585,6 +585,43 @@ func TestParticipateEvent(t *testing.T) {
 	}
 }
 
+func TestGetParticipation(t *testing.T) {
+	clearTables()
+	addAMember()
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"answer":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "toto")
+	response := executeRequest(req)
+
+	req, _ = http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["answer"] != "yes" {
+		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["answer"])
+	}
+}
+
+func TestGetNoParticipation(t *testing.T) {
+	clearTables()
+	addAMember()
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response := executeRequest(req)
+
+	checkResponseCode(t, 204, response.Code)
+}
+
 func TestPresenceEvent(t *testing.T) {
 	clearTables()
 	addAMember()

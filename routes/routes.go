@@ -20,6 +20,7 @@ func CreateRouter(staticDir string) *mux.Router {
 
 	// Requires member uuid
 	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.ParticipateEvent)).Methods("POST")
+	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.GetEventParticipation)).Methods("GET")
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.GetMember)).Methods("GET")
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.EditMember)).Methods("PUT")
 

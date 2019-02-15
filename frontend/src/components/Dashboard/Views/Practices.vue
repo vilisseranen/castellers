@@ -11,7 +11,8 @@
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
                        :columns="columns.map(x => $t('practices.' + x))"
-                       :data="table.data">
+                       :data="table.data"
+                       :styles="table.styles">
                 <template slot="columns"></template>
                 <template slot-scope="{row}">
                   <td>{{row.name}}</td>
@@ -84,7 +85,8 @@
     },
     data () {
       var table = {
-        data: []
+        data: [],
+        styles: []
       }
       return {
         table
@@ -100,6 +102,21 @@
               self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
               self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
               self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])
+              if (self.uuid) {
+                var styles = []
+                axios.get(`/api/events/${self.table.data[i]['uuid']}/members/${self.uuid}`,
+                { headers: { 'X-Member-Code': self.code } })
+                .then(function (response) {
+                  if (response.status === 200) {
+                    if (response.data.answer === 'yes') {
+                      styles.push({ background: 'rgba(174, 224, 127, 0.25)' }) // rgba(174, 224, 127, 0.3)
+                    } else if (response.data.answer === 'no') {
+                      styles.push({ background: 'rgba(232, 78, 78, 0.25)' }) // rgba(232, 78, 78, 0.3)
+                    }
+                  }
+                })
+                self.table.styles = styles
+              }
             }
           }).catch(err => console.log(err))
       },
@@ -117,11 +134,12 @@
         var self = this
         axios.post(
           `/api/events/${eventuuid}/members/${this.uuid}`,
-          {'answer':participation},
+          { 'answer': participation },
           { headers: { 'X-Member-Code': this.code } }
           ).then(function () {
             self.notifyOK(self.$t('practices.participation_ok'))
-          }).catch( function() {
+            self.listPractices()
+          }).catch(function () {
             self.notifyNOK(self.$t('practices.participation_nok'))
           })
       },

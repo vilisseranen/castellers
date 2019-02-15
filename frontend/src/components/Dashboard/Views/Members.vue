@@ -11,7 +11,8 @@
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
                        :columns="columns.map(x => $t('members.' + x))"
-                       :data="table.data">
+                       :data="table.data"
+                       :styles="[]">
                 <template slot="columns"></template>
                 <template slot-scope="{row}">
                   <td>{{row.firstName}}</td>

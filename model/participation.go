@@ -57,6 +57,14 @@ func (p *Participation) Participate() error {
 	return err
 }
 
+func (p *Participation) GetParticipation() error {
+	// Check if a participation already exists
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT answer FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
+	defer stmt.Close()
+	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&p.Answer)
+	return err
+}
+
 // A member might be present even if he is not registered for the event:
 // We can check presence only when the event STARTS
 func (p *Participation) Present() error {
