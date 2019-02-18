@@ -39,6 +39,7 @@
                       <i class="fa fa-thumbs-down"></i>
                     </button>
                   </td>
+                  <td v-if="type == 'admin'" class="text-right" style="width: 40px">{{row.attendance}}</td>
                 </template>
               </l-table>
             </div>
@@ -77,6 +78,9 @@
         if (this.uuid) {
           baseColumns.push('participation')
         }
+        if (this.type === 'admin') {
+          baseColumns.push('attendance')
+        }
         return baseColumns
       }
     },
@@ -96,8 +100,13 @@
       listPractices () {
         var self = this
         var url
-        if (this.uuid) {
+        // If admin we will see attendance
+        if (this.uuid && this.type == 'admin') {
+          url = `/api/admins/${self.uuid}/events`
+        // If user we will see our participation
+        } else if (this.uuid) {
           url = `/api/members/${self.uuid}/events`
+        // We will just see events
         } else {
           url = '/api/events'
         }
@@ -106,6 +115,7 @@
           .then(function (response) {
             self.table.data = response.data
             for (var i = 0; i < self.table.data.length; i++) {
+              console.log(self.table.data[i])
               self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
               self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
               self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])

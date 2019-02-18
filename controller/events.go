@@ -51,7 +51,12 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vars := mux.Vars(r)
-	member_uuid := vars["member_uuid"]
+	var member_uuid string
+	if vars["member_uuid"] != "" {
+		member_uuid = vars["member_uuid"]
+	} else if vars["admin_uuid"] != "" {
+		member_uuid = vars["admin_uuid"]
+	}
 	if member_uuid != "" {
 		for index, event := range events {
 			p := model.Participation{EventUUID: event.UUID, MemberUUID: member_uuid}
@@ -64,6 +69,17 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			events[index].Participation = p.Answer
+		}
+	}
+	if admin_uuid := vars["admin_uuid"]; admin_uuid != "" {
+		for index, event := range events {
+			if err := event.GetAttendance(); err != nil {
+				switch err {
+				default:
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+			}
+			events[index].Attendance = event.Attendance
 		}
 	}
 	RespondWithJSON(w, http.StatusOK, events)

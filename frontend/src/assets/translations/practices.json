@@ -22,7 +22,8 @@
             "cancel_delete": "Non",
             "ok_delete": "Oui",
             "participation_ok": "C'est noté !",
-            "participation_nok": "Un problème est survenu."
+            "participation_nok": "Un problème est survenu.",
+            "attendance": "Inscrits"
         }
     },
     "en": {
