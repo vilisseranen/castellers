@@ -50,6 +50,22 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	vars := mux.Vars(r)
+	member_uuid := vars["member_uuid"]
+	if member_uuid != "" {
+		for index, event := range events {
+			p := model.Participation{EventUUID: event.UUID, MemberUUID: member_uuid}
+			if err := p.GetParticipation(); err != nil {
+				switch err {
+				case sql.ErrNoRows:
+					continue
+				default:
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+			}
+			events[index].Participation = p.Answer
+		}
+	}
 	RespondWithJSON(w, http.StatusOK, events)
 }
 

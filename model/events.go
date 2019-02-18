@@ -32,6 +32,7 @@ type Event struct {
 	StartDate      uint      `json:"startDate"`
 	EndDate        uint      `json:"endDate"`
 	Recurring      Recurring `json:"recurring"`
+	Participation  string    `json:"participation"`
 	RecurringEvent string
 }
 

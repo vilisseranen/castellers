@@ -95,27 +95,24 @@
     methods: {
       listPractices () {
         var self = this
-        axios.get('/api/events')
+        var url
+        if (this.uuid) {
+          url = `/api/members/${self.uuid}/events`
+        } else {
+          url = '/api/events'
+        }
+        axios.get(url,
+        { headers: { 'X-Member-Code': self.code } })
           .then(function (response) {
             self.table.data = response.data
             for (var i = 0; i < self.table.data.length; i++) {
               self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
               self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
               self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])
-              if (self.uuid) {
-                var styles = []
-                axios.get(`/api/events/${self.table.data[i]['uuid']}/members/${self.uuid}`,
-                { headers: { 'X-Member-Code': self.code } })
-                .then(function (response) {
-                  if (response.status === 200) {
-                    if (response.data.answer === 'yes') {
-                      styles.push({ background: 'rgba(174, 224, 127, 0.25)' }) // rgba(174, 224, 127, 0.3)
-                    } else if (response.data.answer === 'no') {
-                      styles.push({ background: 'rgba(232, 78, 78, 0.25)' }) // rgba(232, 78, 78, 0.3)
-                    }
-                  }
-                })
-                self.table.styles = styles
+              if (self.table.data[i]['participation'] == 'yes') {
+                self.table.data[i]['style'] = { background: 'rgba(174, 224, 127, 0.25)' }
+              } else if (self.table.data[i]['participation'] == 'no') {
+                self.table.data[i]['style'] = { background: 'rgba(232, 78, 78, 0.25)' }
               }
             }
           }).catch(err => console.log(err))
