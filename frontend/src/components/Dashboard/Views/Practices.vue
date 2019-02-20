@@ -11,9 +11,7 @@
             <p v-if="type == 'admin'"><toggle-button
                   v-model="allEvents"
                   color="#82C7EB"
-                  :width=55
                   :sync="true"
-                  :labels="toggleButtonLabels"
                   @change="listPractices()"/>
               {{ $t('practices.toggleAllEvents') }}
             </p>
@@ -89,9 +87,6 @@
           baseColumns.push('attendance')
         }
         return baseColumns
-      },
-      toggleButtonLabels: function () {
-        return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no') }
       },
       startTimestamp: function () {
         return this.allEvents ? 1 : 0
