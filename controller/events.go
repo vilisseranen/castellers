@@ -132,6 +132,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			// Compute the list of events
 			for date := event.StartDate; date <= event.Recurring.Until; date += intervalSeconds {
 				var anEvent model.Event
+
 				anEvent.UUID = common.GenerateUUID()
 				if event.UUID == "" {
 					event.UUID = anEvent.UUID
@@ -142,6 +143,20 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				anEvent.EndDate = date + event.EndDate - event.StartDate
 				anEvent.RecurringEvent = recurringEvent.UUID
 				events = append(events, anEvent)
+
+				// Adjust for Daylight Saving Time
+				var location, err = time.LoadLocation("America/Montreal")
+				if err != nil {
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+				// This gives the offset of the current Zone in Montreal
+				// In daylight Saving Time or Standard time accord to the time of year
+				_, thisEventZoneOffset := time.Unix(int64(date), 0).In(location).Zone()
+				_, nextEventZoneOffset := time.Unix(int64(date+intervalSeconds), 0).In(location).Zone()
+				// If the event switch between EST and EDT, offset will adjust the time
+				// So that the end user see always the event at the same time of day
+				offset := thisEventZoneOffset - nextEventZoneOffset
+				date = uint(int(date) + offset)
 			}
 		} else {
 			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
