@@ -26,7 +26,12 @@
             "attendance": "Inscrits",
             "yes": "oui",
             "no": "non",
-            "toggleAllEvents": "Afficher tous les évènements"
+            "toggleAllEvents": "Afficher tous les évènements",
+            "recurringEvent": "Évènement récurrent",
+            "until": "Jusqu'au",
+            "interval": "Intervalle",
+            "1w": "Hebdomadaire",
+            "1d": "Quotidien"
         }
     },
     "en": {

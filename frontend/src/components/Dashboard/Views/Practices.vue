@@ -11,7 +11,7 @@
             <p v-if="type == 'admin'"><toggle-button
                   v-model="allEvents"
                   color="#82C7EB"
-                  width=55
+                  :width=55
                   :sync="true"
                   :labels="toggleButtonLabels"
                   @change="listPractices()"/>
@@ -73,7 +73,7 @@
     mixins: [practiceMixin, notificationMixin],
     components: {
       LTable,
-      Card,
+      Card
     },
     computed: {
       ...mapGetters(['uuid', 'code', 'type']),
@@ -91,9 +91,9 @@
         return baseColumns
       },
       toggleButtonLabels: function () {
-        return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no')}
+        return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no') }
       },
-      startTimestamp: function() {
+      startTimestamp: function () {
         return this.allEvents ? 1 : 0
       }
     },
@@ -114,7 +114,7 @@
         var self = this
         var url
         // If admin we will see attendance
-        if (this.uuid && this.type == 'admin') {
+        if (this.uuid && this.type === 'admin') {
           url = `/api/admins/${self.uuid}/events?start=${this.startTimestamp}`
         // If user we will see our participation
         } else if (this.uuid) {
@@ -131,9 +131,9 @@
               self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
               self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
               self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])
-              if (self.table.data[i]['participation'] == 'yes') {
+              if (self.table.data[i]['participation'] === 'yes') {
                 self.table.data[i]['style'] = { background: 'rgba(174, 224, 127, 0.25)' }
-              } else if (self.table.data[i]['participation'] == 'no') {
+              } else if (self.table.data[i]['participation'] === 'no') {
                 self.table.data[i]['style'] = { background: 'rgba(232, 78, 78, 0.25)' }
               }
             }

@@ -39,6 +39,36 @@
           </fg-input>
         </div>
       </div>
+      <div class="row" v-if="current_event.uuid === undefined">
+        <div class="col-md-2">
+          <fg-input :label="$t('practices.recurringEvent')" type="radio">
+            <form slot="input">
+              <toggle-button
+                      color="#82C7EB"
+                      :width=55
+                      :sync="true"
+                      v-model="recurring"/>
+            </form>
+          </fg-input>
+        </div>
+        <div class="col-md-4" v-if="recurring">
+          <fg-input :label="$t('practices.interval')" type="radio" required="true">
+          <form slot="input">
+              <PrettyRadio class="p-default p-curve" name="interval" color="primary-o" value="1w" v-model="current_event.recurring.interval">{{ $t('practices.1w') }}</PrettyRadio>
+              <PrettyRadio class="p-default p-curve" name="interval" color="info-o" value="1d" v-model="current_event.recurring.interval">{{ $t('practices.1d') }}</PrettyRadio>
+          </form>
+        </fg-input>
+        </div>
+        <div class="col-md-6" v-if="recurring">
+          <fg-input type="number"
+                    :label="$t('practices.until')"
+                    required="true">
+            <template slot="input">
+              <VueCtkDateTimePicker minuteInterval=15  v-model="untilDateForCalendar"/>
+            </template>
+          </fg-input>
+        </div>
+      </div>
       <div class="row">
         <div class="col-md-12">
         <slot name="update-button">
@@ -68,15 +98,18 @@
 <script>
 import Card from 'src/components/UIComponents/Cards/Card.vue'
 import VueCtkDateTimePicker from 'vue-ctk-date-time-picker'
+import PrettyRadio from 'pretty-checkbox-vue/radio'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
 
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css'
+import 'pretty-checkbox/dist/pretty-checkbox.min.css'
 
 export default {
   components: {
     Card,
-    VueCtkDateTimePicker
+    VueCtkDateTimePicker,
+    PrettyRadio
   },
   name: 'edit-practice-form',
   props: {
@@ -110,11 +143,23 @@ export default {
       set: function (newDate) {
         this.current_event.endDate = this.dateFromCalendar(newDate)
       }
+    },
+    untilDateForCalendar: {
+      get: function () {
+        return this.dateToCalendar(this.current_event.recurring.until)
+      },
+      set: function (newDate) {
+        this.current_event.recurring.until = this.dateFromCalendar(newDate)
+      }
+    },
+    toggleButtonLabels: function () {
+      return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no') }
     }
   },
   data () {
     return {
-      updating: false
+      updating: false,
+      recurring: false
     }
   },
   methods: {

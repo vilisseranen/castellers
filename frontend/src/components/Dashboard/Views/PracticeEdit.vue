@@ -28,7 +28,14 @@ export default {
   data () {
     var now = new Date(Date.now())
     return {
-      event: {'startDate': Math.trunc(now.valueOf() / 1000), 'endDate': Math.trunc(now.valueOf() / 1000)}, // defaults are set here
+      event: {
+        'startDate': Math.trunc(now.valueOf() / 1000),
+        'endDate': Math.trunc(now.valueOf() / 1000),
+        'recurring': {
+          'interval': '1w',
+          'until': Math.trunc(now.valueOf() / 1000)
+        }
+      }, // defaults are set here
       updating: false
     }
   },
