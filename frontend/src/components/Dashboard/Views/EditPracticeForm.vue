@@ -134,6 +134,12 @@ export default {
       },
       set: function (newDate) {
         this.current_event.startDate = this.dateFromCalendar(newDate)
+        if (this.current_event.startDate > this.current_event.endDate) {
+          this.endDateForCalendar = newDate
+        }
+        if (this.current_event.startDate > this.current_event.recurring.until) {
+          this.untilDateForCalendar = newDate
+        }
       }
     },
     endDateForCalendar: {
