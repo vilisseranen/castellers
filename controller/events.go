@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -39,7 +40,10 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	start, _ := strconv.Atoi(r.FormValue("start"))
 	if count < 1 {
-		count = 10
+		count = 100
+	}
+	if start < 1 {
+		start = int(time.Now().Unix())
 	}
 	e := model.Event{}
 	events, err := e.GetAll(start, count)

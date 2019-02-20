@@ -8,6 +8,15 @@
               <h4 class="card-title">{{ $t('practices.title') }}</h4>
               <p class="text-right card-category" v-if="type == 'admin'" v-on:click="addPractice">{{ $t('practices.create') }} <i class="nc-icon nc-notification-70"></i></p>
             </template>
+            <p v-if="type == 'admin'"><toggle-button
+                  v-model="allEvents"
+                  color="#82C7EB"
+                  width=55
+                  :sync="true"
+                  :labels="toggleButtonLabels"
+                  @change="listPractices()"/>
+              {{ $t('practices.toggleAllEvents') }}
+            </p>
             <div class="table-responsive"> 
               <l-table class="table-hover table-striped"
                        :columns="columns.map(x => $t('practices.' + x))"
@@ -44,9 +53,7 @@
               </l-table>
             </div>
           </card>
-
         </div>
-
       </div>
     </div>
   </div>
@@ -66,7 +73,7 @@
     mixins: [practiceMixin, notificationMixin],
     components: {
       LTable,
-      Card
+      Card,
     },
     computed: {
       ...mapGetters(['uuid', 'code', 'type']),
@@ -82,6 +89,12 @@
           baseColumns.push('attendance')
         }
         return baseColumns
+      },
+      toggleButtonLabels: function () {
+        return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no')}
+      },
+      startTimestamp: function() {
+        return this.allEvents ? 1 : 0
       }
     },
     mounted () {
@@ -89,11 +102,11 @@
     },
     data () {
       var table = {
-        data: [],
-        styles: []
+        data: []
       }
+      var allEvents = false
       return {
-        table
+        table, allEvents
       }
     },
     methods: {
@@ -102,20 +115,19 @@
         var url
         // If admin we will see attendance
         if (this.uuid && this.type == 'admin') {
-          url = `/api/admins/${self.uuid}/events`
+          url = `/api/admins/${self.uuid}/events?start=${this.startTimestamp}`
         // If user we will see our participation
         } else if (this.uuid) {
-          url = `/api/members/${self.uuid}/events`
+          url = `/api/members/${self.uuid}/events?start=${this.startTimestamp}`
         // We will just see events
         } else {
-          url = '/api/events'
+          url = `/api/events?start=${this.startTimestamp}`
         }
         axios.get(url,
         { headers: { 'X-Member-Code': self.code } })
           .then(function (response) {
             self.table.data = response.data
             for (var i = 0; i < self.table.data.length; i++) {
-              console.log(self.table.data[i])
               self.table.data[i]['date'] = self.extractDate(self.table.data[i]['startDate'])
               self.table.data[i]['start'] = self.extractTime(self.table.data[i]['startDate'])
               self.table.data[i]['end'] = self.extractTime(self.table.data[i]['endDate'])

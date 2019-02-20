@@ -23,7 +23,10 @@
             "ok_delete": "Oui",
             "participation_ok": "C'est noté !",
             "participation_nok": "Un problème est survenu.",
-            "attendance": "Inscrits"
+            "attendance": "Inscrits",
+            "yes": "oui",
+            "no": "non",
+            "toggleAllEvents": "Afficher tous les évènements"
         }
     },
     "en": {

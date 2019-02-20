@@ -59,7 +59,7 @@ func (e *Event) GetAttendance() error {
 }
 
 func (e *Event) GetAll(start, count int) ([]Event, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s LIMIT ? OFFSET ?", EVENTS_TABLE), count, start)
+	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s WHERE startDate > ? ORDER BY startDate LIMIT ?", EVENTS_TABLE), start, count)
 	if err != nil {
 		log.Fatal(err)
 	}
