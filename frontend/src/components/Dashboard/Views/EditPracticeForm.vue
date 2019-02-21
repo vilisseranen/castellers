@@ -25,16 +25,16 @@
                     :label="$t('practices.start')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15 v-model="startDateForCalendar" />
+              <VueCtkDateTimePicker minuteInterval=15 v-model="startDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
             </template>
-          </fg-input>          
+          </fg-input>
         </div>
         <div class="col-md-6">
           <fg-input type="number"
                     :label="$t('practices.end')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15 v-model="endDateForCalendar" />
+              <VueCtkDateTimePicker minuteInterval=15 v-model="endDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
             </template>
           </fg-input>
         </div>
@@ -64,7 +64,7 @@
                     :label="$t('practices.until')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15  v-model="untilDateForCalendar"/>
+              <VueCtkDateTimePicker minuteInterval=15  v-model="untilDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
             </template>
           </fg-input>
         </div>
@@ -158,8 +158,8 @@ export default {
         this.current_event.recurring.until = this.dateFromCalendar(newDate)
       }
     },
-    toggleButtonLabels: function () {
-      return { checked: this.$t('practices.yes'), unchecked: this.$t('practices.no') }
+    selectDateLabel: function () {
+      return this.$t('practices.selectDate')
     }
   },
   data () {
