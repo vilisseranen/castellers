@@ -25,7 +25,7 @@
                     :label="$t('practices.start')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15 v-model="startDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
+              <datetime type="datetime" v-model="startDateForCalendar" input-class="form-control" :minute-step=15></datetime>
             </template>
           </fg-input>
         </div>
@@ -34,7 +34,7 @@
                     :label="$t('practices.end')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15 v-model="endDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
+              <datetime type="datetime" v-model="endDateForCalendar" input-class="form-control" :minute-step=15></datetime>
             </template>
           </fg-input>
         </div>
@@ -64,7 +64,7 @@
                     :label="$t('practices.until')"
                     required="true">
             <template slot="input">
-              <VueCtkDateTimePicker minuteInterval=15  v-model="untilDateForCalendar" :label="this.selectDateLabel" format="YYYY-MM-DD H:mm"/>
+              <datetime type="datetime" v-model="untilDateForCalendar" input-class="form-control" :minute-step=15></datetime>
             </template>
           </fg-input>
         </div>
@@ -97,19 +97,19 @@
 
 <script>
 import Card from 'src/components/UIComponents/Cards/Card.vue'
-import VueCtkDateTimePicker from 'vue-ctk-date-time-picker'
+import {Datetime} from 'vue-datetime'
 import PrettyRadio from 'pretty-checkbox-vue/radio'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
 
-import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css'
+import 'vue-datetime/dist/vue-datetime.css'
 import 'pretty-checkbox/dist/pretty-checkbox.min.css'
 
 export default {
   components: {
     Card,
-    VueCtkDateTimePicker,
-    PrettyRadio
+    PrettyRadio,
+    Datetime
   },
   name: 'edit-practice-form',
   props: {
@@ -180,8 +180,7 @@ export default {
     dateToCalendar (dateToConvert) {
       if (dateToConvert) {
         var date = new Date(dateToConvert * 1000)
-        return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() +
-             ' ' + date.getHours() + ' ' + date.getMinutes()
+        return date.toISOString()
       } else {
         return ''
       }
