@@ -8,7 +8,7 @@
       </tr>
     </thead>
     <tbody>
-    <tr v-for="item in data">
+    <tr v-for="(item, index) in data" v-bind:style="item['style']">
       <slot :row="item">
         <td v-for="column in columns" v-if="hasValue(item, column)">{{itemValue(item, column)}}</td>
         <td v-if="hasValue(item, 'uuid')" style="display:none">{{itemValue(item, 'uuid')}}</td>

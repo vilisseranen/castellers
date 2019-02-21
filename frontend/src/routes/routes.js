@@ -4,11 +4,12 @@ import NotFound from '../components/GeneralViews/NotFoundPage.vue'
 
 // Pages
 import Login from 'src/components/Dashboard/Views/Login.vue'
-import Practices from 'src/components/Dashboard/Views/Practices.vue'
-import Events from 'src/components/Dashboard/Views/Events.vue'
 import Initialize from 'src/components/Dashboard/Views/Initialize.vue'
 import Members from 'src/components/Dashboard/Views/Members.vue'
 import MemberEdit from 'src/components/Dashboard/Views/MemberEdit.vue'
+import Practices from 'src/components/Dashboard/Views/Practices.vue'
+import PracticeEdit from 'src/components/Dashboard/Views/PracticeEdit.vue'
+import Events from 'src/components/Dashboard/Views/Events.vue'
 
 const routes = [
   {
@@ -20,16 +21,6 @@ const routes = [
         path: 'login',
         name: 'Login',
         component: Login
-      },
-      {
-        path: 'practices',
-        name: 'Practices',
-        component: Practices
-      },
-      {
-        path: 'events',
-        name: 'Events',
-        component: Events
       },
       {
         path: 'initialize',
@@ -50,6 +41,26 @@ const routes = [
         path: 'memberEdit/:uuid',
         name: 'MemberEdit',
         component: MemberEdit
+      },
+      {
+        path: 'practices',
+        name: 'Practices',
+        component: Practices
+      },
+      {
+        path: 'practiceEdit',
+        name: 'PracticeAdd',
+        component: PracticeEdit
+      },
+      {
+        path: 'practiceEdit/:uuid',
+        name: 'practiceEdit',
+        component: PracticeEdit
+      },
+      {
+        path: 'events',
+        name: 'Events',
+        component: Events
       }
     ]
   },

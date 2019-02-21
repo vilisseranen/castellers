@@ -167,7 +167,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -202,7 +202,7 @@ func TestCreateDailyEvent(t *testing.T) {
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -478,7 +478,7 @@ func TestGetEvents(t *testing.T) {
 	addEvent("deadbeef", "An event", 1527894960, 1528046040)
 	addEvent("deadfeed", "Another event", 1527994960, 1527996960)
 
-	req, _ := http.NewRequest("GET", "/api/events?count=2&start=0", nil)
+	req, _ := http.NewRequest("GET", "/api/events?count=2&start=1", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -583,6 +583,43 @@ func TestParticipateEvent(t *testing.T) {
 	if m["answer"] != "maybe" {
 		t.Errorf("Expected answer to be 'maybe'. Got '%v'", m["answer"])
 	}
+}
+
+func TestGetParticipation(t *testing.T) {
+	clearTables()
+	addAMember()
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"answer":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "toto")
+	response := executeRequest(req)
+
+	req, _ = http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["answer"] != "yes" {
+		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["answer"])
+	}
+}
+
+func TestGetNoParticipation(t *testing.T) {
+	clearTables()
+	addAMember()
+	addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	req, _ := http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response := executeRequest(req)
+
+	checkResponseCode(t, 204, response.Code)
 }
 
 func TestPresenceEvent(t *testing.T) {
