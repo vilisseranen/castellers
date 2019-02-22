@@ -23,6 +23,7 @@ COPY . /gopath/src/castellers
 RUN apk add -U git go && \
     apk add --update gcc musl-dev && \
     apk add --no-cache ca-certificates && \
+    apk add --no-cache tzdata && \
     go get -v castellers && \
     mv /gopath/bin/castellers /app && \
     apk del git go gcc musl-dev && \

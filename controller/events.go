@@ -148,6 +148,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				var location, err = time.LoadLocation("America/Montreal")
 				if err != nil {
 					RespondWithError(w, http.StatusInternalServerError, err.Error())
+					return
 				}
 				// This gives the offset of the current Zone in Montreal
 				// In daylight Saving Time or Standard time accord to the time of year
