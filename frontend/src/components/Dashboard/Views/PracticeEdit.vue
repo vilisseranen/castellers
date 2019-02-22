@@ -33,7 +33,7 @@ export default {
         'endDate': Math.trunc(now.valueOf() / 1000),
         'recurring': {
           'interval': '1w',
-          'until': Math.trunc(now.valueOf() / 1000)
+          'until': 0
         }
       }, // defaults are set here
       updating: false

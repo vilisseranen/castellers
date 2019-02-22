@@ -137,7 +137,7 @@ export default {
         if (this.current_event.startDate > this.current_event.endDate) {
           this.endDateForCalendar = newDate
         }
-        if (this.current_event.startDate > this.current_event.recurring.until) {
+        if (this.recurring && this.current_event.startDate > this.current_event.recurring.until) {
           this.untilDateForCalendar = newDate
         }
       }
@@ -166,6 +166,15 @@ export default {
     return {
       updating: false,
       recurring: false
+    }
+  },
+  watch: {
+    recurring: function (val) {
+      if (val) {
+        this.current_event.recurring.until = this.current_event.startDate
+      } else {
+        this.current_event.recurring.until = 0
+      }
     }
   },
   methods: {

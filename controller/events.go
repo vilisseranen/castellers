@@ -107,7 +107,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		events = append(events, event)
 	} else {
 		interval := intervalRegex.FindStringSubmatch(event.Recurring.Interval)
-		if len(interval) != 0 && event.Recurring.Until > event.StartDate {
+		if len(interval) != 0 && event.Recurring.Until >= event.StartDate {
 			inter, err := strconv.ParseUint(interval[1], 10, 32)
 			intervalSeconds := uint(inter)
 			if err != nil {
