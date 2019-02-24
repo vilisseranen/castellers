@@ -5,6 +5,7 @@ import App from './App.vue'
 import axios from 'axios'
 import VueI18n from 'vue-i18n'
 import VuejsDialog from 'vuejs-dialog'
+import ToggleButton from 'vue-js-toggle-button'
 
 import 'vuejs-dialog/dist/vuejs-dialog.min.css'
 
@@ -20,6 +21,7 @@ Vue.use(LightBootstrap)
 Vue.use(Vuex)
 Vue.use(VueI18n)
 Vue.use(VuejsDialog)
+Vue.use(ToggleButton)
 
 // configure router
 const router = new VueRouter({

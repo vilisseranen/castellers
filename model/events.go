@@ -34,6 +34,8 @@ type Event struct {
 	StartDate      uint      `json:"startDate"`
 	EndDate        uint      `json:"endDate"`
 	Recurring      Recurring `json:"recurring"`
+	Participation  string    `json:"participation"`
+	Attendance     uint      `json:"attendance"`
 	RecurringEvent string
 }
 
@@ -47,8 +49,19 @@ func (e *Event) Get() error {
 	return err
 }
 
+func (e *Event) GetAttendance() error {
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(e.UUID).Scan(&e.Attendance)
+	return err
+
+}
+
 func (e *Event) GetAll(start, count int) ([]Event, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s LIMIT ? OFFSET ?", EVENTS_TABLE), count, start)
+	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate FROM %s WHERE startDate > ? ORDER BY startDate LIMIT ?", EVENTS_TABLE), start, count)
 	if err != nil {
 		log.Fatal(err)
 	}

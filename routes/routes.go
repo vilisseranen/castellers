@@ -20,11 +20,14 @@ func CreateRouter(staticDir string) *mux.Router {
 
 	// Requires member uuid
 	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.ParticipateEvent)).Methods("POST")
+	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.GetEventParticipation)).Methods("GET")
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.GetMember)).Methods("GET")
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.EditMember)).Methods("PUT")
+	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}/events", checkMember(controller.GetEvents)).Methods("GET")
 
 	// Requires admin uuid
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkAdmin(controller.CreateEvent)).Methods("POST")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkAdmin(controller.GetEvents)).Methods("GET")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkAdmin(controller.CreateMember)).Methods("POST")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkAdmin(controller.GetMembers)).Methods("GET")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.GetMember)).Methods("GET")

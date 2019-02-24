@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -39,7 +40,10 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	start, _ := strconv.Atoi(r.FormValue("start"))
 	if count < 1 {
-		count = 10
+		count = 100
+	}
+	if start < 1 {
+		start = int(time.Now().Unix())
 	}
 	e := model.Event{}
 	events, err := e.GetAll(start, count)
@@ -49,6 +53,38 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
+	}
+	vars := mux.Vars(r)
+	var member_uuid string
+	if vars["member_uuid"] != "" {
+		member_uuid = vars["member_uuid"]
+	} else if vars["admin_uuid"] != "" {
+		member_uuid = vars["admin_uuid"]
+	}
+	if member_uuid != "" {
+		for index, event := range events {
+			p := model.Participation{EventUUID: event.UUID, MemberUUID: member_uuid}
+			if err := p.GetParticipation(); err != nil {
+				switch err {
+				case sql.ErrNoRows:
+					continue
+				default:
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+			}
+			events[index].Participation = p.Answer
+		}
+	}
+	if admin_uuid := vars["admin_uuid"]; admin_uuid != "" {
+		for index, event := range events {
+			if err := event.GetAttendance(); err != nil {
+				switch err {
+				default:
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+			}
+			events[index].Attendance = event.Attendance
+		}
 	}
 	RespondWithJSON(w, http.StatusOK, events)
 }
@@ -71,7 +107,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		events = append(events, event)
 	} else {
 		interval := intervalRegex.FindStringSubmatch(event.Recurring.Interval)
-		if len(interval) != 0 && event.Recurring.Until > event.StartDate {
+		if len(interval) != 0 && event.Recurring.Until >= event.StartDate {
 			inter, err := strconv.ParseUint(interval[1], 10, 32)
 			intervalSeconds := uint(inter)
 			if err != nil {
@@ -96,6 +132,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			// Compute the list of events
 			for date := event.StartDate; date <= event.Recurring.Until; date += intervalSeconds {
 				var anEvent model.Event
+
 				anEvent.UUID = common.GenerateUUID()
 				if event.UUID == "" {
 					event.UUID = anEvent.UUID
@@ -106,6 +143,21 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				anEvent.EndDate = date + event.EndDate - event.StartDate
 				anEvent.RecurringEvent = recurringEvent.UUID
 				events = append(events, anEvent)
+
+				// Adjust for Daylight Saving Time
+				var location, err = time.LoadLocation("America/Montreal")
+				if err != nil {
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+				// This gives the offset of the current Zone in Montreal
+				// In daylight Saving Time or Standard time accord to the time of year
+				_, thisEventZoneOffset := time.Unix(int64(date), 0).In(location).Zone()
+				_, nextEventZoneOffset := time.Unix(int64(date+intervalSeconds), 0).In(location).Zone()
+				// If the event switch between EST and EDT, offset will adjust the time
+				// So that the end user see always the event at the same time of day
+				offset := thisEventZoneOffset - nextEventZoneOffset
+				date = uint(int(date) + offset)
 			}
 		} else {
 			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
