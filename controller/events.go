@@ -100,6 +100,13 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	// Validation on events data
+	if event.StartDate > event.EndDate ||
+		event.Name == "" {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
 	// Compute all events
 	var events = make([]model.Event, 0)
 	if event.Recurring.Interval == "" || event.Recurring.Until == 0 {
