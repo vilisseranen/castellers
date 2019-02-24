@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+// TODO: implement deleted flag on events
+
 const EVENTS_TABLE = "events"
 
 const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
