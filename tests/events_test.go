@@ -92,7 +92,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 	h.checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = h.executeRequest(req)
 
 	h.checkResponseCode(t, http.StatusOK, response.Code)
@@ -127,7 +127,7 @@ func TestCreateDailyEvent(t *testing.T) {
 
 	h.checkResponseCode(t, http.StatusCreated, response.Code)
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=0", nil)
+	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = h.executeRequest(req)
 
 	h.checkResponseCode(t, http.StatusOK, response.Code)
@@ -180,7 +180,7 @@ func TestGetEvents(t *testing.T) {
 	h.addEvent("deadbeef", "An event", 1527894960, 1528046040)
 	h.addEvent("deadfeed", "Another event", 1527994960, 1527996960)
 
-	req, _ := http.NewRequest("GET", "/api/events?count=2&start=0", nil)
+	req, _ := http.NewRequest("GET", "/api/events?count=2&start=1", nil)
 	response := h.executeRequest(req)
 
 	h.checkResponseCode(t, http.StatusOK, response.Code)
