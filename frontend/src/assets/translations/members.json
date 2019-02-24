@@ -30,7 +30,18 @@
             "lang_fr": "Français",
             "lang_en": "Anglais",
             "lang_cat": "Catalan",
-            "email_button": "Renvoyer le courriel d'inscription"
+            "email_button": "Renvoyer le courriel d'inscription",
+            "height": "Taille",
+            "weight": "Poids",
+            "lb": "lb",
+            "kg": "kg",
+            "cm": "cm",
+            "ft": "pi",
+            "lb_exemple": "165",
+            "kg_exemple": "74.83",
+            "cm_exemple": "180",
+            "ft_exemple": "5'11",
+            "units": "unité"
         }
     },
     "en": {
@@ -64,7 +75,9 @@
             "lang_fr": "French",
             "lang_en": "English",
             "lang_cat": "Catalan",
-            "email_button": "Resend registration email"
+            "email_button": "Resend registration email",
+            "height": "Height",
+            "weight": "Weight"
         }
     },
     "cat": {

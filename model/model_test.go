@@ -56,3 +56,36 @@ func TestLanguages(t *testing.T) {
 		t.Errorf("This language should be invalid: %v", invalidLanguage)
 	}
 }
+
+func TestNumberOrEmpty(t *testing.T) {
+	empty := ""
+	integer := "10"
+	decimal := "12.10"
+	withComma := "11,10"
+	withTooManyDecimals := "1.10000"
+
+	testEmpty := ValidNumberOrEmpty(empty)
+	if testEmpty != nil {
+		t.Errorf("An empty field should be valid.")
+	}
+
+	testInteger := ValidNumberOrEmpty(integer)
+	if testInteger != nil {
+		t.Errorf("An integer should be valid.")
+	}
+
+	testDecimal := ValidNumberOrEmpty(decimal)
+	if testDecimal != nil {
+		t.Errorf("A decimal should be valid.")
+	}
+
+	testWithComma := ValidNumberOrEmpty(withComma)
+	if testWithComma == nil {
+		t.Errorf("A number with comma should be invalid.")
+	}
+
+	testWithTooManyDecimals := ValidNumberOrEmpty(withTooManyDecimals)
+	if testWithTooManyDecimals == nil {
+		t.Errorf("A number with more than 2 decimals should be invalid.")
+	}
+}

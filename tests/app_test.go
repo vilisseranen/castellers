@@ -9,7 +9,12 @@ import (
 
 func TestInitialize(t *testing.T) {
 	h.clearTables()
-	payload := []byte(`{"firstName":"Chimo", "lastName":"Anaïs", "extra":"Cap de colla", "roles": ["second"], "email": "vilisseranen@gmail.com"}`)
+	payload := []byte(`{
+		"firstName":"Chimo",
+		"lastName":"Anaïs",
+		"extra":"Cap de colla",
+		"roles": ["second"],
+		"email": "vilisseranen@gmail.com"}`)
 
 	req, _ := http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response := h.executeRequest(req)

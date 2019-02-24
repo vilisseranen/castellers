@@ -17,6 +17,8 @@ func TestCreateMember(t *testing.T) {
 	payload := []byte(`{
 		"firstName":"Clément",
 		"lastName": "Contini",
+		"height": "180",
+		"weight": "70",
 		"extra":"Santi",
 		"roles": ["segon","baix","terç"],
 		"type": "member",
@@ -285,4 +287,45 @@ func TestGetRoles(t *testing.T) {
 			t.Errorf("%v is not a valid role", m[i])
 		}
 	}
+}
+
+func TestCreateMemberWrongHeight(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"height": "180,10",
+		"extra":"Santi",
+		"roles": ["segon","baix","terç"],
+		"type": "member",
+		"email": "vilisseranen@gmail.com",
+		"language": "fr"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+func TestCreateMemberWrongWeight(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"weight": "70.1260",
+		"extra":"Santi",
+		"roles": ["segon","baix","terç"],
+		"type": "member",
+		"email": "vilisseranen@gmail.com",
+		"language": "fr"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
