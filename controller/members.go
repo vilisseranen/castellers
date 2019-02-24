@@ -50,7 +50,17 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	if missingRequiredFields(m) {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
+		return
+	}
+	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
+		fmt.Println("Error validating Height: " + m.Height)
+		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
+		return
+	}
+	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
+		fmt.Println("Error validating Weight: " + m.Weight)
+		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
@@ -103,7 +113,17 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	if missingRequiredFields(m) {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
+		return
+	}
+	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
+		fmt.Println("Error validating Height: " + m.Height)
+		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
+		return
+	}
+	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
+		fmt.Println("Error validating Weight: " + m.Weight)
+		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
