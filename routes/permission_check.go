@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/vilisseranen/castellers/controller"
 	"github.com/vilisseranen/castellers/model"
 )
