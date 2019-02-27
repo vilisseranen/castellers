@@ -19,7 +19,7 @@
     },
     "cat": {
         "general": {
-            "required_fields": "Els camps indicats amb un asterisc són obligatoris.",
+            "required_fields": "Els camps amb l'asterisc són obligatoris.",
             "admin_zone": "Admin",
             "profile_zone": "Perfil",
             "login": "Iniciar Sessió",

@@ -84,8 +84,8 @@
         "members": {
             "title": "Llista dels membres",
             "update": "Editar el perfil d'un membre",
-            "create": "Crear el perfil d'un nou membre",
-            "add_a_member": "Afegir un nou membre",
+            "create": "Crear el perfil d'un membre nou",
+            "add_a_member": "Afegir un membre nou",
             "first_name": "Nom",
             "last_name": "Cognom",
             "roles": "Rols",
@@ -96,22 +96,24 @@
             "remove": "Suprimir",
             "type_member": "Normal",
             "type_admin": "Administrador",
-            "email": "Mail",
-            "create_button": "Crear el membre",
+            "email": "Correu electrònic",
+            "create_button": "Crear membre",
             "update_button": "Actualitzar el perfil",
-            "already_logged_in": "El membre ja s'ha connectat.",
+            "already_logged_in": "El membre s'ha connectat.",
             "never_logged_in": "El membre no s'ha connectat mai.",
             "notify_success": "L'opéració s'ha completat correctament.",
             "notify_error": "Hi ha hagut un problema. Comproveu les dades entrades.",
-            "confirm_delete": "Segur que voleu eliminar aquest membre",
+            "confirm_delete": "Estàs segur que vols eliminar aquest membre?",
             "ok_delete": "Si",
             "cancel_delete": "No",
-            "delete_button": "Suprimeix membre",
+            "delete_button": "Eliminar membre",
             "language": "Idioma",
             "lang_fr": "Francès",
             "lang_en": "Anglès",
             "lang_cat": "Català",
-            "email_button": "Enviar un mail de registre"
+            "email_button": "Enviar un mail de registre",
+            "height": "Alçada",
+            "weight": "Pes"
         }
     }
 }

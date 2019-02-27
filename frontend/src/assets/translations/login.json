@@ -42,18 +42,18 @@
             "status": "Estat",
             "not_logged_in": "Encara no has iniciat sessió.",
             "logged_in": "Ja has iniciat sessió.",
-            "not_logged_in_text": "Si vulls registrar-te a un esdeveniment o actualitzar el teu perfil, has d'iniciar sessió.",
-            "logged_in_text": "Ara pots registrar-te per a esdeveniments o actualitzar el teu perfil.",
+            "not_logged_in_text": "Si vols registrar-te a un esdeveniment o actualitzar el teu perfil, has d'iniciar sessió.",
+            "logged_in_text": "Ara pots registrar-te en un esdeveniments o actualitzar el teu perfil.",
             "how_to_log_in": "Com iniciar sessió",
-            "instructions": "La forma més senzilla d'iniciar sessió és fent clic a l'enllaç del correu electrònic de registre. Tornaràs a aquesta pàgina i iniciaràs la sessió automàticament.",
+            "instructions": "La forma més senzilla d'iniciar sessió és fent clic a l'enllaç del correu electrònic de registre. Tornaràs a aquesta maeixa pàgina però amb la sessió iniciada.",
             "id": "Identificació",
             "code": "Codi",
             "button": "Inicia sessió",
             "now": "Ara què fem?",
-            "logged_in_instructions": "Ara que has iniciat sessión, pots fer diverses coses: ",
-            "bookmark_site": "Guarda la pàgina dins dels teus favorits per tornar-hi fàcilment ",
+            "logged_in_instructions": "Ara que ja has iniciat sessión, pots fer diverses coses: ",
+            "bookmark_site": "Guarda la pàgina dins dels teus preferits per tornar fàcilment",
             "update_profile": "Actualitza el teu perfil",
-            "register_events": "Resgistra't per a esdeveniments"
+            "register_events": "Inscriu-te en els esdeveniments"
         }
     }
 }
