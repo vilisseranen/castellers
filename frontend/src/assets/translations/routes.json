@@ -25,7 +25,10 @@
             "members": "Membres",
             "memberadd": "Membres",
             "memberedit": "Membres",
-            "login": "Iniciar Sessió"
+            "login": "Iniciar Sessió",
+            "initialize": "Initialitzar",
+            "practices": "Pràtiques",
+            "practiceedit": "Pràtiques"
         }
     }
 }
