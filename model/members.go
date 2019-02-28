@@ -31,19 +31,20 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 );`
 
 type Member struct {
-	UUID      string   `json:"uuid"`
-	FirstName string   `json:"firstName"`
-	LastName  string   `json:"lastName"`
-	Height    string   `json:"height"`
-	Weight    string   `json:"weight"`
-	Roles     []string `json:"roles"`
-	Extra     string   `json:"extra"`
-	Type      string   `json:"type"`
-	Email     string   `json:"email"`
-	Code      string   `json:"-"`
-	Activated int      `json:"activated"`
-	Deleted   int      `json:"-"`
-	Language  string   `json:"language"`
+	UUID          string   `json:"uuid"`
+	FirstName     string   `json:"firstName"`
+	LastName      string   `json:"lastName"`
+	Height        string   `json:"height"`
+	Weight        string   `json:"weight"`
+	Roles         []string `json:"roles"`
+	Extra         string   `json:"extra"`
+	Type          string   `json:"type"`
+	Email         string   `json:"email"`
+	Code          string   `json:"-"`
+	Activated     int      `json:"activated"`
+	Deleted       int      `json:"-"`
+	Language      string   `json:"language"`
+	Participation string   `json:"participation"`
 }
 
 func (m *Member) CreateMember() error {

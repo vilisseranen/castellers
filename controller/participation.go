@@ -87,16 +87,26 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	event_uuid := vars["event_uuid"]
-	member_uuid := vars["member_uuid"]
-	p := model.Participation{EventUUID: event_uuid, MemberUUID: member_uuid}
-	if err := p.GetParticipation(); err != nil {
+	m := model.Member{}
+	members, err := m.GetAll()
+	if err != nil {
 		switch err {
-		case sql.ErrNoRows:
-			w.WriteHeader(204)
 		default:
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
-	RespondWithJSON(w, http.StatusOK, p)
+	for index, member := range members {
+		p := model.Participation{EventUUID: event_uuid, MemberUUID: member.UUID}
+		if err := p.GetParticipation(); err != nil {
+			switch err {
+			case sql.ErrNoRows:
+				continue
+			default:
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+			}
+		}
+		members[index].Participation = p.Answer
+	}
+	RespondWithJSON(w, http.StatusOK, members)
 }
