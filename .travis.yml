@@ -10,8 +10,9 @@ services:
 - docker
 
 env:
-- APP_LOG_FILE="castellers.log"
-- GO111MODULE=on
+  global:
+    - APP_LOG_FILE="castellers.log"
+    - GO111MODULE=on
 
 install: true
 
