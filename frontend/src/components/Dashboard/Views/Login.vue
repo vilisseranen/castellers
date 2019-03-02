@@ -50,7 +50,7 @@
   import {mapGetters} from 'vuex'
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import LoginCard from 'src/components/UIComponents/Cards/LoginCard.vue'
-  import PrettyCheck from 'pretty-checkbox-vue/check';
+  import PrettyCheck from 'pretty-checkbox-vue/check'
   import {cookieMixin} from 'src/components/mixins/cookies.js'
 
   import 'pretty-checkbox/dist/pretty-checkbox.min.css'
@@ -73,8 +73,8 @@
         autoconnect: false
       }
     },
-    watch : {
-      autoconnect: function(val) {
+    watch: {
+      autoconnect: function (val) {
         if (val) {
           this.setCookie('member', this.uuid, 365)
           this.setCookie('code', this.code, 365)
