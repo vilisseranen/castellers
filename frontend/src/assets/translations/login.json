@@ -15,7 +15,11 @@
             "logged_in_instructions": "Maintenant que tu es authentifié, tu peux faire plusieurs choses :",
             "bookmark_site": "Mettre la page en favori, pour pouvoir y revenir facilement",
             "update_profile": "Mettre à jour ton profil",
-            "register_events": "T'inscrire à des évènements"
+            "register_events": "T'inscrire à des évènements",
+            "autoconnect": "Connection automatique",
+            "autoconnect_no": "Désactivée",
+            "autoconnect_yes": "Activée",
+            "cookie_warning": "Nous utilisons des cookies pour nous permettre de t'identifier automatiquement grâce au code que tu as reçu dans ton courriel d'inscription. En cliquant sur la case ci-dessus, tu acceptes l'utilisation de cookies."
         }
     },
     "en": {
