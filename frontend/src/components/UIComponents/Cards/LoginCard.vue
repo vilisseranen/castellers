@@ -38,8 +38,10 @@
   import Card from 'src/components/UIComponents/Cards/Card.vue'
   import {mapMutations} from 'vuex'
   import axios from 'axios'
+  import {notificationMixin} from 'src/components/mixins/notifications.js'
 
   export default {
+    mixins: [notificationMixin],
     components: {
       Card
     },
@@ -63,20 +65,8 @@
             self.$root.setLocale(response.data.language)
           }).catch(err => {
             console.log(err)
-            self.notifyNOK()
+            self.notifyNOK(self.$t('login.notify_error'))
           })
-      },
-      notifyNOK () {
-        const notification = {
-          template: `<span>There was an error during login.</span>`
-        }
-        this.$notifications.notify({
-          component: notification,
-          icon: 'nc-icon nc-simple-remove',
-          type: 'danger',
-          showClose: false,
-          timeout: null
-        })
       }
     }
   }
