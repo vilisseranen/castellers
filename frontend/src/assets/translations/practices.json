@@ -74,7 +74,17 @@
             "interval": "Interval",
             "1w": "Weekly",
             "1d": "Daily",
-            "selectDate": "Choose the date"
+            "selectDate": "Choose the date",
+            "update": "Edit a practice",
+            "participants": "List of participants",
+            "participant_name": "Name",
+            "roles": "Roles",
+            "participation_yes": "Yes",
+            "participation_no": "No",
+            "participation_maybe": "Maybe",
+            "participation_": "No answer",
+            "display_all_members": "Show all members",
+            "totals_participants": "Totals"
         }
     },
     "cat": {

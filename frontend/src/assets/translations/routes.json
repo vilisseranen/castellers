@@ -17,7 +17,8 @@
             "memberedit": "Members",
             "login": "Log in",
             "initialize": "Initialize",
-            "practices": "Practices"
+            "practices": "Practices",
+            "practiceedit": "Practives"
         }
     },
     "cat": {

@@ -38,7 +38,11 @@
             "logged_in_instructions": "Now that you are authenticated, you can do all of these things:",
             "bookmark_site": "Save the page in your bookmarks, to come back here easily",
             "update_profile": "Update your profile",
-            "register_events": "Register for events"
+            "register_events": "Register for events",
+            "autoconnect": "Automatic login",
+            "autoconnect_no": "Enabled",
+            "autoconnect_yes": "Disabled",
+            "cookie_warning": "We use cookie to log you in automatically with the code that was sent in your registration email. By clicking the checkbox above, you accept the use of cookies on this website."
         }
     },
     "cat": {
