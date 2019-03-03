@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"github.com/vilisseranen/castellers/model"
 )
 
 func TestParticipateEvent(t *testing.T) {
@@ -50,8 +52,9 @@ func TestPresenceEvent(t *testing.T) {
 	}
 }
 
-func TestGetParticipation(t *testing.T) {
+func TestGetParticipants(t *testing.T) {
 	h.clearTables()
+	h.addAnAdmin()
 	h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
@@ -61,28 +64,35 @@ func TestGetParticipation(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response := h.executeRequest(req)
 
-	req, _ = http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	h.checkResponseCode(t, http.StatusCreated, response.Code)
+
+	payload = []byte(`{"answer":"no"}`)
+
+	req, _ = http.NewRequest("POST", "/api/events/deadbeef/members/deadfeed", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response = h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusCreated, response.Code)
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
+	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
 	h.checkResponseCode(t, http.StatusOK, response.Code)
 
-	var m map[string]interface{}
-	json.Unmarshal(response.Body.Bytes(), &m)
+	var members = make([]model.Member, 0)
+	json.Unmarshal(response.Body.Bytes(), &members)
 
-	if m["answer"] != "yes" {
-		t.Errorf("Expected answer to be 'yes'. Got '%v'", m["answer"])
+	if len(members) != 2 {
+		t.Errorf("Expected to have %v members. Got '%v'", 2, len(members))
 	}
-}
 
-func TestGetNoParticipation(t *testing.T) {
-	h.clearTables()
-	h.addAMember()
-	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
-
-	req, _ := http.NewRequest("GET", "/api/events/deadbeef/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
-	response := h.executeRequest(req)
-
-	h.checkResponseCode(t, 204, response.Code)
+	for _, member := range members {
+		if member.UUID == "deadbeef" && member.Participation != "yes" {
+			t.Errorf("Expected member participation to be '%v'. Got '%v'", "yes", member.Participation)
+		}
+		if member.UUID == "deadfeed" && member.Participation != "no" {
+			t.Errorf("Expected member participation to be '%v'. Got '%v'", "no", member.Participation)
+		}
+	}
 }
