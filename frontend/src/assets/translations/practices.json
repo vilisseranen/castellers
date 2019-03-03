@@ -30,7 +30,17 @@
             "interval": "Intervalle",
             "1w": "Hebdomadaire",
             "1d": "Quotidien",
-            "selectDate": "Choisir la date"
+            "selectDate": "Choisir la date",
+            "update": "Modifier une pratique",
+            "participants": "Liste des participants",
+            "participant_name": "Nom",
+            "roles": "Roles",
+            "participation_yes": "Oui",
+            "participation_no": "Non",
+            "participation_maybe": "Peut-être",
+            "participation_": "Pas de réponse",
+            "display_all_members": "Afficher tous les membres",
+            "totals_participants": "Totaux"
         }
     },
     "en": {
