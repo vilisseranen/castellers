@@ -172,8 +172,10 @@ import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
 import PrettyRadio from 'pretty-checkbox-vue/radio'
 import 'pretty-checkbox/dist/pretty-checkbox.min.css'
+import {notificationMixin} from 'src/components/mixins/notifications.js'
 
 export default {
+  mixins: [notificationMixin],
   components: {
     Card,
     Multiselect,
@@ -298,10 +300,10 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.notifyOK()
+          self.notifyOK(self.$t('members.notify_success'))
         }).catch(function (error) {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK(self.$t('members.notify_error'))
           console.log(error)
         })
     },
@@ -321,11 +323,11 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.notifyOK()
+          self.notifyOK(self.$t('members.notify_success'))
           self.$emit('updateUser', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK(self.$t('members.notify_error'))
           console.log(error)
         })
       } else {
@@ -335,43 +337,18 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.notifyOK()
+          self.notifyOK(self.$t('members.notify_success'))
           self.$emit('updateUser', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK(self.$t('members.notify_error'))
           console.log(error)
         })
       }
     },
     memberDelete () {
       this.$emit('deleteUser', this.current_user)
-    },
-    notifyOK () {
-      const notification = {
-        template: '<span>' + this.$i18n.t('members.notify_success') + '</span>'
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-check-2',
-        type: 'success',
-        timeout: 10000,
-        showClose: false
-      })
-    },
-    notifyNOK () {
-      const notification = {
-        template: '<span>' + this.$i18n.t('members.notify_error') + '</span>'
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-simple-remove',
-        type: 'danger',
-        timeout: null,
-        showClose: false
-      })
     }
-
   }
 }
 </script>

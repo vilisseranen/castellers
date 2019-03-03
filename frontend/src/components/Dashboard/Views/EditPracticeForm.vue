@@ -101,11 +101,13 @@ import {Datetime} from 'vue-datetime'
 import PrettyRadio from 'pretty-checkbox-vue/radio'
 import axios from 'axios'
 import {mapGetters} from 'vuex'
+import {notificationMixin} from 'src/components/mixins/notifications.js'
 
 import 'vue-datetime/dist/vue-datetime.css'
 import 'pretty-checkbox/dist/pretty-checkbox.min.css'
 
 export default {
+  mixins: [notificationMixin],
   components: {
     Card,
     PrettyRadio,
@@ -205,11 +207,11 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.notifyOK()
+          self.notifyOK(self.$t('practices.notify_success'))
           self.$emit('updatePractice', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK(self.$t('practices.notify_error'))
           console.log(error)
         })
       } else {
@@ -219,38 +221,14 @@ export default {
           { headers: { 'X-Member-Code': this.code } }
         ).then(function (response) {
           self.updating = false
-          self.notifyOK()
+          self.notifyOK(self.$t('practices.notify_success'))
           self.$emit('updatePractice', response.data.uuid)
         }).catch(function (error) {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK(self.$t('practices.notify_error'))
           console.log(error)
         })
       }
-    },
-    notifyOK () {
-      const notification = {
-        template: '<span>' + this.$i18n.t('practices.notify_success') + '</span>'
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-check-2',
-        type: 'success',
-        timeout: 10000,
-        showClose: false
-      })
-    },
-    notifyNOK () {
-      const notification = {
-        template: '<span>' + this.$i18n.t('practices.notify_error') + '</span>'
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-simple-remove',
-        type: 'danger',
-        timeout: null,
-        showClose: false
-      })
     }
   }
 }

@@ -291,3 +291,18 @@ func TestCreateEventEmptyName(t *testing.T) {
 
 	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
+
+func TestUpdateEventEndBeforeBeginning(t *testing.T) {
+	h.clearTables()
+	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
+	h.addAnAdmin()
+
+	payload := []byte(`{"name":"An event","startDate":1528052400, "endDate":1518063200}`)
+
+	req, _ := http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+}
