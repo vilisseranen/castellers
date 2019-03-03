@@ -73,6 +73,11 @@
       LTable,
       Card
     },
+    watch: {
+      code: function () {
+        this.listPractices()
+      }
+    },
     computed: {
       ...mapGetters(['uuid', 'code', 'type']),
       columns: function () {
