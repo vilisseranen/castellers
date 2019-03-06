@@ -61,7 +61,11 @@
             "logged_in_instructions": "Ara que ja has iniciat sessión, pots fer diverses coses: ",
             "bookmark_site": "Guarda la pàgina dins dels teus preferits per tornar fàcilment",
             "update_profile": "Actualitza el teu perfil",
-            "register_events": "Inscriu-te en els esdeveniments"
+            "register_events": "Inscriu-te en els esdeveniments",
+            "autoconnect": "Connecta't automàticament",
+            "autoconnect_no": "Desactivat",
+            "autoconnect_yes": "Activat",
+            "cookie_warning": "Les cookies s'utilitzen per fer connectar-te de manera automàtica fent servir el codi enviat al teu correu durant el process de registre. Fent click a la casella superior, acceptes l'ús de les cookies necessaries per poder fer funcionar aquesta web."
         }
     }
 }
