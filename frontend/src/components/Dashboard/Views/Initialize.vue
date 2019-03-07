@@ -21,8 +21,10 @@
 <script>
 import EditProfileForm from './UserProfile/EditProfileForm.vue'
 import axios from 'axios'
+import {notificationMixin} from 'src/components/mixins/notifications.js'
 
 export default {
+  mixins: [notificationMixin],
   components: {
     EditProfileForm
   },
@@ -52,35 +54,11 @@ export default {
         self.updating = false
         self.user = response.data
         if (response.status === 201) {
-          self.notifyOK()
+          self.notifyOK('The application is now initialized ! You will receive an email with your infos.')
         } else {
           self.updating = false
-          self.notifyNOK()
+          self.notifyNOK('There was an error during the application initialization.')
         }
-      })
-    },
-    notifyOK () {
-      const notification = {
-        template: `<span>The application is now initialized ! You will receive an email with your infos.</span>`
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-check-2',
-        type: 'success',
-        timeout: null,
-        showClose: false
-      })
-    },
-    notifyNOK () {
-      const notification = {
-        template: `<span>There was an error during the application initialization.</span>`
-      }
-      this.$notifications.notify({
-        component: notification,
-        icon: 'nc-icon nc-simple-remove',
-        type: 'danger',
-        timeout: null,
-        showClose: false
       })
     }
   }

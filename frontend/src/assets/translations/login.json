@@ -19,7 +19,8 @@
             "autoconnect": "Connection automatique",
             "autoconnect_no": "Désactivée",
             "autoconnect_yes": "Activée",
-            "cookie_warning": "Nous utilisons des cookies pour nous permettre de t'identifier automatiquement grâce au code que tu as reçu dans ton courriel d'inscription. En cliquant sur la case ci-dessus, tu acceptes l'utilisation de cookies."
+            "cookie_warning": "Nous utilisons des cookies pour nous permettre de t'identifier automatiquement grâce au code que tu as reçu dans ton courriel d'inscription. En cliquant sur la case ci-dessus, tu acceptes l'utilisation de cookies.",
+            "notify_error": "Il y a eu une erreur, veuillez vérifier les informations fournies."
         }
     },
     "en": {
@@ -42,7 +43,8 @@
             "autoconnect": "Automatic login",
             "autoconnect_no": "Enabled",
             "autoconnect_yes": "Disabled",
-            "cookie_warning": "We use cookie to log you in automatically with the code that was sent in your registration email. By clicking the checkbox above, you accept the use of cookies on this website."
+            "cookie_warning": "We use cookie to log you in automatically with the code that was sent in your registration email. By clicking the checkbox above, you accept the use of cookies on this website.",
+            "notify_error": "There was an error, please check your information."
         }
     },
     "cat": {

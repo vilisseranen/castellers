@@ -72,7 +72,9 @@
       this.listMembers()
     },
     watch: {
-      '$route': 'listMembers'
+      code: function () {
+        this.listMembers()
+      }
     },
     methods: {
       listMembers () {

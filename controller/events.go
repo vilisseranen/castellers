@@ -192,6 +192,14 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+
+	// Validation on events data
+	if e.StartDate > e.EndDate ||
+		e.Name == "" {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
 	e.UUID = uuid
 	if err := e.UpdateEvent(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
