@@ -2,6 +2,9 @@ export var cookieMixin = {
   methods: {
     // Code extracted from https://stackoverflow.com/a/24103596
     setCookie (name, value, days) {
+      if (!value) {
+        return
+      }
       var expires = ''
       if (days) {
         var date = new Date()
