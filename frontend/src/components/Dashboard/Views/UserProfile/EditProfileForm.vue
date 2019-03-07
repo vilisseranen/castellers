@@ -147,9 +147,11 @@
         </div>
       </div>
       <div class="clearfix">
-        <div class="spinner" v-if="updating == true">
-          <div class="double-bounce1"></div>
-          <div class="double-bounce2"></div>
+        <div class="spinner_overlay" v-if="updating == true">
+          <div class="spinner" v-if="updating == true">
+            <div class="double-bounce1"></div>
+            <div class="double-bounce2"></div>
+          </div>
         </div>
       </div>
     </form>
