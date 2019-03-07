@@ -74,7 +74,17 @@
             "interval": "Interval",
             "1w": "Weekly",
             "1d": "Daily",
-            "selectDate": "Choose the date"
+            "selectDate": "Choose the date",
+            "update": "Edit a practice",
+            "participants": "List of participants",
+            "participant_name": "Name",
+            "roles": "Roles",
+            "participation_yes": "Yes",
+            "participation_no": "No",
+            "participation_maybe": "Maybe",
+            "participation_": "No answer",
+            "display_all_members": "Show all members",
+            "totals_participants": "Totals"
         }
     },
     "cat": {
@@ -108,7 +118,17 @@
             "interval": "En un interval de",
             "1w": "Setmanal",
             "1d": "Diaria",
-            "selectDate": "Selecciona la data"
+            "selectDate": "Selecciona la data",
+            "display_all_members": "Mostrar tots els membres",
+            "roles": "Rols",
+            "totals_participants": "Totals",
+            "participation_yes": "Sí",
+            "participation_no": "No",
+            "participation_maybe": "Potser",
+            "participation_": "Sense resposta",
+            "update": "Editar pràctica",
+            "participants": "Llista de participants",
+            "participant_name": "Nom"
         }
     }
 }

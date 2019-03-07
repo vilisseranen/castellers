@@ -77,7 +77,16 @@
             "lang_cat": "Catalan",
             "email_button": "Resend registration email",
             "height": "Height",
-            "weight": "Weight"
+            "weight": "Weight",
+            "lb": "lb",
+            "kg": "kg",
+            "cm": "cm",
+            "ft": "ft",
+            "lb_exemple": "165",
+            "kg_exemple": "74",
+            "cm_exemple": "180",
+            "ft_exemple": "5'11",
+            "units": "units"
         }
     },
     "cat": {
@@ -113,7 +122,16 @@
             "lang_cat": "Català",
             "email_button": "Enviar un mail de registre",
             "height": "Alçada",
-            "weight": "Pes"
+            "weight": "Pes",
+            "kg": "kg",
+            "lb": "lb",
+            "cm": "cm",
+            "ft": "ft",
+            "units": "unitats",
+            "lb_exemple": "165",
+            "kg_exemple": "74",
+            "cm_exemple": "180",
+            "ft_exemple": "5'11"
         }
     }
 }
