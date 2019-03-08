@@ -18,13 +18,13 @@ import (
 // Regex to match any positive number followed by w (week) or d (days)
 var intervalRegex = regexp.MustCompile(`^([1-9]\d*)(w|d)$`)
 
-const INTERVAL_DAY_SECOND = 60 * 60 * 24
-const INTERVAL_WEEK_SECOND = 60 * 60 * 24 * 7
+const intervalDaySecond = 60 * 60 * 24
+const intervalWeekSecond = 60 * 60 * 24 * 7
 
 func GetEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
-	e := model.Event{UUID: uuid}
+	UUID := vars["uuid"]
+	e := model.Event{UUID: UUID}
 	if err := e.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -56,15 +56,15 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vars := mux.Vars(r)
-	var member_uuid string
+	var memberUUID string
 	if vars["member_uuid"] != "" {
-		member_uuid = vars["member_uuid"]
+		memberUUID = vars["member_uuid"]
 	} else if vars["admin_uuid"] != "" {
-		member_uuid = vars["admin_uuid"]
+		memberUUID = vars["admin_uuid"]
 	}
-	if member_uuid != "" {
+	if memberUUID != "" {
 		for index, event := range events {
-			p := model.Participation{EventUUID: event.UUID, MemberUUID: member_uuid}
+			p := model.Participation{EventUUID: event.UUID, MemberUUID: memberUUID}
 			if err := p.GetParticipation(); err != nil {
 				switch err {
 				case sql.ErrNoRows:
@@ -76,7 +76,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			events[index].Participation = p.Answer
 		}
 	}
-	if admin_uuid := vars["admin_uuid"]; admin_uuid != "" {
+	if adminUUID := vars["admin_uuid"]; adminUUID != "" {
 		for index, event := range events {
 			if err := event.GetAttendance(); err != nil {
 				switch err {
@@ -123,9 +123,9 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			}
 			switch interval[2] {
 			case "d":
-				intervalSeconds *= INTERVAL_DAY_SECOND
+				intervalSeconds *= intervalDaySecond
 			case "w":
-				intervalSeconds *= INTERVAL_WEEK_SECOND
+				intervalSeconds *= intervalWeekSecond
 			}
 			// Create the recurringEvent
 			var recurringEvent model.RecurringEvent
@@ -185,7 +185,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	UUID := vars["uuid"]
 	var e model.Event
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
@@ -193,7 +193,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	e.UUID = uuid
+	e.UUID = UUID
 	if err := e.UpdateEvent(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -203,7 +203,8 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+	uu
+	id := vars["uuid"]
 	e := model.Event{UUID: uuid}
 	if err := e.DeleteEvent(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())

@@ -69,8 +69,8 @@ func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	if len(members) > 0 {
 		RespondWithJSON(w, http.StatusOK, nil)
 		return
-	} else {
-		RespondWithJSON(w, http.StatusNoContent, nil)
-		return
 	}
+	RespondWithJSON(w, http.StatusNoContent, nil)
+	return
+
 }
