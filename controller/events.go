@@ -203,9 +203,8 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uu
-	id := vars["uuid"]
-	e := model.Event{UUID: uuid}
+	UUID := vars["uuid"]
+	e := model.Event{UUID: UUID}
 	if err := e.DeleteEvent(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

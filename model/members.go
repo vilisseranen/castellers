@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-const MEMBERS_TABLE = "members"
+const MembersTable = "members"
+const MemberTypeAdmin = "admin"
 
-const MEMBER_TYPE_ADMIN = "admin"
-const MEMBER_TYPE_MEMBER = "member"
+const MemberTypeMember = "member"
 
 const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 (
@@ -54,7 +54,7 @@ func (m *Member) CreateMember() error {
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		MEMBERS_TABLE))
+		MembersTable))
 	if err != nil {
 		fmt.Printf("%v\n", m)
 		return err
@@ -76,7 +76,7 @@ func (m *Member) CreateMember() error {
 		fmt.Printf("%v\n", m)
 		return err
 	}
-	tx.Commit()
+	err = tx.Commit()
 	return err
 }
 
@@ -87,7 +87,7 @@ func (m *Member) EditMember() error {
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, language=? WHERE uuid=?",
-		MEMBERS_TABLE))
+		MembersTable))
 	if err != nil {
 		return err
 	}
@@ -107,14 +107,14 @@ func (m *Member) EditMember() error {
 		fmt.Printf("%v\n", m)
 		return err
 	}
-	tx.Commit()
+	err = tx.Commit()
 	return err
 }
 
 func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, code, activated, language FROM %s WHERE uuid= ? AND deleted=0",
-		MEMBERS_TABLE))
+		MembersTable))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func (m *Member) Get() error {
 func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, code, activated, language FROM %s WHERE deleted=0",
-		MEMBERS_TABLE))
+		MembersTable))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func (m *Member) GetAll() ([]Member, error) {
 
 func (m *Member) DeleteMember() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
-		MEMBERS_TABLE))
+		MembersTable))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func (m *Member) sanitizeEmptyRoles() {
 }
 
 func (m *Member) Activate() error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MembersTable))
 	if err != nil {
 		log.Fatal(err)
 	}
