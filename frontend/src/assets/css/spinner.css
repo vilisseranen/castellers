@@ -1,25 +1,25 @@
+.spinner_overlay {
+  position: absolute;
+  background-color: rgba(0,0,0,0.3);
+  width: 100%;
+  height: 100%;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
 .spinner {
-  position: fixed;
+  position: absolute;
   z-index: 999;
   height: 5em;
   width: 5em;
-  overflow: show;
+  overflow: visible;
   margin: auto;
   top: 0;
   left: 0;
   bottom: 0;
   right: 0;
-}
-
-.spinner:before {
-  content: '';
-  display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.3);
 }
 
 .double-bounce1, .double-bounce2 {
