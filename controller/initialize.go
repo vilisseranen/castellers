@@ -48,7 +48,12 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
 		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
-			m.DeleteMember()
+			err = m.DeleteMember()
+			if err != nil {
+				// Log?
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -69,8 +74,8 @@ func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	if len(members) > 0 {
 		RespondWithJSON(w, http.StatusOK, nil)
 		return
-	} else {
-		RespondWithJSON(w, http.StatusNoContent, nil)
-		return
 	}
+	RespondWithJSON(w, http.StatusNoContent, nil)
+	return
+
 }

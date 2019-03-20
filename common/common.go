@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-const UUID_SIZE = 40
-const CODE_SIZE = 16
+const uuidSize = 40
+const codeSize = 16
 
 func GenerateUUID() string {
 	data := make([]byte, 10)
@@ -16,7 +16,7 @@ func GenerateUUID() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Sprintf("%x", sha256.Sum256(data))[:UUID_SIZE]
+	return fmt.Sprintf("%x", sha256.Sum256(data))[:uuidSize]
 }
 
 func GenerateCode() string {
@@ -25,9 +25,9 @@ func GenerateCode() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Sprintf("%x", sha256.Sum256(data))[:CODE_SIZE]
+	return fmt.Sprintf("%x", sha256.Sum256(data))[:codeSize]
 }
 
-const ANSWER_YES = "yes"
-const ANSWER_NO = "no"
-const ANSWER_MAYBE = "maybe"
+const AnswerYes = "yes"
+const AnswerNo = "no"
+const AnswerMaybe = "maybe"
