@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
