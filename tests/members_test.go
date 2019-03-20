@@ -94,10 +94,10 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		t.Errorf("Expected roles to be nil. Got '%v'", m["roles"])
 	}
 
-	var member_uuid string
-	member_uuid = m["uuid"].(string)
+	var memberUUID string
+	memberUUID = m["uuid"].(string)
 
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+member_uuid, nil)
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+memberUUID, nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 	h.checkResponseCode(t, http.StatusOK, response.Code)

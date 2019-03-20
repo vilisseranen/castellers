@@ -31,7 +31,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	m.Type = model.MEMBER_TYPE_ADMIN // Make sure it's an admin
+	m.Type = model.MemberTypeAdmin // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
