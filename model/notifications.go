@@ -19,6 +19,7 @@ const NotificationsTableCreationQuery = `CREATE TABLE IF NOT EXISTS notification
 );`
 
 const TypeMemberRegistration = "memberRegistration"
+const TypeUpcomingEvent = "upcomingEvent"
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1

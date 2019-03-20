@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/robfig/cron"
 
@@ -18,6 +19,9 @@ func (s *Scheduler) Start() {
 
 	// Send notifications when they are ready
 	s.cron.AddFunc("@every 10m", checkAndSendNotification)
+
+	// Look for upcoming events and generate notifications
+	s.cron.AddFunc("@every 10m", generateEventsNotifications)
 
 	s.cron.Start()
 }
@@ -62,6 +66,29 @@ func checkAndSendNotification() {
 			}
 			notification.Delivered = model.NotificationDeliverySuccess
 			notification.UpdateNotificationStatus()
+		}
+	}
+}
+
+func generateEventsNotifications() {
+	e := model.Event{}
+	events, err := e.GetUpcomingEventsWithoutNotification()
+	if err != nil {
+		fmt.Println("Error generating event notifications.")
+		return
+	}
+	n := model.Notification{NotificationType: model.TypeUpcomingEvent}
+	for _, event := range events {
+		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("notification_time_before_event")) {
+			n.AuthorUUID = "0"
+			n.ObjectUUID = event.UUID
+			n.SendDate = int(time.Now().Unix())
+			err = n.CreateNotification()
+			if err != nil {
+				fmt.Printf("Error creating event notification for event: %v.", event.UUID)
+			}
+		} else {
+			continue
 		}
 	}
 }
