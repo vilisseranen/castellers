@@ -31,7 +31,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	m.Type = model.MEMBER_TYPE_ADMIN // Make sure it's an admin
+	m.Type = model.MemberTypeAdmin // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
@@ -48,7 +48,12 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
 		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
-			m.DeleteMember()
+			err = m.DeleteMember()
+			if err != nil {
+				// Log?
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -69,8 +74,8 @@ func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	if len(members) > 0 {
 		RespondWithJSON(w, http.StatusOK, nil)
 		return
-	} else {
-		RespondWithJSON(w, http.StatusNoContent, nil)
-		return
 	}
+	RespondWithJSON(w, http.StatusNoContent, nil)
+	return
+
 }

@@ -12,9 +12,9 @@ import (
 
 func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	event_uuid := vars["event_uuid"]
-	member_uuid := vars["member_uuid"]
-	event := model.Event{UUID: event_uuid}
+	eventUUID := vars["event_uuid"]
+	memberUUID := vars["member_uuid"]
+	event := model.Event{UUID: eventUUID}
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -30,16 +30,16 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if p.Answer != common.ANSWER_YES &&
-		p.Answer != common.ANSWER_NO &&
-		p.Answer != common.ANSWER_MAYBE {
+	if p.Answer != common.AnswerYes &&
+		p.Answer != common.AnswerNo &&
+		p.Answer != common.AnswerMaybe {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
 
-	p.EventUUID = event_uuid
-	p.MemberUUID = member_uuid
+	p.EventUUID = eventUUID
+	p.MemberUUID = memberUUID
 
 	if err := p.Participate(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -50,9 +50,9 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 
 func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	event_uuid := vars["event_uuid"]
-	member_uuid := vars["member_uuid"]
-	event := model.Event{UUID: event_uuid}
+	eventUUID := vars["event_uuid"]
+	memberUUID := vars["member_uuid"]
+	event := model.Event{UUID: eventUUID}
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -68,14 +68,14 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if p.Presence != common.ANSWER_YES && p.Presence != common.ANSWER_NO {
+	if p.Presence != common.AnswerYes && p.Presence != common.AnswerNo {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
 
-	p.EventUUID = event_uuid
-	p.MemberUUID = member_uuid
+	p.EventUUID = eventUUID
+	p.MemberUUID = memberUUID
 
 	if err := p.Present(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -86,7 +86,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 
 func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	event_uuid := vars["event_uuid"]
+	eventUUID := vars["event_uuid"]
 	m := model.Member{}
 	members, err := m.GetAll()
 	if err != nil {
@@ -97,7 +97,7 @@ func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for index, member := range members {
-		p := model.Participation{EventUUID: event_uuid, MemberUUID: member.UUID}
+		p := model.Participation{EventUUID: eventUUID, MemberUUID: member.UUID}
 		if err := p.GetParticipation(); err != nil {
 			switch err {
 			case sql.ErrNoRows:

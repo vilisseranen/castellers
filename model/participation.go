@@ -22,12 +22,15 @@ type Participation struct {
 	Presence   string `json:"presence"`
 }
 
-// A member will say if he or she participes BEFORE the event:
+// A member will say if he or she participates BEFORE the event:
 // We always insert in the table
 func (p *Participation) Participate() error {
 	// Check if a participation already exists
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT count(*) FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
 	defer stmt.Close()
+	if err != nil {
+		return err
+	}
 	c := 0
 	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&c)
 	if err != nil {
@@ -60,6 +63,9 @@ func (p *Participation) Participate() error {
 func (p *Participation) GetParticipation() error {
 	// Check if a participation already exists
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT answer FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
+	if err != nil {
+		return err
+	}
 	defer stmt.Close()
 	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&p.Answer)
 	return err
@@ -71,6 +77,9 @@ func (p *Participation) Present() error {
 	// Check if a participation already exists
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT count(*) FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
 	defer stmt.Close()
+	if err != nil {
+		return err
+	}
 	c := 0
 	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&c)
 	if err != nil {

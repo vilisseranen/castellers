@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/vilisseranen/castellers/controller"
 	"github.com/vilisseranen/castellers/model"
 )
@@ -33,7 +34,7 @@ func checkAdmin(h handler) func(w http.ResponseWriter, r *http.Request) {
 			controller.RespondWithError(w, http.StatusUnauthorized, unauthorizedMessage)
 			return
 		}
-		if member.Type != model.MEMBER_TYPE_ADMIN {
+		if member.Type != model.MemberTypeAdmin {
 			controller.RespondWithError(w, http.StatusUnauthorized, unauthorizedMessage)
 			return
 		}

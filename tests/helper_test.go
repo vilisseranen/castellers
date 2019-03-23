@@ -80,7 +80,7 @@ func (test *TestHelper) addAnAdmin() {
 	test.addMember("deadfeed", "Romà", "Èric", "", "", "Cap de colla", "baix,second", "admin", "romà@eric.ca", "tutu")
 }
 
-func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, extra, roles, member_type, email, code string) {
+func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, extra, roles, memberType, email, code string) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
@@ -95,7 +95,7 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, firstName, lastName, height, weight, roles, extra, member_type, email, code)
+	_, err = stmt.Exec(uuid, firstName, lastName, height, weight, roles, extra, memberType, email, code)
 	if err != nil {
 		log.Fatal(err)
 	}
