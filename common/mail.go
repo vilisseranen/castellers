@@ -7,6 +7,21 @@ import (
 	"net/smtp"
 )
 
+type emailRegisterInfo struct {
+	MemberName             string
+	AdminName, AdminExtra  string
+	LoginLink, ProfileLink string
+	ImageSource            string
+}
+
+type emailReminderInfo struct {
+	MemberName                     string
+	ParticipationLink, ProfileLink string
+	ImageSource                    string
+	Answer, Participation          string
+	EventName, EventDate           string
+}
+
 func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, activateLink, profileLink string) error {
 	// Prepare header
 	header := "Subject: Inscription\r\n" +
@@ -38,18 +53,35 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 	return nil
 }
 
-type emailRegisterInfo struct {
-	MemberName             string
-	AdminName, AdminExtra  string
-	LoginLink, ProfileLink string
-	ImageSource            string
-}
-
-type email struct {
-	from    string
-	to      []string
-	subject string
-	body    string
+func SendReminderEmail(to, memberName, language, participationLink, profileLink, answer, participation, eventName, eventDate string) error {
+	// Prepare header
+	header := "Subject: Reminder\r\n" +
+		"To: " + to + "\r\n" +
+		"From: Castellers de Montréal <" + GetConfigString("mail_from") + ">\r\n" +
+		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
+		"MIME-version: 1.0;\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
+		"\r\n"
+	// Parse body
+	t, err := template.ParseFiles("templates/email_reminder_" + language + ".html")
+	if err != nil {
+		fmt.Println("Error parsing template: " + err.Error())
+		return err
+	}
+	buf := new(bytes.Buffer)
+	imageSource := GetConfigString("domain") + "/static/img/"
+	emailInfo := emailReminderInfo{memberName, participationLink, profileLink, imageSource, answer, participation, eventName, eventDate}
+	if err = t.Execute(buf, emailInfo); err != nil {
+		fmt.Println("Error generating template: " + err.Error())
+		return err
+	}
+	body := header + buf.String()
+	// Send mail
+	if err = sendMail([]string{to}, body); err != nil {
+		fmt.Println("Error sending Email: " + err.Error())
+		return err
+	}
+	return nil
 }
 
 func sendMail(to []string, body string) error {

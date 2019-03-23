@@ -25,6 +25,7 @@ const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1
 const NotificationDeliveryFailure = 2
 const NotificationDeliveryPartialFailure = 3
+const NotificationTooLate = 98
 const NotificationDeliveryInProgress = 99
 
 type Notification struct {
