@@ -34,7 +34,7 @@ var ValidLanguageList = []string{
 func ValidateRoles(roles []string) error {
 	sort.Strings(roles)
 	sort.Strings(ValidRoleList)
-	validRoles := ValidRoleList[:]
+	validRoles := ValidRoleList
 	index := -1
 	for _, roleToTest := range roles {
 		validRoles = validRoles[index+1 : len(validRoles)]

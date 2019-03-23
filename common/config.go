@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+
 	"github.com/spf13/viper"
 )
 
@@ -13,8 +14,7 @@ type config struct {
 	SMTPServer string `mapstructure:"smtp_server"`
 }
 
-func ReadConfig() config {
-
+func ReadConfig() {
 	// config file location
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/castellers/")
@@ -48,7 +48,7 @@ func ReadConfig() config {
 	var c config
 	err = viper.Unmarshal(&c)
 	if err != nil {
-		panic(fmt.Errorf("Unable to parse configuration, %v\n", err))
+		panic(fmt.Errorf("Unable to parse configuration, %v", err))
 	}
 
 	if c.Debug {
@@ -56,7 +56,6 @@ func ReadConfig() config {
 		fmt.Printf("%+v", c)
 		fmt.Println()
 	}
-	return c
 }
 
 func GetConfigString(key string) string {
