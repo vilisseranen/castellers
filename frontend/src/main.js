@@ -93,7 +93,7 @@ new Vue({
         this.$router.push(this.$route.query.next)
       }
     },
-    checkAction() {
+    checkAction () {
       if ('action' in this.$route.query) {
         var action = {}
         action.type = this.$route.query.action

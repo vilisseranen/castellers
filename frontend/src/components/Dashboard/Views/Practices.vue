@@ -111,7 +111,7 @@
       }
     },
     methods: {
-      checkAction() {
+      checkAction () {
         if (this.action.type === 'participateEvent') {
           this.participation(this.action.objectUUID, this.action.payload)
         }
