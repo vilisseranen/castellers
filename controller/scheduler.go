@@ -122,7 +122,7 @@ func checkAndSendNotification() {
 					participationLink := loginLink + "&next=practices" +
 						"&action=participateEvent" +
 						"&objectUUID=" + event.UUID +
-						"&payload=" + p.Answer
+						"&payload="
 					answer := "false"
 					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
 						answer = "true"
