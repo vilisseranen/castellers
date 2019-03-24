@@ -116,12 +116,13 @@ func checkAndSendNotification() {
 				// Send the email
 				if common.GetConfigBool("debug") == false { // Don't send email in debug
 					loginLink := common.GetConfigString("domain") + "/#/login?" +
-						"m=" + m.UUID +
-						"&c=" + m.Code
-					profileLink := loginLink + "&next=memberEdit/" + m.UUID
-					participationLink := loginLink + "&next=practices&event=" + event.UUID +
-						"&answer="
-					participation := p.Answer
+						"m=" + member.UUID +
+						"&c=" + member.Code
+					profileLink := loginLink + "&next=memberEdit/" + member.UUID
+					participationLink := loginLink + "&next=practices" + 
+					  "&action=participateEvent" +
+					  "&objectUUID=" + event.UUID +
+						"&payload=" + participation := p.Answer
 					answer := "false"
 					if participation == common.ANSWER_YES || participation == common.ANSWER_NO {
 						answer = "true"
