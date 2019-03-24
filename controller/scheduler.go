@@ -119,12 +119,12 @@ func checkAndSendNotification() {
 						"m=" + member.UUID +
 						"&c=" + member.Code
 					profileLink := loginLink + "&next=memberEdit/" + member.UUID
-					participationLink := loginLink + "&next=practices" + 
-					  "&action=participateEvent" +
-					  "&objectUUID=" + event.UUID +
-						"&payload=" + participation := p.Answer
+					participationLink := loginLink + "&next=practices" +
+						"&action=participateEvent" +
+						"&objectUUID=" + event.UUID +
+						"&payload=" + p.Answer
 					answer := "false"
-					if participation == common.ANSWER_YES || participation == common.ANSWER_NO {
+					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
 						answer = "true"
 					}
 					var location, err = time.LoadLocation("America/Montreal")
@@ -135,7 +135,7 @@ func checkAndSendNotification() {
 					}
 					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 					// get eventDate as a string
-					if err := common.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, participation, event.Name, eventDate); err != nil {
+					if err := common.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
 						fmt.Printf("%v\n", err)
 						failures += 1
 						continue
