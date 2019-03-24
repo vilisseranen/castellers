@@ -37,7 +37,10 @@ func InitializeDB(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func stringOrNull(s string) string {
