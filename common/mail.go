@@ -26,7 +26,7 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 	// Prepare header
 	header := "Subject: Inscription\r\n" +
 		"To: " + to + "\r\n" +
-		"From: Castellers de Montréal <" + GetConfigString("mail_from") + ">\r\n" +
+		"From: Castellers de Montréal <" + GetConfigString("smtp_username") + ">\r\n" +
 		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
@@ -57,7 +57,7 @@ func SendReminderEmail(to, memberName, language, participationLink, profileLink,
 	// Prepare header
 	header := "Subject: Reminder\r\n" +
 		"To: " + to + "\r\n" +
-		"From: Castellers de Montréal <" + GetConfigString("mail_from") + ">\r\n" +
+		"From: Castellers de Montréal <" + GetConfigString("smtp_username") + ">\r\n" +
 		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
@@ -88,7 +88,7 @@ func sendMail(to []string, body string) error {
 	var auth smtp.Auth
 	auth = smtp.PlainAuth("", GetConfigString("smtp_username"), GetConfigString("smtp_password"), GetConfigString("smtp_server"))
 	addr := GetConfigString("smtp_server") + ":" + GetConfigString("smtp_port")
-	if err := smtp.SendMail(addr, auth, GetConfigString("mail_from"), to, []byte(body)); err != nil {
+	if err := smtp.SendMail(addr, auth, GetConfigString("smtp_username"), to, []byte(body)); err != nil {
 		fmt.Println(err)
 		return err
 	}

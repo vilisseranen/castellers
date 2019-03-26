@@ -18,7 +18,6 @@ debug: false
 domain: http://<DOMAIN_NAME>:8080
 log_file: castellers.log
 smtp_server: <SMTP_SERVER>:<SMTP_PORT>
-mail_from: <MAIL_FROM>
 ```
 
 - `sudo docker run --name app -d -e APP_LOG_FILE=castellers.log -v app_var_log:/var/log -v app_data:/data -v app_etc:/etc/castellers -p 127.0.0.1:8080:8080/tcp test`
