@@ -41,8 +41,8 @@
             "update_profile": "Update your profile",
             "register_events": "Register for events",
             "autoconnect": "Automatic login",
-            "autoconnect_no": "Enabled",
-            "autoconnect_yes": "Disabled",
+            "autoconnect_no": "Disabled",
+            "autoconnect_yes": "Enabled",
             "cookie_warning": "We use cookie to log you in automatically with the code that was sent in your registration email. By clicking the checkbox above, you accept the use of cookies on this website.",
             "notify_error": "There was an error, please check your information."
         }

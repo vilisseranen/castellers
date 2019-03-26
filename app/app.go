@@ -10,13 +10,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vilisseranen/castellers/common"
+  "github.com/vilisseranen/castellers/controller"
 	"github.com/vilisseranen/castellers/model"
 	"github.com/vilisseranen/castellers/routes"
 )
 
 type App struct {
-	Router  *mux.Router
-	handler http.Handler
+	Router    *mux.Router
+	handler   http.Handler
+	scheduler controller.Scheduler
 }
 
 func (a *App) Initialize() {
@@ -41,5 +43,6 @@ func (a *App) Initialize() {
 }
 
 func (a *App) Run(addr string) {
+	a.scheduler.Start()
 	log.Fatal(http.ListenAndServe(addr, a.handler))
 }

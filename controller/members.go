@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -90,17 +91,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// Send the email
-	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		loginLink := common.GetConfigString("domain") + "/#/login?" +
-			"m=" + m.UUID +
-			"&c=" + m.Code
-		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
-			m.DeleteMember()
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+	// Queue the notification
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	if err := n.CreateNotification(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
@@ -201,15 +196,10 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		loginLink := common.GetConfigString("domain") + "/#/login?" +
-			"m=" + m.UUID +
-			"&c=" + m.Code
-		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	if err := n.CreateNotification(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
 

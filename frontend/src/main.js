@@ -40,6 +40,11 @@ const store = new Vuex.Store({
       code: '',
       type: ''
     },
+    action: {
+      type: '',
+      objectUUID: '',
+      payload: ''
+    },
     locale: ''
   },
   mutations: {
@@ -48,13 +53,19 @@ const store = new Vuex.Store({
       state.auth.code = payload.code
       state.auth.type = payload.type
       state.locale = payload.language
+    },
+    setAction (state, payload) {
+      state.action.type = payload.type
+      state.action.objectUUID = payload.objectUUID
+      state.action.payload = payload.payload
     }
   },
   getters: {
     uuid: (state) => state.auth.uuid,
     code: (state) => state.auth.code,
     type: (state) => state.auth.type,
-    language: (state) => state.locale
+    language: (state) => state.locale,
+    action: (state) => state.action
   }
 })
 
@@ -80,6 +91,15 @@ new Vue({
     globalRedirect () {
       if ('next' in this.$route.query) {
         this.$router.push(this.$route.query.next)
+      }
+    },
+    checkAction () {
+      if ('action' in this.$route.query) {
+        var action = {}
+        action.type = this.$route.query.action
+        action.objectUUID = this.$route.query.objectUUID
+        action.payload = this.$route.query.payload
+        this.$store.commit('setAction', action)
       }
     },
     checkCredentials () {
@@ -124,6 +144,7 @@ new Vue({
     }
   },
   mounted () {
-    this.checkCredentials() // this must be the first thing to do
+    this.checkAction()      // check for an action to perform
+    this.checkCredentials() // log in and go to next page
   }
 })

@@ -33,6 +33,10 @@ func InitializeDB(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	_, err = tx.Exec(NotificationsTableCreationQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
