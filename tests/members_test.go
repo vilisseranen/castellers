@@ -329,3 +329,34 @@ func TestCreateMemberWrongWeight(t *testing.T) {
 
 	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
+
+func TestUpdateSelf(t *testing.T) {
+	h.clearTables()
+	h.addAMember()
+
+	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req.Header.Add("X-Member-Code", "toto")
+	response := h.executeRequest(req)
+	h.checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	m["height"] = "180"
+	payload, error := json.Marshal(m)
+	if error != nil {
+		t.Errorf(error.Error())
+	}
+
+	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "toto")
+	response = h.executeRequest(req)
+
+	h.checkResponseCode(t, http.StatusAccepted, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["height"] != "180" {
+		t.Errorf("Expected extra to be '180'. Got '%v'", m["height"])
+	}
+}
