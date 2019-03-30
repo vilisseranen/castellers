@@ -232,6 +232,7 @@ func validateChangeRole(m model.Member, code string) bool {
 		return true
 	}
 	if current_user.Type == "member" {
+		// Member trying to promote to admin
 		if m.Type == "admin" {
 			return false
 		}
@@ -248,7 +249,11 @@ func validateChangeRole(m model.Member, code string) bool {
 		}
 		if count_admins > 0 {
 			return true
+			// This is the last admin
+		} else {
+			return false
 		}
 	}
-	return false
+	// All other cases except those stated above are OK
+	return true
 }
