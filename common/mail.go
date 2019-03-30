@@ -9,6 +9,7 @@ import (
 
 type emailRegisterInfo struct {
 	MemberName             string
+	Language               string
 	AdminName, AdminExtra  string
 	LoginLink, ProfileLink string
 	ImageSource            string
@@ -16,6 +17,7 @@ type emailRegisterInfo struct {
 
 type emailReminderInfo struct {
 	MemberName                     string
+	Language                       string
 	ParticipationLink, ProfileLink string
 	ImageSource                    string
 	Answer, Participation          string
@@ -32,14 +34,14 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"\r\n"
 	// Parse body
-	t, err := template.ParseFiles("templates/email_register_" + language + ".html")
+	t, err := template.ParseFiles("templates/email_register.html")
 	if err != nil {
 		fmt.Println("Error parsing template: " + err.Error())
 		return err
 	}
 	buf := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
-	emailInfo := emailRegisterInfo{memberName, adminName, adminExtra, activateLink, profileLink, imageSource}
+	emailInfo := emailRegisterInfo{memberName, language, adminName, adminExtra, activateLink, profileLink, imageSource}
 	if err = t.Execute(buf, emailInfo); err != nil {
 		fmt.Println("Error generating template: " + err.Error())
 		return err
@@ -55,7 +57,16 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 
 func SendReminderEmail(to, memberName, language, participationLink, profileLink, answer, participation, eventName, eventDate string) error {
 	// Prepare header
-	header := "Subject: Reminder\r\n" +
+	var title_translated string
+	switch language {
+	case "fr":
+		title_translated = "Rappel"
+	case "en":
+		title_translated = "Reminder"
+	case "cat":
+		title_translated = "Reminder" // TODO
+	}
+	header := "Subject: " + title_translated + "\r\n" +
 		"To: " + to + "\r\n" +
 		"From: Castellers de Montréal <" + GetConfigString("smtp_username") + ">\r\n" +
 		"Reply-To: " + GetConfigString("reply_to") + "\r\n" +
@@ -70,7 +81,7 @@ func SendReminderEmail(to, memberName, language, participationLink, profileLink,
 	}
 	buf := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
-	emailInfo := emailReminderInfo{memberName, participationLink, profileLink, imageSource, answer, participation, eventName, eventDate}
+	emailInfo := emailReminderInfo{memberName, language, participationLink, profileLink, imageSource, answer, participation, eventName, eventDate}
 	if err = t.Execute(buf, emailInfo); err != nil {
 		fmt.Println("Error generating template: " + err.Error())
 		return err
