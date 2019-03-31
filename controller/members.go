@@ -220,7 +220,7 @@ func validateChangeRole(m model.Member, code string) bool {
 		return false
 	}
 	// Only admins can change other users roles.
-	if currentUser.Type != model.MEMBER_TYPE_ADMIN {
+	if currentUser.Type != model.MemberTypeAdmin {
 		return false
 	}
 	// May not be necessary
