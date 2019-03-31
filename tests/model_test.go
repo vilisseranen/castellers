@@ -1,7 +1,9 @@
-package model
+package tests
 
 import (
 	"testing"
+
+	"github.com/vilisseranen/castellers/model"
 )
 
 func TestRoles(t *testing.T) {
@@ -11,27 +13,27 @@ func TestRoles(t *testing.T) {
 	invalidRoles := []string{"xxxxx", "segon", "baix"}
 	invalidRoles2 := []string{"segon", "segon", "baix"}
 
-	testEmpty := ValidateRoles(emptyRoles)
+	testEmpty := model.ValidateRoles(emptyRoles)
 	if testEmpty != nil {
 		t.Errorf("An empty role list should be valid.")
 	}
 
-	testValid := ValidateRoles(validRoles)
+	testValid := model.ValidateRoles(validRoles)
 	if testValid != nil {
 		t.Errorf("This list of roles should be valid: %v", validRoles)
 	}
 
-	testValid2 := ValidateRoles(validRoles2)
+	testValid2 := model.ValidateRoles(validRoles2)
 	if testValid2 != nil {
 		t.Errorf("This list of roles should be valid: %v", validRoles2)
 	}
 
-	testInvalid := ValidateRoles(invalidRoles)
+	testInvalid := model.ValidateRoles(invalidRoles)
 	if testInvalid == nil {
 		t.Errorf("This list of roles should be invalid: %v", invalidRoles)
 	}
 
-	testInvalid2 := ValidateRoles(invalidRoles2)
+	testInvalid2 := model.ValidateRoles(invalidRoles2)
 	if testInvalid2 == nil {
 		t.Errorf("This list of roles should be invalid: %v", invalidRoles2)
 	}
@@ -41,17 +43,17 @@ func TestLanguages(t *testing.T) {
 	emptyLanguage := ""
 	validLanguage := "cat"
 	invalidLanguage := "it"
-	testEmpty := ValidateLanguage(emptyLanguage)
+	testEmpty := model.ValidateLanguage(emptyLanguage)
 	if testEmpty == nil {
 		t.Errorf("An empty Language should be invalid.")
 	}
 
-	testValid := ValidateLanguage(validLanguage)
+	testValid := model.ValidateLanguage(validLanguage)
 	if testValid != nil {
 		t.Errorf("This language should be valid: %v", validLanguage)
 	}
 
-	testInvalid := ValidateLanguage(invalidLanguage)
+	testInvalid := model.ValidateLanguage(invalidLanguage)
 	if testInvalid == nil {
 		t.Errorf("This language should be invalid: %v", invalidLanguage)
 	}
@@ -64,27 +66,27 @@ func TestNumberOrEmpty(t *testing.T) {
 	withComma := "11,10"
 	withTooManyDecimals := "1.10000"
 
-	testEmpty := ValidNumberOrEmpty(empty)
+	testEmpty := model.ValidNumberOrEmpty(empty)
 	if testEmpty != nil {
 		t.Errorf("An empty field should be valid.")
 	}
 
-	testInteger := ValidNumberOrEmpty(integer)
+	testInteger := model.ValidNumberOrEmpty(integer)
 	if testInteger != nil {
 		t.Errorf("An integer should be valid.")
 	}
 
-	testDecimal := ValidNumberOrEmpty(decimal)
+	testDecimal := model.ValidNumberOrEmpty(decimal)
 	if testDecimal != nil {
 		t.Errorf("A decimal should be valid.")
 	}
 
-	testWithComma := ValidNumberOrEmpty(withComma)
+	testWithComma := model.ValidNumberOrEmpty(withComma)
 	if testWithComma == nil {
 		t.Errorf("A number with comma should be invalid.")
 	}
 
-	testWithTooManyDecimals := ValidNumberOrEmpty(withTooManyDecimals)
+	testWithTooManyDecimals := model.ValidNumberOrEmpty(withTooManyDecimals)
 	if testWithTooManyDecimals == nil {
 		t.Errorf("A number with more than 2 decimals should be invalid.")
 	}

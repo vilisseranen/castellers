@@ -79,7 +79,7 @@
       }
     },
     computed: {
-      ...mapGetters(['uuid', 'code', 'type']),
+      ...mapGetters(['uuid', 'code', 'type', 'action']),
       columns: function () {
         var baseColumns = ['name', 'date', 'start', 'end']
         if (this.type === 'admin') {
@@ -99,6 +99,7 @@
     },
     mounted () {
       this.listPractices()
+      this.checkAction()
     },
     data () {
       var table = {
@@ -110,6 +111,11 @@
       }
     },
     methods: {
+      checkAction () {
+        if (this.action.type === 'participateEvent') {
+          this.participation(this.action.objectUUID, this.action.payload)
+        }
+      },
       listPractices () {
         var self = this
         var url

@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"time"
 )
 
 // TODO: implement deleted flag on events
@@ -116,6 +117,30 @@ func (e *Event) CreateEvent() error {
 	if err != nil {
 		return err
 	}
-	tx.Commit()
+	err = tx.Commit()
 	return err
+}
+
+func (e *Event) GetUpcomingEventsWithoutNotification() ([]Event, error) {
+	rows, err := db.Query(fmt.Sprintf(
+		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') ORDER BY startDate",
+		EVENTS_TABLE, TypeUpcomingEvent), time.Now().Unix())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	Events := []Event{}
+
+	for rows.Next() {
+		var e Event
+		if err = rows.Scan(&e.UUID, &e.StartDate); err != nil {
+			return nil, err
+		}
+		Events = append(Events, e)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return Events, nil
 }
