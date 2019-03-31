@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-12">
-          <edit-profile-form :user="user" :updating="updating" v-on:updateUser="loadUser" v-on:deleteUser="removeUser">
+          <edit-profile-form :user="user" v-on:updateUser="loadUser" v-on:deleteUser="removeUser">
             <template slot="message">
               <span></span>
             </template>
@@ -29,8 +29,7 @@ export default {
   },
   data () {
     return {
-      user: {roles: [], type: 'member', language: 'fr'}, // defaults are set here
-      updating: false
+      user: {roles: [], type: 'member', language: 'fr'} // defaults are set here
     }
   },
   mounted () {

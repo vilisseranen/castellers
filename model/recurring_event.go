@@ -46,6 +46,6 @@ func (r *RecurringEvent) CreateRecurringEvent() error {
 	if err != nil {
 		return err
 	}
-	tx.Commit()
+	err = tx.Commit()
 	return err
 }

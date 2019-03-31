@@ -5,16 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
+
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["member_uuid"]
-	m := model.Member{UUID: uuid}
+	UUID := vars["member_uuid"]
+	m := model.Member{UUID: UUID}
 	if err := m.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -77,8 +79,8 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
 	vars := mux.Vars(r)
-	uuid := vars["admin_uuid"]
-	a := model.Member{UUID: uuid}
+	UUID := vars["admin_uuid"]
+	a := model.Member{UUID: UUID}
 	if err := a.Get(); err != nil {
 		fmt.Println("Failed to get admin for CreateMember.")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -89,17 +91,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// Send the email
-	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		loginLink := common.GetConfigString("domain") + "/#/login?" +
-			"m=" + m.UUID +
-			"&c=" + m.Code
-		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
-			m.DeleteMember()
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+	// Queue the notification
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	if err := n.CreateNotification(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
@@ -150,9 +146,9 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["member_uuid"]
-	admin_uuid := vars["admin_uuid"]
-	m := model.Member{UUID: uuid}
+	UUID := vars["member_uuid"]
+	adminUUID := vars["admin_uuid"]
+	m := model.Member{UUID: UUID}
 	// Cannot delete self if admin
 	if err := m.Get(); err != nil {
 		switch err {
@@ -163,7 +159,7 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if admin_uuid == uuid && m.Type == "admin" {
+	if adminUUID == UUID && m.Type == "admin" {
 		RespondWithError(w, http.StatusLocked, "Cannot remove yourself if admin")
 		return
 	}
@@ -181,8 +177,8 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 
 func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uuid := vars["member_uuid"]
-	m := model.Member{UUID: uuid}
+	UUID := vars["member_uuid"]
+	m := model.Member{UUID: UUID}
 	if err := m.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -193,22 +189,17 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vars = mux.Vars(r)
-	uuid = vars["admin_uuid"]
-	a := model.Member{UUID: uuid}
+	UUID = vars["admin_uuid"]
+	a := model.Member{UUID: UUID}
 	if err := a.Get(); err != nil {
 		fmt.Println("Failed to get admin.")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		loginLink := common.GetConfigString("domain") + "/#/login?" +
-			"m=" + m.UUID +
-			"&c=" + m.Code
-		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	if err := n.CreateNotification(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
 
@@ -223,30 +214,30 @@ func validateChangeRole(m model.Member, code string) bool {
 	// There are 2 cases when we cannot allow to change a role:
 	// - a regular user wants to promote itself
 	// - the last admin wants to demote itself
-	current_user := model.Member{UUID: m.UUID}
-	if err := current_user.Get(); err != nil {
+	currentUser := model.Member{UUID: m.UUID}
+	if err := currentUser.Get(); err != nil {
 		return false
 	}
 	// There are only problems when changes are made on ourselves
-	if current_user.Code != code {
+	if currentUser.Code != code {
 		return true
 	}
-	if current_user.Type == "member" {
+	if currentUser.Type == "member" {
 		if m.Type == "admin" {
 			return false
 		}
 	} else {
-		all_users, err := m.GetAll()
+		allUsers, err := m.GetAll()
 		if err != nil {
 			return false
 		}
-		var count_admins = 0
-		for _, user := range all_users {
+		var countAdmins = 0
+		for _, user := range allUsers {
 			if user.Type == "admin" {
-				count_admins += 1
+				countAdmins++
 			}
 		}
-		if count_admins > 0 {
+		if countAdmins > 0 {
 			return true
 		}
 	}
