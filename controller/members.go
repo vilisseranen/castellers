@@ -215,36 +215,34 @@ func validateChangeRole(m model.Member, code string) bool {
 	// - a regular user wants to promote itself
 	// - the last admin wants to demote itself
 	currentUser := model.Member{UUID: m.UUID}
+	// If member does not exist can't do any action.
 	if err := currentUser.Get(); err != nil {
 		return false
 	}
-	// There are only problems when changes are made on ourselves
-	if currentUser.Code != code {
-		return true
+	// Only admins can change other users roles.
+	if currentUser.Type != model.MEMBER_TYPE_ADMIN {
+		return false
 	}
-	if currentUser.Type == "member" {
-		// Member trying to promote to admin
-		if m.Type == "admin" {
-			return false
-		}
-	} else {
-		allUsers, err := m.GetAll()
-		if err != nil {
-			return false
-		}
-		var countAdmins = 0
-		for _, user := range allUsers {
-			if user.Type == "admin" {
-				countAdmins++
-			}
-		}
-		if countAdmins > 0 {
-			return true
-			// This is the last admin
-		} else {
-			return false
+	// May not be necessary
+	// // Not allowed to update our own role
+	// if currentUser.Code == code {
+	// 	return false
+	// }
+
+	allUsers, err := m.GetAll()
+	if err != nil {
+		return false
+	}
+	var countAdmins = 0
+	for _, user := range allUsers {
+		if user.Type == "admin" {
+			countAdmins += 1
 		}
 	}
-	// All other cases except those stated above are OK
+	if countAdmins < 2 {
+		// This is the last admin
+		return false
+	}
+
 	return true
 }
