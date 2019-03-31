@@ -29,7 +29,9 @@ func TestCreateMember(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -59,7 +61,9 @@ func TestCreateMemberInvalidRole(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestCreateMemberNoExtra(t *testing.T) {
@@ -77,7 +81,9 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -100,7 +106,9 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+memberUUID, nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestUpdateMember(t *testing.T) {
@@ -111,7 +119,9 @@ func TestUpdateMember(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -126,7 +136,9 @@ func TestUpdateMember(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusAccepted, response.Code)
+	if err := h.checkResponseCode(http.StatusAccepted, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	json.Unmarshal(response.Body.Bytes(), &m)
 
@@ -142,7 +154,9 @@ func TestPromoteSelf(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "toto")
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -157,7 +171,9 @@ func TestPromoteSelf(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusForbidden, response.Code)
+	if err := h.checkResponseCode(http.StatusForbidden, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPromoteByAdmin(t *testing.T) {
@@ -168,7 +184,9 @@ func TestPromoteByAdmin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -183,7 +201,9 @@ func TestPromoteByAdmin(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusAccepted, response.Code)
+	if err := h.checkResponseCode(http.StatusAccepted, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestDeleteMember(t *testing.T) {
@@ -194,17 +214,21 @@ func TestDeleteMember(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
-
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
-
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusNotFound, response.Code)
+	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestDeleteSelfAdmin(t *testing.T) {
@@ -214,7 +238,9 @@ func TestDeleteSelfAdmin(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadfeed", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusLocked, response.Code)
+	if err := h.checkResponseCode(http.StatusLocked, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetMember(t *testing.T) {
@@ -225,7 +251,9 @@ func TestGetMember(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -243,7 +271,9 @@ func TestGetMemberType(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -256,7 +286,9 @@ func TestGetMemberType(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	json.Unmarshal(response.Body.Bytes(), &m)
 
@@ -271,7 +303,9 @@ func TestGetRoles(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/roles", nil)
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m []string
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -307,7 +341,9 @@ func TestCreateMemberWrongHeight(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 func TestCreateMemberWrongWeight(t *testing.T) {
 	h.clearTables()
@@ -327,5 +363,7 @@ func TestCreateMemberWrongWeight(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }

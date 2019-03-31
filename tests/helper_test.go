@@ -2,6 +2,7 @@ package tests
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -45,10 +46,11 @@ func (test *TestHelper) executeRequest(req *http.Request) *httptest.ResponseReco
 	return rr
 }
 
-func (test *TestHelper) checkResponseCode(t *testing.T, expected, actual int) {
+func (test *TestHelper) checkResponseCode(expected, actual int) error {
 	if expected != actual {
-		t.Errorf("Expected response code %d. Got %d\n", expected, actual)
+		return fmt.Errorf("Expected response code %d. Got %d\n", expected, actual)
 	}
+	return nil
 }
 
 func (test *TestHelper) addEvent(uuid, name string, startDate, endDate int) {

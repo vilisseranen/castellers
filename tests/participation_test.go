@@ -20,7 +20,9 @@ func TestParticipateEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -42,7 +44,9 @@ func TestPresenceEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -64,7 +68,9 @@ func TestGetParticipants(t *testing.T) {
 	req.Header.Add("X-Member-Code", "toto")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	payload = []byte(`{"answer":"no"}`)
 
@@ -72,13 +78,17 @@ func TestGetParticipants(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var members = make([]model.Member, 0)
 	json.Unmarshal(response.Body.Bytes(), &members)

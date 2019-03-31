@@ -20,7 +20,9 @@ func TestInitialize(t *testing.T) {
 	response := h.executeRequest(req)
 
 	// First admin should succeed
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -46,8 +48,9 @@ func TestInitialize(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
 	response = h.executeRequest(req)
 
-	// First admin should succeed
-	h.checkResponseCode(t, http.StatusUnauthorized, response.Code)
+	if err := h.checkResponseCode(http.StatusUnauthorized, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestNotInitialized(t *testing.T) {
@@ -56,6 +59,7 @@ func TestNotInitialized(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/initialize", nil)
 	response := h.executeRequest(req)
 
-	// First admin should succeed
-	h.checkResponseCode(t, http.StatusNoContent, response.Code)
+	if err := h.checkResponseCode(http.StatusNoContent, response.Code); err != nil {
+		t.Error(err)
+	}
 }

@@ -19,7 +19,9 @@ func TestCreateEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var event model.Event
 	json.Unmarshal(response.Body.Bytes(), &event)
@@ -43,8 +45,9 @@ func TestGetNonExistentEvent(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusNotFound, response.Code)
-
+	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
+		t.Error(err)
+	}
 	var m map[string]string
 	json.Unmarshal(response.Body.Bytes(), &m)
 	if m["error"] != "Event not found" {
@@ -62,8 +65,9 @@ func TestCreateEventNonAdmin(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusUnauthorized, response.Code)
-
+	if err := h.checkResponseCode(http.StatusUnauthorized, response.Code); err != nil {
+		t.Error(err)
+	}
 	var m map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &m)
 
@@ -90,13 +94,16 @@ func TestCreateWeeklyEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
-
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 	var events = make([]model.Event, 0)
 	json.Unmarshal(response.Body.Bytes(), &events)
 
@@ -125,12 +132,16 @@ func TestCreateDailyEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusCreated, response.Code)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var events = make([]model.Event, 0)
 	json.Unmarshal(response.Body.Bytes(), &events)
@@ -157,7 +168,9 @@ func TestGetEvent(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -183,7 +196,9 @@ func TestGetEvents(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/events?count=2&start=1", nil)
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m [2]model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -230,7 +245,9 @@ func TestUpdateEvent(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
@@ -254,16 +271,22 @@ func TestDeleteEvent(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/events/deadbeef", nil)
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusOK, response.Code)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
 
 	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response = h.executeRequest(req)
-	h.checkResponseCode(t, http.StatusNotFound, response.Code)
+	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestCreateEventEndBeforeBeginning(t *testing.T) {
@@ -276,7 +299,9 @@ func TestCreateEventEndBeforeBeginning(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestCreateEventEmptyName(t *testing.T) {
@@ -289,7 +314,9 @@ func TestCreateEventEmptyName(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestUpdateEventEndBeforeBeginning(t *testing.T) {
@@ -303,6 +330,7 @@ func TestUpdateEventEndBeforeBeginning(t *testing.T) {
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
-	h.checkResponseCode(t, http.StatusBadRequest, response.Code)
-
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
 }
