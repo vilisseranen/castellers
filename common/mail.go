@@ -81,7 +81,6 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 }
 
 func SendReminderEmail(to, memberName, language, participationLink, profileLink, answer, participation, eventName, eventDate string) error {
-	fmt.Printf("Sending reminder email to %v with language %v\n", memberName, language)
 	// Prepare header
 	var title_translated string
 	switch language {
