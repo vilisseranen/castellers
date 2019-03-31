@@ -1,0 +1,84 @@
+        <!-- SOCIAL : BEGIN -->
+        <tr>
+          <td bgcolor="#292828">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 30px 30px; text-align: center;">
+                  <table align="center" style="text-align: center;">
+                    <tr>
+                      <td>
+                        <a href="https://www.facebook.com/CastellersMTL/"><img src='{{ .ImageSource }}f-logo.png'
+                            class="social" /></a>
+                      </td>
+                      <td width="30">&nbsp;</td>
+                      <td>
+                        <a href="https://mobile.twitter.com/castellersmtl"><img src='{{ .ImageSource }}t-logo.png'
+                            class="social" /></a>
+                      </td>
+                      <td width="30">&nbsp;</td>
+                      <td>
+                        <a href="https://www.instagram.com/castellersdemontreal/"><img
+                            src='{{ .ImageSource }}i-logo.png' class="social" /></a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- SOCIAL : END -->
+
+        <!-- FOOTER : BEGIN -->
+        <tr>
+          <td bgcolor="#ffffff">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td
+                  style="padding: 40px 40px 10px 40px; font-family: sans-serif; font-size: 12px; line-height: 18px; color: #666666; text-align: center; font-weight:normal;">
+                  <p style="margin: 0;">Castellers de Montréal</p>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="padding: 0px 40px 10px 40px; font-family: sans-serif; font-size: 12px; line-height: 18px; color: #666666; text-align: center; font-weight:normal;">
+                  <p style="margin: 0;">
+                    <a href="{{ .ProfileLink }}">
+                        {{ if eq .Language "fr" }}Mon profil{{ end }}
+                        {{ if eq .Language "en" }}My profile{{ end }}
+                        {{ if eq .Language "cat" }}My profile{{ end }} <!-- TODO -->
+                    </a>
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="padding: 0px 40px 40px 40px; font-family: sans-serif; font-size: 12px; line-height: 18px; color: #666666; text-align: center; font-weight:normal;">
+                  <p style="margin: 0;">
+                    {{ if eq .Language "fr" }}Bogue ? Suggestion ? Écris moi: {{ end }}
+                    {{ if eq .Language "en" }}Bug? Suggestion? Write to me: {{ end }}
+                    {{ if eq .Language "cat" }}Bug? Suggestion? Want to help with the translations? Write to me: {{ end }} <!-- TODO -->
+                    <a href="mailto:vilisseranen@gmail.com"><b>Clément Contini</b></a>
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+        <!-- FOOTER : END -->
+
+      </table>
+      <!-- Email Body : END -->
+
+      <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+    </div>
+
+  </center>
+</body>
+
+</html>

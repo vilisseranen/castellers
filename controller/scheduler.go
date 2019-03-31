@@ -19,7 +19,7 @@ func (s *Scheduler) Start() {
 	s.cron = cron.New()
 
 	// Send notifications when they are ready
-	s.cron.AddFunc("@every 10m", checkAndSendNotification)
+	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotifications)
