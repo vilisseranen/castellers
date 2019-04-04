@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/smtp"
+
+	"github.com/vilisseranen/castellers/model"
 )
 
 type emailRegisterInfo struct {
@@ -22,6 +24,14 @@ type emailReminderInfo struct {
 	ImageSource           string
 	Answer, Participation string
 	EventName, EventDate  string
+}
+
+type emailSummaryInfo struct {
+	MemberName           string
+	Language             string
+	ImageSource          string
+	Members              []model.Member
+	EventName, EventDate string
 }
 
 type emailTop struct {
@@ -107,6 +117,52 @@ func SendReminderEmail(to, memberName, language, participationLink, profileLink,
 	body := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailReminderInfo{memberName, language, participationLink, imageSource, answer, participation, eventName, eventDate}
+	if err = t.Execute(body, emailInfo); err != nil {
+		fmt.Println("Error generating template: " + err.Error())
+		return err
+	}
+	// Build bottom of the email
+	bottom := new(bytes.Buffer)
+	if err := buildEmailBottom(bottom, emailBottom{language, imageSource, profileLink}); err != nil {
+		fmt.Println("Error parsing template: " + err.Error())
+		return err
+	}
+	email := header + top.String() + body.String() + bottom.String()
+	// Send mail
+	if err = sendMail([]string{to}, email); err != nil {
+		fmt.Println("Error sending Email: " + err.Error())
+		return err
+	}
+	return nil
+}
+
+func SendSummaryEmail(to, memberName, language, profileLink, eventName, eventDate string, members []model.Member) error {
+	// Prepare header
+	var title_translated string
+	switch language {
+	case "fr":
+		title_translated = "Inscriptions pour le prochain évènement"
+	case "en":
+		title_translated = "Inscriptions to the next event"
+	case "cat":
+		title_translated = "Inscriptions to the next event"
+	}
+	header := buildHeader(title_translated, to)
+	// Build top of the email
+	top := new(bytes.Buffer)
+	if err := buildEmailTop(top, emailTop{title_translated}); err != nil {
+		fmt.Println("Error parsing template: " + err.Error())
+		return err
+	}
+	// Build body
+	t, err := template.ParseFiles("templates/email_summary_body.html")
+	if err != nil {
+		fmt.Println("Error parsing template: " + err.Error())
+		return err
+	}
+	body := new(bytes.Buffer)
+	imageSource := GetConfigString("domain") + "/static/img/"
+	emailInfo := emailSummaryInfo{memberName, language, imageSource, members, eventName, eventDate}
 	if err = t.Execute(body, emailInfo); err != nil {
 		fmt.Println("Error generating template: " + err.Error())
 		return err

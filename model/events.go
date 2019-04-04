@@ -121,10 +121,10 @@ func (e *Event) CreateEvent() error {
 	return err
 }
 
-func (e *Event) GetUpcomingEventsWithoutNotification() ([]Event, error) {
+func (e *Event) GetUpcomingEventsWithoutNotification(eventType string) ([]Event, error) {
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') ORDER BY startDate",
-		EVENTS_TABLE, TypeUpcomingEvent), time.Now().Unix())
+		EVENTS_TABLE, eventType), time.Now().Unix())
 	if err != nil {
 		log.Fatal(err)
 	}

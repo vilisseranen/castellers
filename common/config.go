@@ -26,7 +26,8 @@ func ReadConfig() {
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
 	viper.SetDefault("smtp_server", "127.0.0.1:25")
-	viper.SetDefault("notification_time_before_event", 172800) // 2 days
+	viper.SetDefault("reminder_time_before_event", 172800) // 2 days
+	viper.SetDefault("summary_time_before_event", 86400)   // 1 day
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -41,7 +42,8 @@ func ReadConfig() {
 	viper.BindEnv("domain")
 	viper.BindEnv("debug")
 	viper.BindEnv("smtp_server")
-	viper.BindEnv("notification_time_before_event")
+	viper.BindEnv("reminder_time_before_event")
+	viper.BindEnv("summary_time_before_event")
 
 	var c config
 	err = viper.Unmarshal(&c)
