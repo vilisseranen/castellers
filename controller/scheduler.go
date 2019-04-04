@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/robfig/cron"
@@ -19,10 +20,13 @@ func (s *Scheduler) Start() {
 	s.cron = cron.New()
 
 	// Send notifications when they are ready
-	s.cron.AddFunc("@every 10m", checkAndSendNotification)
+	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
-	// Look for upcoming events and generate notifications
-	s.cron.AddFunc("@every 10m", generateEventsNotifications)
+	// Look for upcoming events and generate reminder notifications
+	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
+
+	// Look for upcoming events and generate summary notifications
+	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
 
 	s.cron.Start()
 }
@@ -150,20 +154,122 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
+		case model.TypeSummaryEvent:
+			event := model.Event{UUID: notification.ObjectUUID}
+			err := event.Get()
+			if err != nil {
+				// Cannot get the event, complete failure
+				fmt.Printf("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			if event.StartDate < uint(time.Now().Unix()) {
+				// Event has begun or is finished, we don't send the notification
+				fmt.Printf("Event %v has already started.\n", event.UUID)
+				notification.Delivered = model.NotificationTooLate
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			m := model.Member{}
+			members, err := m.GetAll()
+			if err != nil {
+				// Cannot get the members, complete failure
+				fmt.Printf("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			failures := 0
+			// Get participation for all members
+			for index, member := range members {
+				p := model.Participation{EventUUID: notification.ObjectUUID, MemberUUID: member.UUID}
+				if err := p.GetParticipation(); err != nil {
+					switch err {
+					case sql.ErrNoRows:
+						members[index].Participation = ""
+					default:
+						// Cannot get participation for user
+						failures += 1
+						continue
+					}
+				}
+				members[index].Participation = p.Answer
+			}
+			// Sort by FirstName then by Participation
+			sort.Slice(members, func(i, j int) bool { return members[i].FirstName < members[j].FirstName })
+			sort.Slice(members, func(i, j int) bool { return members[i].Participation > members[j].Participation })
+			// Send email to all admins
+			for _, member := range members {
+				if member.Type == model.MemberTypeAdmin {
+					// Send the email
+					if common.GetConfigBool("debug") == false { // Don't send email in debug
+						loginLink := common.GetConfigString("domain") + "/#/login?" +
+							"m=" + member.UUID +
+							"&c=" + member.Code
+						profileLink := loginLink + "&next=memberEdit/" + member.UUID
+						var location, err = time.LoadLocation("America/Montreal")
+						if err != nil {
+							fmt.Printf("%v\n", err)
+							failures += 1
+							continue
+						}
+						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
+						// get eventDate as a string
+						if err := common.SendSummaryEmail(member.Email, member.FirstName, member.Language,
+							profileLink, event.Name, eventDate, members); err != nil {
+							fmt.Printf("%v\n", err)
+							failures += 1
+							continue
+						}
+					}
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if failures == len(members) {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus()
 		}
 	}
 }
 
-func generateEventsNotifications() {
+func generateEventsNotificationsReminder() {
 	e := model.Event{}
-	events, err := e.GetUpcomingEventsWithoutNotification()
+	events, err := e.GetUpcomingEventsWithoutNotification(model.TypeUpcomingEvent)
 	if err != nil {
 		fmt.Println("Error generating event notifications.")
 		return
 	}
 	n := model.Notification{NotificationType: model.TypeUpcomingEvent}
 	for _, event := range events {
-		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("notification_time_before_event")) {
+		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("reminder_time_before_event")) {
+			n.AuthorUUID = "0"
+			n.ObjectUUID = event.UUID
+			n.SendDate = int(time.Now().Unix())
+			err = n.CreateNotification()
+			if err != nil {
+				fmt.Printf("Error creating event notification for event: %v.", event.UUID)
+			}
+		} else {
+			continue
+		}
+	}
+}
+
+func generateEventsNotificationsSummary() {
+	e := model.Event{}
+	events, err := e.GetUpcomingEventsWithoutNotification(model.TypeSummaryEvent)
+	if err != nil {
+		fmt.Println("Error generating event notifications.")
+		return
+	}
+	n := model.Notification{NotificationType: model.TypeSummaryEvent}
+	for _, event := range events {
+		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("summary_time_before_event")) {
 			n.AuthorUUID = "0"
 			n.ObjectUUID = event.UUID
 			n.SendDate = int(time.Now().Unix())
