@@ -29,6 +29,7 @@ test/unit/coverage
 
 # vscode preferences
 .vscode
+XDG_CACHE_HOME
 
 # vim swp files
 *.swp
