@@ -13,7 +13,7 @@ func TestCreateEvent(t *testing.T) {
 	h.clearTables()
 	h.addAnAdmin()
 
-	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040}`)
+	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040, "type":"presentation"}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("X-Member-Code", "tutu")
@@ -36,6 +36,9 @@ func TestCreateEvent(t *testing.T) {
 
 	if event.EndDate != 1528046040 {
 		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", event.EndDate)
+	}
+	if event.Type != "presentation" {
+		t.Errorf("Expected event type to be 'presentation'. Got '%v'", event.Type)
 	}
 }
 
@@ -88,7 +91,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 	h.clearTables()
 	h.addAnAdmin()
 
-	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}}`)
+	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}, "type":"practice"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
@@ -126,7 +129,7 @@ func TestCreateDailyEvent(t *testing.T) {
 	h.clearTables()
 	h.addAnAdmin()
 
-	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}}`)
+	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}, "type":"practice"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
@@ -186,6 +189,9 @@ func TestGetEvent(t *testing.T) {
 	if m.EndDate != 1528046040 {
 		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m.EndDate)
 	}
+	if m.Type != "presentation" {
+		t.Errorf("Expected event type to be 'presentation'. Got '%v'", m.Type)
+	}
 }
 
 func TestGetEvents(t *testing.T) {
@@ -215,6 +221,10 @@ func TestGetEvents(t *testing.T) {
 		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m[0].EndDate)
 	}
 
+	if m[0].Type != "presentation" {
+		t.Errorf("Expected event type to be 'presentation'. Got '%v'", m[0].Type)
+	}
+
 	if m[1].Name != "Another event" {
 		t.Errorf("Expected event name to be 'Another event'. Got '%v'", m[1].Name)
 	}
@@ -225,6 +235,10 @@ func TestGetEvents(t *testing.T) {
 
 	if m[1].EndDate != 1527996960 {
 		t.Errorf("Expected event end date to be '1527996960'. Got '%v'", m[1].EndDate)
+	}
+
+	if m[1].Type != "presentation" {
+		t.Errorf("Expected event type to be 'presentation'. Got '%v'", m[1].Type)
 	}
 }
 
@@ -239,7 +253,7 @@ func TestUpdateEvent(t *testing.T) {
 	var originalEvent model.Event
 	json.Unmarshal(response.Body.Bytes(), &originalEvent)
 
-	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200}`)
+	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200, "type":"practice"}`)
 
 	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
@@ -261,6 +275,9 @@ func TestUpdateEvent(t *testing.T) {
 	}
 	if m.EndDate == originalEvent.EndDate {
 		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.EndDate, "2018-06-03 22:00", m.EndDate)
+	}
+	if m.Type == originalEvent.Type {
+		t.Errorf("Expected the type to change from '%v' to '%v'. Got '%v'", originalEvent.Type, "2018-06-03 22:00", m.Type)
 	}
 }
 
