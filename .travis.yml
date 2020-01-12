@@ -22,15 +22,8 @@ before_install:
 - chmod 600 travis-deploy
 - ssh-add travis-deploy
 
-before_script:
-- cd frontend && npm install && cd ..
-
 script:
 - go test -v -mod=vendor ./...
-- cd frontend
-- npm run test
-- npm run lint
-- cd ..
 
 before_deploy: bash build.sh latest
 

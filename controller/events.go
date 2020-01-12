@@ -102,8 +102,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// Validation on events data
-	if event.StartDate > event.EndDate ||
-		event.Name == "" {
+	if validEventData(event) == false {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
@@ -195,8 +194,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// Validation on events data
-	if e.StartDate > e.EndDate ||
-		e.Name == "" {
+	if validEventData(e) == false {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
@@ -218,4 +216,19 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
+}
+
+func validEventData(event model.Event) bool {
+	var valid = true
+	var validType = false
+	if event.StartDate > event.EndDate ||
+		event.Name == "" {
+		valid = false
+	}
+	for _, eventType := range model.ValidEventTypes {
+		if event.Type == eventType {
+			validType = true
+		}
+	}
+	return (valid && validType)
 }

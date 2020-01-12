@@ -62,12 +62,12 @@ func (test *TestHelper) addEvent(uuid, name string, startDate, endDate int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare("INSERT INTO events(uuid, name, startDate, endDate) VALUES(?, ?, ?, ?);")
+	stmt, err := tx.Prepare("INSERT INTO events(uuid, name, startDate, endDate, type) VALUES(?, ?, ?, ?, ?);")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, name, startDate, endDate)
+	_, err = stmt.Exec(uuid, name, startDate, endDate, "presentation")
 	if err != nil {
 		log.Fatal(err)
 	}

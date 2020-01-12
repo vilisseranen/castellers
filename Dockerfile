@@ -1,9 +1,6 @@
 FROM alpine:3.8
 
-COPY frontend/dist /static
 COPY templates /templates
-
-RUN ls /static
 
 VOLUME ["/data", "/var/log", "/etc/castellers"]
 

@@ -31,6 +31,11 @@ var ValidLanguageList = []string{
 	"cat",
 }
 
+var ValidEventTypes = []string{
+	"presentation",
+	"practice",
+}
+
 func ValidateRoles(roles []string) error {
 	sort.Strings(roles)
 	sort.Strings(ValidRoleList)
