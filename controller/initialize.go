@@ -43,7 +43,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	}
 	// Send the email
 	if common.GetConfigBool("debug") == false { // Don't send email in debug
-		loginLink := common.GetConfigString("domain") + "/#/login?" +
+		loginLink := common.GetConfigString("domain") + "/login?" +
 			"m=" + m.UUID +
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID

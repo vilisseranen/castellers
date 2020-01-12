@@ -61,7 +61,7 @@ func checkAndSendNotification() {
 			}
 			// Send the email
 			if common.GetConfigBool("debug") == false { // Don't send email in debug
-				loginLink := common.GetConfigString("domain") + "/#/login?" +
+				loginLink := common.GetConfigString("domain") + "/login?" +
 					"m=" + m.UUID +
 					"&c=" + m.Code
 				profileLink := loginLink + "&next=memberEdit/" + m.UUID
@@ -119,7 +119,7 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if common.GetConfigBool("debug") == false { // Don't send email in debug
-					loginLink := common.GetConfigString("domain") + "/#/login?" +
+					loginLink := common.GetConfigString("domain") + "/login?" +
 						"m=" + member.UUID +
 						"&c=" + member.Code
 					profileLink := loginLink + "&next=memberEdit/" + member.UUID
@@ -204,7 +204,7 @@ func checkAndSendNotification() {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
 					if common.GetConfigBool("debug") == false { // Don't send email in debug
-						loginLink := common.GetConfigString("domain") + "/#/login?" +
+						loginLink := common.GetConfigString("domain") + "/login?" +
 							"m=" + member.UUID +
 							"&c=" + member.Code
 						profileLink := loginLink + "&next=memberEdit/" + member.UUID
