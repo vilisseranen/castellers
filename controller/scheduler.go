@@ -123,7 +123,7 @@ func checkAndSendNotification() {
 						"m=" + member.UUID +
 						"&c=" + member.Code
 					profileLink := loginLink + "&next=memberEdit/" + member.UUID
-					participationLink := loginLink + "&next=practices" +
+					participationLink := loginLink + "&next=events" +
 						"&action=participateEvent" +
 						"&objectUUID=" + event.UUID +
 						"&payload="
