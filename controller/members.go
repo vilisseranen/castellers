@@ -133,7 +133,9 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	code := r.Header.Get("X-Member-Code")
-	if !validateChangeRole(m, code) {
+	vars := mux.Vars(r)
+	adminUuid := vars["admin_uuid"]
+	if !validateChangeRole(m, code, adminUuid) {
 		RespondWithError(w, http.StatusForbidden, "Cannot change role.")
 		return
 	}
@@ -210,36 +212,16 @@ func missingRequiredFields(m model.Member) bool {
 }
 
 // Returns true if it's valid, false otherwise
-func validateChangeRole(m model.Member, code string) bool {
-	// There are 2 cases when we cannot allow to change a role:
-	// - a regular user wants to promote itself
-	// - the last admin wants to demote itself
+func validateChangeRole(m model.Member, code string, adminUuid string) bool {
+	// Make sure a user does not promote him or herself
 	currentUser := model.Member{UUID: m.UUID}
+	// If member does not exist can't do any action.
 	if err := currentUser.Get(); err != nil {
 		return false
 	}
-	// There are only problems when changes are made on ourselves
-	if currentUser.Code != code {
-		return true
+
+	if currentUser.Type == model.MemberTypeMember && m.Type == model.MemberTypeAdmin && adminUuid == "" {
+		return false
 	}
-	if currentUser.Type == "member" {
-		if m.Type == "admin" {
-			return false
-		}
-	} else {
-		allUsers, err := m.GetAll()
-		if err != nil {
-			return false
-		}
-		var countAdmins = 0
-		for _, user := range allUsers {
-			if user.Type == "admin" {
-				countAdmins++
-			}
-		}
-		if countAdmins > 0 {
-			return true
-		}
-	}
-	return false
+	return true
 }

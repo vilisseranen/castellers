@@ -36,3 +36,5 @@ XDG_CACHE_HOME
 
 # Configuration file
 config.yaml
+
+frontend/package-lock\.json
