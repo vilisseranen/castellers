@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -134,7 +133,9 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	code := r.Header.Get("X-Member-Code")
-	if !validateChangeRole(m, r.URL.Path, code) {
+	vars := mux.Vars(r)
+	adminUuid := vars["admin_uuid"]
+	if !validateChangeRole(m, code, adminUuid) {
 		RespondWithError(w, http.StatusForbidden, "Cannot change role.")
 		return
 	}
@@ -211,48 +212,16 @@ func missingRequiredFields(m model.Member) bool {
 }
 
 // Returns true if it's valid, false otherwise
-func validateChangeRole(m model.Member, URL string, code string) bool {
-	// There are 2 cases when we cannot allow to change a role:
-	// - a regular user wants to promote itself
-	// - the last admin wants to demote itself
+func validateChangeRole(m model.Member, code string, adminUuid string) bool {
+	// Make sure a user does not promote him or herself
 	currentUser := model.Member{UUID: m.UUID}
 	// If member does not exist can't do any action.
 	if err := currentUser.Get(); err != nil {
 		return false
 	}
 
-	if m.Type == currentUser.Type {
-		return true
-	}
-
-	orig_UUID := strings.Split(URL, "/")[3]
-	orig_User := model.Member{UUID: orig_UUID}
-	if err := orig_User.Get(); err != nil {
-		return false
-	}
-	if orig_User.Type != model.MemberTypeAdmin || orig_User.Code != code {
-		return false
-	}
-
-	if m.Type == model.MemberTypeAdmin {
-		return true
-	}
-
-	// Avoid deleting last admin
-	allUsers, err := m.GetAll()
-	if err != nil {
-		return false
-	}
-	var countAdmins = 0
-	for _, user := range allUsers {
-		if user.Type == "admin" {
-			countAdmins += 1
-		}
-	}
-	if countAdmins < 2 {
-		// This is the last admin
+	if currentUser.Type == model.MemberTypeMember && m.Type == model.MemberTypeAdmin && adminUuid == "" {
 		return false
 	}
 	return true
-
 }
