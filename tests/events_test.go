@@ -40,6 +40,39 @@ func TestCreateEvent(t *testing.T) {
 	if event.Type != "presentation" {
 		t.Errorf("Expected event type to be 'presentation'. Got '%v'", event.Type)
 	}
+
+	req, _ = http.NewRequest("GET", "/api/events/"+event.UUID, nil)
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestCreateEventNoDate(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{"name":"diada","type":"presentation"}`)
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var event model.Event
+	json.Unmarshal(response.Body.Bytes(), &event)
+
+	if event.Name != "diada" {
+		t.Errorf("Expected event name to be 'diada'. Got '%v'", event.Name)
+	}
+	if event.Type != "presentation" {
+		t.Errorf("Expected event type to be 'presentation'. Got '%v'", event.Type)
+	}
 }
 
 func TestGetNonExistentEvent(t *testing.T) {
@@ -253,7 +286,7 @@ func TestUpdateEvent(t *testing.T) {
 	var originalEvent model.Event
 	json.Unmarshal(response.Body.Bytes(), &originalEvent)
 
-	payload := []byte(`{"name":"test event - updated name","startDate":1528052400, "endDate":1528063200, "type":"practice"}`)
+	payload := []byte(`{"name": "test event - updated name", "startDate":1579218314,"endDate":1579228214,"recurring":{"interval":"1w","until":0},"type":"practice","location":{"lat":45.50073714334654,"lng":-73.6241186484186},"locationName":"Brébeuf","description":""}`)
 
 	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
@@ -350,4 +383,46 @@ func TestUpdateEventEndBeforeBeginning(t *testing.T) {
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestCreateEventWithLocationAndDescription(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+
+	payload := []byte(`{"name":"diada", "type":"presentation", "locationName": "Brébeuf", "location": {"lat": 45.50073714334654, "lng": -73.6241186484186}, "description": "First event description"}`)
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var event model.Event
+	json.Unmarshal(response.Body.Bytes(), &event)
+
+	if event.Location.Lat != 45.50073714334654 {
+		t.Errorf("Expected lat to be '45.50073714334654'. Got '%v'", event.Location.Lat)
+	}
+
+	if event.Location.Lng != -73.6241186484186 {
+		t.Errorf("Expected lng to be '-73.6241186484186'. Got '%v'", event.Location.Lng)
+	}
+
+	if event.LocationName != "Brébeuf" {
+		t.Errorf("Expected event description to be 'Brébeuf'. Got '%v'", event.LocationName)
+	}
+
+	if event.Description != "First event description" {
+		t.Errorf("Expected description to be 'First event description'. Got '%v'", event.Description)
+	}
+
+	req, _ = http.NewRequest("GET", "/api/events/"+event.UUID, nil)
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
 }

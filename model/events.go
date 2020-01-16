@@ -20,6 +20,9 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 	uuid TEXT NOT NULL,
 	recurringEvent TEXT,
 	type TEXT NOT NULL,
+	locationName TEXT,
+	lat REAL,
+	lng REAL,
 	CONSTRAINT uuid_unique UNIQUE (uuid),
 	FOREIGN KEY(recurringEvent) REFERENCES recurring_events(id)
 );`
@@ -27,6 +30,11 @@ const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
 type Recurring struct {
 	Interval string `json:"interval"`
 	Until    uint   `json:"until"`
+}
+
+type LatLng struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 type Event struct {
@@ -39,16 +47,18 @@ type Event struct {
 	Type           string    `json:"type"`
 	Participation  string    `json:"participation"`
 	Attendance     uint      `json:"attendance"`
+	Location       LatLng    `json:"location"`
+	LocationName   string    `json:"locationName"`
 	RecurringEvent string
 }
 
 func (e *Event) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type FROM %s WHERE uuid= ?", EVENTS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type)
+	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.Description, &e.LocationName, &e.Location.Lat, &e.Location.Lng)
 	return err
 }
 
@@ -86,12 +96,21 @@ func (e *Event) GetAll(start, count int) ([]Event, error) {
 }
 
 func (e *Event) UpdateEvent() error {
-	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ? WHERE uuid= ?", EVENTS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(e.Name, e.StartDate, e.EndDate, e.Type, e.UUID)
+	_, err = stmt.Exec(
+		e.Name,
+		e.StartDate,
+		e.EndDate,
+		stringOrNull(e.Description),
+		e.Type,
+		stringOrNull(e.LocationName),
+		e.Location.Lat,
+		e.Location.Lng,
+		e.UUID)
 	return err
 }
 
@@ -110,12 +129,22 @@ func (e *Event) CreateEvent() error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type) VALUES (?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(e.UUID, e.Name, e.StartDate, e.EndDate, e.RecurringEvent, e.Description, e.Type)
+	_, err = stmt.Exec(
+		e.UUID,
+		e.Name,
+		e.StartDate,
+		e.EndDate,
+		e.RecurringEvent,
+		stringOrNull(e.Description),
+		e.Type,
+		stringOrNull(e.LocationName),
+		e.Location.Lat,
+		e.Location.Lng)
 	if err != nil {
 		return err
 	}
