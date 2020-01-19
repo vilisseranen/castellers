@@ -127,6 +127,7 @@ func TestUpdateMember(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &m)
 
 	m["extra"] = "Cap de pinya"
+	m["subscribed"] = 1
 	payload, error := json.Marshal(m)
 	if error != nil {
 		t.Errorf(error.Error())
@@ -144,6 +145,10 @@ func TestUpdateMember(t *testing.T) {
 
 	if m["extra"] != "Cap de pinya" {
 		t.Errorf("Expected extra to be 'Cap de pinya'. Got '%v'", m["extra"])
+	}
+
+	if m["subscribed"] != 1.0 {
+		t.Errorf("Expected subscribed to be '1'. Got '%v'", m["subscribed"])
 	}
 }
 

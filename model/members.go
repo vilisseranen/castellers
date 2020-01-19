@@ -25,6 +25,7 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 	email TEXT NOT NULL,
 	code TEXT NOT NULL,
 	activated INTEGER NOT NULL DEFAULT 0,
+	subscribed INTEGER NOT NULL DEFAULT 0,
 	deleted INTEGER NOT NULL DEFAULT 0,
 	language TEXT NOT NULL DEFAULT 'fr',
 	CONSTRAINT uuid_unique UNIQUE (uuid)
@@ -42,6 +43,7 @@ type Member struct {
 	Email         string   `json:"email"`
 	Code          string   `json:"-"`
 	Activated     int      `json:"activated"`
+	Subscribed    int      `json:"subscribed"`
 	Deleted       int      `json:"-"`
 	Language      string   `json:"language"`
 	Participation string   `json:"participation"`
@@ -87,7 +89,7 @@ func (m *Member) EditMember() error {
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
-		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, language=? WHERE uuid=?",
+		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, language=?, subscribed=? WHERE uuid=?",
 		MembersTable))
 	if err != nil {
 		return err
@@ -103,6 +105,7 @@ func (m *Member) EditMember() error {
 		stringOrNull(m.Type),
 		stringOrNull(m.Email),
 		stringOrNull(m.Language),
+		m.Subscribed,
 		stringOrNull(m.UUID))
 	if err != nil {
 		fmt.Printf("%v\n", m)
@@ -114,14 +117,14 @@ func (m *Member) EditMember() error {
 
 func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, code, activated, language FROM %s WHERE uuid= ? AND deleted=0",
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
 		MembersTable))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
 	var rolesAsString string
-	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated, &m.Language)
+	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
 	m.Roles = strings.Split(rolesAsString, ",")
 	m.sanitizeEmptyRoles()
 	return err
@@ -129,7 +132,7 @@ func (m *Member) Get() error {
 
 func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, code, activated, language FROM %s WHERE deleted=0",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, code, activated, subscribed, language FROM %s WHERE deleted=0",
 		MembersTable))
 	if err != nil {
 		log.Fatal(err)
@@ -141,7 +144,7 @@ func (m *Member) GetAll() ([]Member, error) {
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Height, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated, &m.Language); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Height, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Code, &m.Activated, &m.Subscribed, &m.Language); err != nil {
 			return nil, err
 		}
 		m.Roles = strings.Split(rolesAsString, ",")
