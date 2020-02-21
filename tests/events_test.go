@@ -289,31 +289,38 @@ func TestUpdateEvent(t *testing.T) {
 	var originalEvent model.Event
 	json.Unmarshal(response.Body.Bytes(), &originalEvent)
 
-	payload := []byte(`{"name": "test event - updated name", "startDate":1579218314,"endDate":1579228214,"recurring":{"interval":"1w","until":0},"type":"practice","location":{"lat":45.50073714334654,"lng":-73.6241186484186},"locationName":"Brébeuf","description":""}`)
+	payload := []byte(`{"name": "test event - updated name", "startDate":1579218314,"endDate":1579228214,"recurring":{"interval":"1w","until":0},"type":"practice","location":{"lat":45.50073714334654,"lng":-73.6241186484186},"locationName":"Brébeuf","description":"new description"}`)
 
 	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response = h.executeRequest(req)
 
+	// Make sure the update request is successful
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
 
+	// Make sure the event is returned properly
+	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
+	response = h.executeRequest(req)
+
 	var m model.Event
 	json.Unmarshal(response.Body.Bytes(), &m)
 
-	if m.Name == originalEvent.Name {
+	if m.Name != "test event - updated name" {
 		t.Errorf("Expected the name to change from '%v' to '%v'. Got '%v'", originalEvent.Name, "test event - updated name", m.Name)
 	}
-
-	if m.StartDate == originalEvent.StartDate {
-		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.StartDate, "2018-06-03 19:00", m.StartDate)
+	if m.StartDate != 1579218314 {
+		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.StartDate, "1579218314", m.StartDate)
 	}
-	if m.EndDate == originalEvent.EndDate {
-		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.EndDate, "2018-06-03 22:00", m.EndDate)
+	if m.EndDate != 1579228214 {
+		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalEvent.EndDate, "1579228214", m.EndDate)
 	}
-	if m.Type == originalEvent.Type {
-		t.Errorf("Expected the type to change from '%v' to '%v'. Got '%v'", originalEvent.Type, "2018-06-03 22:00", m.Type)
+	if m.Type != "practice" {
+		t.Errorf("Expected the type to change from '%v' to '%v'. Got '%v'", originalEvent.Type, "practice", m.Type)
+	}
+	if m.Description != "new description" {
+		t.Errorf("Expected the description to change from '%v' to '%v'. Got '%v'", originalEvent.Description, "new description", m.Description)
 	}
 }
 
