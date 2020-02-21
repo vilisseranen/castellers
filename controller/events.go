@@ -141,14 +141,12 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				var anEvent model.Event
 
 				anEvent.UUID = common.GenerateUUID()
-				if event.UUID == "" {
-					event.UUID = anEvent.UUID
-				}
 				anEvent.Name = recurringEvent.Name
 				anEvent.Description = recurringEvent.Description
 				anEvent.StartDate = date
 				anEvent.EndDate = date + event.EndDate - event.StartDate
 				anEvent.RecurringEvent = recurringEvent.UUID
+				anEvent.Type = event.Type
 				events = append(events, anEvent)
 
 				// Adjust for Daylight Saving Time

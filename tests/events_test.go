@@ -155,6 +155,9 @@ func TestCreateWeeklyEvent(t *testing.T) {
 		if event.StartDate != correctTimestamp {
 			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, correctTimestamp, event.StartDate)
 		}
+		if event.Type != "practice" {
+			t.Errorf("Expected event %v type to be '%v'. Got '%v'", i, "practice", event.Type)
+		}
 	}
 }
 

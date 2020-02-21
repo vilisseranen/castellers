@@ -23,7 +23,8 @@ func TestCreateMember(t *testing.T) {
 		"roles": ["segon","baix","terç"],
 		"type": "member",
 		"email": "vilisseranen@gmail.com",
-		"language": "fr"}`)
+		"language": "fr",
+		"subscribed": 0}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
