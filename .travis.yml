@@ -28,6 +28,7 @@ script:
 before_deploy: bash build.sh latest
 
 deploy:
+  edge: true
   provider: script
   script: bash deploy.sh latest
   on:
