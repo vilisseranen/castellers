@@ -1,10 +1,10 @@
+os: linux
+
 language: go
 
 go:
 - '1.12'
 - master
-
-sudo: required
 
 services:
 - docker
@@ -28,7 +28,6 @@ script:
 before_deploy: bash build.sh latest
 
 deploy:
-  skip_cleanup: true
   provider: script
   script: bash deploy.sh latest
   on:
