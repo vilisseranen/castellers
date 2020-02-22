@@ -23,6 +23,7 @@ func TestCreateMember(t *testing.T) {
 		"roles": ["segon","baix","terç"],
 		"type": "member",
 		"email": "vilisseranen@gmail.com",
+		"contact": "514-111-1111",
 		"language": "fr",
 		"subscribed": 0}`)
 
@@ -40,9 +41,11 @@ func TestCreateMember(t *testing.T) {
 	if m["firstName"] != "Clément" {
 		t.Errorf("Expected member first name to be 'Clément'. Got '%v'", m["firstName"])
 	}
-
 	if m["extra"] != "Santi" {
 		t.Errorf("Expected extra to be 'Santi'. Got '%v'", m["extra"])
+	}
+	if m["contact"] != "514-111-1111" {
+		t.Errorf("Expected contact to be '514-111-1111'. Got '%v'", m["contact"])
 	}
 }
 
@@ -129,6 +132,7 @@ func TestUpdateMember(t *testing.T) {
 
 	m["extra"] = "Cap de pinya"
 	m["subscribed"] = 1
+	m["contact"] = "514-111-1111"
 	payload, error := json.Marshal(m)
 	if error != nil {
 		t.Errorf(error.Error())
@@ -142,14 +146,20 @@ func TestUpdateMember(t *testing.T) {
 		t.Error(err)
 	}
 
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response = h.executeRequest(req)
+
 	json.Unmarshal(response.Body.Bytes(), &m)
 
 	if m["extra"] != "Cap de pinya" {
 		t.Errorf("Expected extra to be 'Cap de pinya'. Got '%v'", m["extra"])
 	}
-
 	if m["subscribed"] != 1.0 {
 		t.Errorf("Expected subscribed to be '1'. Got '%v'", m["subscribed"])
+	}
+	if m["contact"] != "514-111-1111" {
+		t.Errorf("Expected contact to be '514-111-1111'. Got '%v'", m["contact"])
 	}
 }
 
