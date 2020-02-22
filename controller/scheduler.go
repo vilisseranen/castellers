@@ -118,7 +118,7 @@ func checkAndSendNotification() {
 					}
 				}
 				// Send the email
-				if common.GetConfigBool("debug") == false && member.Subscribed == 1 { // Don't send email in debug
+				if member.Subscribed == 1 {
 					loginLink := common.GetConfigString("domain") + "/login?" +
 						"m=" + member.UUID +
 						"&c=" + member.Code
@@ -203,7 +203,7 @@ func checkAndSendNotification() {
 			for _, member := range members {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
-					if common.GetConfigBool("debug") == false && m.Subscribed == 1 { // Don't send email in debug
+					if member.Subscribed == 1 {
 						loginLink := common.GetConfigString("domain") + "/login?" +
 							"m=" + member.UUID +
 							"&c=" + member.Code
