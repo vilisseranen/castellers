@@ -88,7 +88,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if p.Presence != common.AnswerYes && p.Presence != common.AnswerNo {
+	if p.Presence != common.AnswerYes && p.Presence != common.AnswerNo && p.Presence != "" {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
