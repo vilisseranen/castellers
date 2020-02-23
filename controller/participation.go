@@ -15,10 +15,20 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	eventUUID := vars["event_uuid"]
 	memberUUID := vars["member_uuid"]
 	event := model.Event{UUID: eventUUID}
+	member := model.Member{UUID: memberUUID}
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			RespondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	if err := member.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			RespondWithError(w, http.StatusBadRequest, "This member does not exist.")
 		default:
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
@@ -53,10 +63,20 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 	eventUUID := vars["event_uuid"]
 	memberUUID := vars["member_uuid"]
 	event := model.Event{UUID: eventUUID}
+	member := model.Member{UUID: memberUUID}
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusUnauthorized, "This event does not exist.")
+			RespondWithError(w, http.StatusBadRequest, "This event does not exist.")
+		default:
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	if err := member.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			RespondWithError(w, http.StatusBadRequest, "This member does not exist.")
 		default:
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
@@ -107,6 +127,7 @@ func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		members[index].Participation = p.Answer
+		members[index].Presence = p.Presence
 	}
 	RespondWithJSON(w, http.StatusOK, members)
 }

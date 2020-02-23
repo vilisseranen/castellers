@@ -49,6 +49,7 @@ type Member struct {
 	Deleted       int      `json:"-"`
 	Language      string   `json:"language"`
 	Participation string   `json:"participation"`
+	Presence      string   `json:"presence"`
 }
 
 func (m *Member) CreateMember() error {
