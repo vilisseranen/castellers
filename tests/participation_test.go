@@ -40,7 +40,7 @@ func TestPresenceEvent(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/baada55", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("X-Member-Code", "tutu")
 	response := h.executeRequest(req)
 
@@ -105,4 +105,74 @@ func TestGetParticipants(t *testing.T) {
 			t.Errorf("Expected member participation to be '%v'. Got '%v'", "no", member.Participation)
 		}
 	}
+}
+
+func TestGetPresence(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+	h.addAMember()
+	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"presence":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
+	req.Header.Add("X-Member-Code", "tutu")
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var members = make([]model.Member, 0)
+	json.Unmarshal(response.Body.Bytes(), &members)
+
+	for _, member := range members {
+		if member.UUID == "deadbeef" && member.Presence != "yes" {
+			t.Errorf("Expected member presence to be '%v'. Got '%v'", "yes", member.Presence)
+		}
+	}
+}
+
+func TestPresenceWrongEvent(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+	h.addAMember()
+	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"presence":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/123/members/deadbeef", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestPresenceWrongMember(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+	h.addAMember()
+	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
+
+	payload := []byte(`{"presence":"yes"}`)
+
+	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/123", bytes.NewBuffer(payload))
+	req.Header.Add("X-Member-Code", "tutu")
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
+
 }
