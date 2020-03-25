@@ -38,6 +38,7 @@ func checkAdmin(h handler) func(w http.ResponseWriter, r *http.Request) {
 			controller.RespondWithError(w, http.StatusUnauthorized, unauthorizedMessage)
 			return
 		}
+		r.Header.Add("Permission", member.Type)
 		h(w, r)
 	}
 }
@@ -68,6 +69,7 @@ func checkMember(h handler) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		r.Header.Add("Permission", member.Type)
 		h(w, r)
 	}
 }

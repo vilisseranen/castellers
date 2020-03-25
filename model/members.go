@@ -1,14 +1,15 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 )
 
 const MembersTable = "members"
-const MemberTypeAdmin = "admin"
 
+const MemberTypeAdmin = "admin"
 const MemberTypeMember = "member"
 
 const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
@@ -87,31 +88,55 @@ func (m *Member) CreateMember() error {
 	return err
 }
 
-func (m *Member) EditMember() error {
+func (m *Member) EditMember(callerType string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf(
-		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
-		MembersTable))
-	if err != nil {
-		return err
+	switch callerType {
+	case MemberTypeAdmin:
+		stmt, err := tx.Prepare(fmt.Sprintf(
+			"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
+			MembersTable))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(
+			stringOrNull(m.FirstName),
+			stringOrNull(m.LastName),
+			stringOrNull(m.Height),
+			stringOrNull(m.Weight),
+			stringOrNull(strings.Join(m.Roles, ",")),
+			stringOrNull(m.Extra),
+			stringOrNull(m.Type),
+			stringOrNull(m.Email),
+			stringOrNull(m.Contact),
+			stringOrNull(m.Language),
+			m.Subscribed,
+			stringOrNull(m.UUID))
+	case MemberTypeMember:
+		stmt, err := tx.Prepare(fmt.Sprintf(
+			"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
+			MembersTable))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(
+			stringOrNull(m.FirstName),
+			stringOrNull(m.LastName),
+			stringOrNull(m.Height),
+			stringOrNull(m.Weight),
+			stringOrNull(m.Type),
+			stringOrNull(m.Email),
+			stringOrNull(m.Contact),
+			stringOrNull(m.Language),
+			m.Subscribed,
+			stringOrNull(m.UUID))
+	default:
+		err = errors.New("")
 	}
-	defer stmt.Close()
-	_, err = stmt.Exec(
-		stringOrNull(m.FirstName),
-		stringOrNull(m.LastName),
-		stringOrNull(m.Height),
-		stringOrNull(m.Weight),
-		stringOrNull(strings.Join(m.Roles, ",")),
-		stringOrNull(m.Extra),
-		stringOrNull(m.Type),
-		stringOrNull(m.Email),
-		stringOrNull(m.Contact),
-		stringOrNull(m.Language),
-		m.Subscribed,
-		stringOrNull(m.UUID))
 	if err != nil {
 		fmt.Printf("%v\n", m)
 		return err

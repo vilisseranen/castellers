@@ -26,6 +26,10 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if r.Header.Get("Permission") != model.MemberTypeAdmin {
+		m.Roles = []string{}
+		m.Extra = ""
+	}
 	RespondWithJSON(w, http.StatusOK, m)
 }
 
@@ -135,11 +139,11 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	code := r.Header.Get("X-Member-Code")
 	vars := mux.Vars(r)
 	adminUuid := vars["admin_uuid"]
-	if !validateChangeRole(m, code, adminUuid) {
-		RespondWithError(w, http.StatusForbidden, "Cannot change role.")
+	if !validateChangeType(m, code, adminUuid) {
+		RespondWithError(w, http.StatusForbidden, "Cannot change type.")
 		return
 	}
-	if err := m.EditMember(); err != nil {
+	if err := m.EditMember(r.Header.Get("Permission")); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -212,7 +216,7 @@ func missingRequiredFields(m model.Member) bool {
 }
 
 // Returns true if it's valid, false otherwise
-func validateChangeRole(m model.Member, code string, adminUuid string) bool {
+func validateChangeType(m model.Member, code string, adminUuid string) bool {
 	// Make sure a user does not promote him or herself
 	currentUser := model.Member{UUID: m.UUID}
 	// If member does not exist can't do any action.
