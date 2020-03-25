@@ -3,7 +3,7 @@ os: linux
 language: go
 
 go:
-- '1.14'
+- '1.13'
 - master
 
 services:
@@ -12,7 +12,6 @@ services:
 env:
   global:
     - APP_LOG_FILE="castellers.log"
-    - GO111MODULE=on
 
 install: true
 
@@ -23,7 +22,7 @@ before_install:
 - ssh-add travis-deploy
 
 script:
-- go test -v -mod=vendor ./...
+- go test -v ./...
 
 before_deploy: bash build.sh latest
 
