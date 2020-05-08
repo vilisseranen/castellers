@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.11
 
 COPY templates /templates
 
@@ -17,11 +17,11 @@ EXPOSE 8080
 WORKDIR /gopath/src/castellers
 COPY . /gopath/src/castellers
 
-RUN apk add -U git go && \
+RUN apk add -U git go=~1.13 && \
     apk add --update gcc musl-dev && \
     apk add --no-cache ca-certificates && \
     apk add --no-cache tzdata && \
-    go get -v castellers && \
+    go get -u && \
     mv /gopath/bin/castellers /app && \
     apk del git go gcc musl-dev && \
     rm -rf /gopath && \
