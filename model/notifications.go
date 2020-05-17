@@ -8,16 +8,6 @@ import (
 
 const notificationsTable = "notifications"
 
-const NotificationsTableCreationQuery = `CREATE TABLE IF NOT EXISTS notifications
-(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	notificationType TEXT NOT NULL,
-	authorUUID TEXT NOT NULL,
-	objectUUID TEXT NOT NULL, 
-	sendDate INTEGER NOT NULL,
-	delivered INTEGER NOT NULL DEFAULT 0
-);`
-
 const TypeMemberRegistration = "memberRegistration"
 const TypeUpcomingEvent = "upcomingEvent"
 const TypeSummaryEvent = "summaryEvent"

@@ -6,15 +6,6 @@ import (
 
 const PARTICIPATION_TABLE = "participation"
 
-const ParticipationTableCreationQuery = `CREATE TABLE IF NOT EXISTS participation
-(
-	member_uuid INTEGER NOT NULL,
-	event_uuid INTEGER NOT NULL,
-    answer TEXT,
-	presence TEXT,
-	PRIMARY KEY (member_uuid, event_uuid)
-);`
-
 type Participation struct {
 	EventUUID  string `json:"eventUuid"`
 	MemberUUID string `json:"memberUuid"`

@@ -12,27 +12,6 @@ const MembersTable = "members"
 const MemberTypeAdmin = "admin"
 const MemberTypeMember = "member"
 
-const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
-(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	uuid TEXT NOT NULL,
-	firstName TEXT NOT NULL,
-	lastName TEXT NOT NULL,
-	height TEXT NOT NULL,
-	weight TEXT NOT NULL,
-	extra TEXT NOT NULL,
-	roles TEXT NOT NULL,
-	type TEXT NOT NULL,
-	email TEXT NOT NULL,
-	contact TEXT NOT NULL,
-	code TEXT NOT NULL,
-	activated INTEGER NOT NULL DEFAULT 0,
-	subscribed INTEGER NOT NULL DEFAULT 0,
-	deleted INTEGER NOT NULL DEFAULT 0,
-	language TEXT NOT NULL DEFAULT 'fr',
-	CONSTRAINT uuid_unique UNIQUE (uuid)
-);`
-
 type Member struct {
 	UUID          string   `json:"uuid"`
 	FirstName     string   `json:"firstName"` // Encrypted
