@@ -7,11 +7,18 @@ import (
 )
 
 type config struct {
-	LogFile    string `mapstructure:"log_file"`
-	DBName     string `mapstructure:"db_name"`
-	Domain     string `mapstructure:"domain"`
-	Debug      bool   `mapstructure:"debug"`
-	SMTPServer string `mapstructure:"smtp_server"`
+	LogFile    string     `mapstructure:"log_file"`
+	DBName     string     `mapstructure:"db_name"`
+	Domain     string     `mapstructure:"domain"`
+	Debug      bool       `mapstructure:"debug"`
+	SMTPServer string     `mapstructure:"smtp_server"`
+	Encryption encryption `mapstructure:"encryption"`
+}
+
+type encryption struct {
+	Key            string `mapstructure:"key"`
+	KeySalt        string `mapstructure:"key_salt"`
+	PasswordPepper string `mapstructure:"password_pepper"`
 }
 
 func ReadConfig() {
@@ -26,8 +33,10 @@ func ReadConfig() {
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
 	viper.SetDefault("smtp_server", "127.0.0.1:25")
-	viper.SetDefault("reminder_time_before_event", 172800) // 2 days
-	viper.SetDefault("summary_time_before_event", 86400)   // 1 day
+	viper.SetDefault("reminder_time_before_event", 172800)   // 2 days
+	viper.SetDefault("summary_time_before_event", 86400)     // 1 day
+	viper.SetDefault("encryption.iterations", 10000)         // For hashing encryption key
+	viper.SetDefault("encryption.password_hashing_cost", 10) // For hashing passwords
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -44,6 +53,9 @@ func ReadConfig() {
 	viper.BindEnv("smtp_server")
 	viper.BindEnv("reminder_time_before_event")
 	viper.BindEnv("summary_time_before_event")
+	viper.BindEnv("encryption.key", "APP_KEY")
+	viper.BindEnv("encryption.key_salt", "APP_KEY_SALT")
+	viper.BindEnv("encryption.password_pepper", "APP_PASSWORD_PEPPER")
 
 	var c config
 	err = viper.Unmarshal(&c)

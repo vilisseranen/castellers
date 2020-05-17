@@ -28,6 +28,9 @@ func TestMain(m *testing.M) {
 	os.Setenv("APP_LOG_FILE", "castellers.log")
 	os.Setenv("APP_SMTP_SERVER", "192.168.1.100:25")
 	os.Setenv("APP_DEBUG", "true")
+	os.Setenv("APP_KEY", "fsjKJWJIJIJndndokspfkshtgrfghggcf4q32324")
+	os.Setenv("APP_KEY_SALT", "dtgftgft7hftgth")
+	os.Setenv("APP_PASSWORD_PEPPER", "gkjsneisuefsi")
 	h.app.Initialize()
 
 	h.ensureTablesExist()

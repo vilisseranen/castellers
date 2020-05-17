@@ -24,6 +24,11 @@ type App struct {
 func (a *App) Initialize() {
 
 	common.ReadConfig()
+
+	if len(common.GetConfigString("encryption.key")) == 0 || len(common.GetConfigString("encryption.key_salt")) == 0 || len(common.GetConfigString("encryption.password_pepper")) == 0 {
+		log.Fatalf("Please provide `encryption.key`, `encryption.key_salt` and `encryption.password_pepper` for encrypting database.")
+	}
+
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
 
