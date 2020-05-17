@@ -35,15 +35,15 @@ const MembersTableCreationQuery = `CREATE TABLE IF NOT EXISTS members
 
 type Member struct {
 	UUID          string   `json:"uuid"`
-	FirstName     string   `json:"firstName"`
-	LastName      string   `json:"lastName"`
-	Height        string   `json:"height"`
-	Weight        string   `json:"weight"`
-	Roles         []string `json:"roles"`
-	Extra         string   `json:"extra"`
-	Type          string   `json:"type"`
-	Email         string   `json:"email"`
-	Contact       string   `json:"contact"`
+	FirstName     string   `json:"firstName"` // Encrypted
+	LastName      string   `json:"lastName"`  // Encrypted
+	Height        string   `json:"height"`    // Encrypted
+	Weight        string   `json:"weight"`    // Encrypted
+	Roles         []string `json:"roles"`     // Encrypted
+	Extra         string   `json:"extra"`     // Encrypted
+	Type          string   `json:"type"`      // Encrypted
+	Email         string   `json:"email"`     // Encrypted
+	Contact       string   `json:"contact"`   // Encrypted
 	Code          string   `json:"-"`
 	Activated     int      `json:"activated"`
 	Subscribed    int      `json:"subscribed"`

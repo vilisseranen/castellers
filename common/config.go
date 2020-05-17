@@ -62,12 +62,6 @@ func ReadConfig() {
 	if err != nil {
 		panic(fmt.Errorf("Unable to parse configuration, %v", err))
 	}
-
-	if c.Debug {
-		fmt.Println("Config parsed:")
-		fmt.Printf("%+v", c)
-		fmt.Println()
-	}
 }
 
 func GetConfigString(key string) string {

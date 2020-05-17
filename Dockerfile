@@ -1,7 +1,5 @@
 FROM alpine:3.11
 
-COPY templates /templates
-
 VOLUME ["/data", "/var/log", "/etc/castellers"]
 
 ENV APP_DB_NAME /data/castellers.db
@@ -14,8 +12,12 @@ ENV GOROOT=/usr/lib/go \
 
 EXPOSE 8080
 
-WORKDIR /gopath/src/castellers
 COPY . /gopath/src/castellers
+COPY templates /templates
+COPY sql /app/sql
+COPY VERSION /app/VERSION
+
+WORKDIR /gopath/src/castellers
 
 RUN apk add -U git go=~1.13 && \
     apk add --update gcc musl-dev && \
