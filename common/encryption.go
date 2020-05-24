@@ -17,9 +17,10 @@ func createHash(key, salt string) []byte {
 	return pbkdf2.Key([]byte(key), []byte(salt), iterations, 32, sha256.New)
 }
 
-func Encrypt(data string, passphrase string) string {
+func Encrypt(data string) []byte {
+	passphrase := GetConfigString("encryption.key")
 	salt := GetConfigString("encryption.key_salt")
-	block, _ := aes.NewCipher([]byte(createHash(passphrase, salt)))
+	block, _ := aes.NewCipher(createHash(passphrase, salt))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		panic(err.Error())
@@ -29,12 +30,13 @@ func Encrypt(data string, passphrase string) string {
 		panic(err.Error())
 	}
 	ciphertext := gcm.Seal(nonce, nonce, []byte(data), nil)
-	return fmt.Sprintf("%s", ciphertext)
+	return ciphertext
 }
 
-func Decrypt(data string, passphrase string) string {
+func Decrypt(data []byte) string {
+	passphrase := GetConfigString("encryption.key")
 	salt := GetConfigString("encryption.key_salt")
-	key := []byte(createHash(passphrase, salt))
+	key := createHash(passphrase, salt)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err.Error())
@@ -52,14 +54,14 @@ func Decrypt(data string, passphrase string) string {
 	return fmt.Sprintf("%s", plaintext)
 }
 
-func GenerateFromPassword(password string) (string, error) {
+func GenerateFromPassword(password string) ([]byte, error) {
 	pepper := GetConfigString("encryption.password_pepper")
 	cost := GetConfigInt("encryption.password_hashing_cost")
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(password+pepper), cost)
-	return fmt.Sprintf("%s", hashedPasswordBytes), err
+	return hashedPasswordBytes, err
 }
 
-func CompareHashAndPassword(hashedPassword, password string) error {
+func CompareHashAndPassword(hashedPassword []byte, password string) error {
 	pepper := GetConfigString("encryption.password_pepper")
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password+pepper))
+	return bcrypt.CompareHashAndPassword(hashedPassword, []byte(password+pepper))
 }
