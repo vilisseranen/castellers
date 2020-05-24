@@ -14,8 +14,8 @@ EXPOSE 8080
 
 COPY . /gopath/src/castellers
 COPY templates /templates
-COPY sql /app/sql
-COPY VERSION /app/VERSION
+COPY sql /sql
+COPY VERSION /VERSION
 
 WORKDIR /gopath/src/castellers
 
