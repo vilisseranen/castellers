@@ -216,8 +216,9 @@ func checkAndSendNotification() {
 						}
 						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 						// get eventDate as a string
+						// TO FIX
 						if err := common.SendSummaryEmail(member.Email, member.FirstName, member.Language,
-							profileLink, event.Name, eventDate, members); err != nil {
+							profileLink, event.Name, eventDate, ""); err != nil {
 							fmt.Printf("%v\n", err)
 							failures += 1
 							continue
