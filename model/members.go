@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 const MembersTable = "members"
@@ -48,15 +50,15 @@ func (m *Member) CreateMember() error {
 	defer stmt.Close()
 	_, err = stmt.Exec(
 		stringOrNull(m.UUID),
-		stringOrNull(m.FirstName),
-		stringOrNull(m.LastName),
-		stringOrNull(m.Height),
-		stringOrNull(m.Weight),
-		stringOrNull(strings.Join(m.Roles, ",")),
-		stringOrNull(m.Extra),
-		stringOrNull(m.Type),
-		stringOrNull(m.Email),
-		stringOrNull(m.Contact),
+		common.Encrypt(m.FirstName),
+		common.Encrypt(m.LastName),
+		common.Encrypt(m.Height),
+		common.Encrypt(m.Weight),
+		common.Encrypt(strings.Join(m.Roles, ",")),
+		common.Encrypt(m.Extra),
+		common.Encrypt(m.Type),
+		common.Encrypt(m.Email),
+		common.Encrypt(m.Contact),
 		stringOrNull(m.Code),
 		stringOrNull(m.Language))
 	if err != nil {
@@ -82,16 +84,16 @@ func (m *Member) EditMember(callerType string) error {
 		}
 		defer stmt.Close()
 		_, err = stmt.Exec(
-			stringOrNull(m.FirstName),
-			stringOrNull(m.LastName),
-			stringOrNull(m.Height),
-			stringOrNull(m.Weight),
-			stringOrNull(strings.Join(m.Roles, ",")),
-			stringOrNull(m.Extra),
-			stringOrNull(m.Type),
-			stringOrNull(m.Email),
-			stringOrNull(m.Contact),
-			stringOrNull(m.Language),
+			common.Encrypt(m.FirstName),
+			common.Encrypt(m.LastName),
+			common.Encrypt(m.Height),
+			common.Encrypt(m.Weight),
+			common.Encrypt(strings.Join(m.Roles, ",")),
+			common.Encrypt(m.Extra),
+			common.Encrypt(m.Type),
+			common.Encrypt(m.Email),
+			common.Encrypt(m.Contact),
+			m.Language,
 			m.Subscribed,
 			stringOrNull(m.UUID))
 	case MemberTypeMember:
@@ -103,13 +105,13 @@ func (m *Member) EditMember(callerType string) error {
 		}
 		defer stmt.Close()
 		_, err = stmt.Exec(
-			stringOrNull(m.FirstName),
-			stringOrNull(m.LastName),
-			stringOrNull(m.Height),
-			stringOrNull(m.Weight),
-			stringOrNull(m.Type),
-			stringOrNull(m.Email),
-			stringOrNull(m.Contact),
+			common.Encrypt(m.FirstName),
+			common.Encrypt(m.LastName),
+			common.Encrypt(m.Height),
+			common.Encrypt(m.Weight),
+			common.Encrypt(m.Type),
+			common.Encrypt(m.Email),
+			common.Encrypt(m.Contact),
 			stringOrNull(m.Language),
 			m.Subscribed,
 			stringOrNull(m.UUID))
@@ -134,8 +136,18 @@ func (m *Member) Get() error {
 	defer stmt.Close()
 	var rolesAsString string
 	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
-	m.Roles = strings.Split(rolesAsString, ",")
-	m.sanitizeEmptyRoles()
+	if err == nil {
+		m.FirstName = common.Decrypt([]byte(m.FirstName))
+		m.LastName = common.Decrypt([]byte(m.LastName))
+		m.Height = common.Decrypt([]byte(m.Height))
+		m.Weight = common.Decrypt([]byte(m.Weight))
+		m.Roles = strings.Split(common.Decrypt([]byte(rolesAsString)), ",")
+		m.Extra = common.Decrypt([]byte(m.Extra))
+		m.Type = common.Decrypt([]byte(m.Type))
+		m.Email = common.Decrypt([]byte(m.Email))
+		m.Contact = common.Decrypt([]byte(m.Contact))
+		m.sanitizeEmptyRoles()
+	}
 	return err
 }
 
@@ -153,10 +165,18 @@ func (m *Member) GetAll() ([]Member, error) {
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Height, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language); err != nil {
 			return nil, err
 		}
-		m.Roles = strings.Split(rolesAsString, ",")
+		m.FirstName = common.Decrypt([]byte(m.FirstName))
+		m.LastName = common.Decrypt([]byte(m.LastName))
+		m.Height = common.Decrypt([]byte(m.Height))
+		m.Weight = common.Decrypt([]byte(m.Weight))
+		m.Roles = strings.Split(common.Decrypt([]byte(rolesAsString)), ",")
+		m.Extra = common.Decrypt([]byte(m.Extra))
+		m.Type = common.Decrypt([]byte(m.Type))
+		m.Email = common.Decrypt([]byte(m.Email))
+		m.Contact = common.Decrypt([]byte(m.Contact))
 		m.sanitizeEmptyRoles()
 		members = append(members, m)
 	}

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/vilisseranen/castellers/app"
+	"github.com/vilisseranen/castellers/common"
 )
 
 var a app.App
@@ -100,7 +101,18 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, firstName, lastName, height, weight, roles, extra, memberType, email, contact, code)
+	_, err = stmt.Exec(
+		uuid,
+		common.Encrypt(firstName),
+		common.Encrypt(lastName),
+		common.Encrypt(height),
+		common.Encrypt(weight),
+		common.Encrypt(roles),
+		common.Encrypt(extra),
+		common.Encrypt(memberType),
+		common.Encrypt(email),
+		common.Encrypt(contact),
+		code)
 	if err != nil {
 		log.Fatal(err)
 	}
