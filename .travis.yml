@@ -31,5 +31,5 @@ deploy:
   provider: script
   script: bash deploy.sh latest
   on:
-    go: '1.12'
+    go: '1.13'
     branch: master
