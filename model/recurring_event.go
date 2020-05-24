@@ -7,14 +7,6 @@ import (
 
 const RECURRING_EVENTS_TABLE = "recurring_events"
 
-const RecurringEventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS recurring_events
-(
-	uuid TEXT PRIMARY KEY,
-	name TEXT NOT NULL,
-    description TEXT,
-	interval TEXT NOT NULL
-);`
-
 type RecurringEvent struct {
 	UUID        string
 	Name        string

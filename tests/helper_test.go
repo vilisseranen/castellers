@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/vilisseranen/castellers/app"
-	"github.com/vilisseranen/castellers/model"
+	"github.com/vilisseranen/castellers/common"
 )
 
 var a app.App
@@ -23,14 +23,18 @@ type TestHelper struct {
 }
 
 func TestMain(m *testing.M) {
+	os.Chdir("..")
 	h.app = app.App{}
 	os.Setenv("APP_DB_NAME", "test_database.db")
 	os.Setenv("APP_LOG_FILE", "castellers.log")
 	os.Setenv("APP_SMTP_SERVER", "192.168.1.100:25")
 	os.Setenv("APP_DEBUG", "true")
-	h.app.Initialize()
+	os.Setenv("APP_KEY", "fsjKJWJIJIJndndokspfkshtgrfghggcf4q32324")
+	os.Setenv("APP_KEY_SALT", "dtgftgft7hftgth")
+	os.Setenv("APP_PASSWORD_PEPPER", "gkjsneisuefsi")
 
-	h.ensureTablesExist()
+	h.removeExistingTables()
+	h.app.Initialize()
 
 	code := m.Run()
 
@@ -97,24 +101,35 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(uuid, firstName, lastName, height, weight, roles, extra, memberType, email, contact, code)
+	_, err = stmt.Exec(
+		uuid,
+		common.Encrypt(firstName),
+		common.Encrypt(lastName),
+		common.Encrypt(height),
+		common.Encrypt(weight),
+		common.Encrypt(roles),
+		common.Encrypt(extra),
+		common.Encrypt(memberType),
+		common.Encrypt(email),
+		common.Encrypt(contact),
+		code)
 	if err != nil {
 		log.Fatal(err)
 	}
 	tx.Commit()
 }
 
-func (test *TestHelper) ensureTablesExist() {
+func (test *TestHelper) removeExistingTables() {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.Exec("DROP TABLE events")
-	db.Exec("DROP TABLE members")
-	db.Exec("DROP TABLE participation")
-	db.Exec(model.EventsTableCreationQuery)
-	db.Exec(model.MembersTableCreationQuery)
-	db.Exec(model.ParticipationTableCreationQuery)
+	db.Exec("DROP TABLE IF EXISTS schema_version")
+	db.Exec("DROP TABLE IF EXISTS events")
+	db.Exec("DROP TABLE IF EXISTS members")
+	db.Exec("DROP TABLE IF EXISTS participation")
+	db.Exec("DROP TABLE IF EXISTS recurring_events")
+	db.Exec("DROP TABLE IF EXISTS notifications")
 }
 
 func (test *TestHelper) clearTables() {

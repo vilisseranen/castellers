@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/smtp"
-
-	"github.com/vilisseranen/castellers/model"
 )
 
 type emailRegisterInfo struct {
@@ -27,10 +25,11 @@ type emailReminderInfo struct {
 }
 
 type emailSummaryInfo struct {
-	MemberName           string
-	Language             string
-	ImageSource          string
-	Members              []model.Member
+	MemberName  string
+	Language    string
+	ImageSource string
+	// Members              []model.Member // TO FIX
+	Members              string
 	EventName, EventDate string
 }
 
@@ -136,7 +135,8 @@ func SendReminderEmail(to, memberName, language, participationLink, profileLink,
 	return nil
 }
 
-func SendSummaryEmail(to, memberName, language, profileLink, eventName, eventDate string, members []model.Member) error {
+// TO FIX
+func SendSummaryEmail(to, memberName, language, profileLink, eventName, eventDate string, members string) error {
 	// Prepare header
 	var title_translated string
 	switch language {

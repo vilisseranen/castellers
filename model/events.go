@@ -10,23 +10,6 @@ import (
 
 const EVENTS_TABLE = "events"
 
-const EventsTableCreationQuery = `CREATE TABLE IF NOT EXISTS events
-(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	startDate INTEGER NOT NULL,
-	endDate INTEGER NOT NULL,
-	description TEXT,
-	uuid TEXT NOT NULL,
-	recurringEvent TEXT,
-	type TEXT NOT NULL,
-	locationName TEXT,
-	lat REAL,
-	lng REAL,
-	CONSTRAINT uuid_unique UNIQUE (uuid),
-	FOREIGN KEY(recurringEvent) REFERENCES recurring_events(id)
-);`
-
 type Recurring struct {
 	Interval string `json:"interval"`
 	Until    uint   `json:"until"`
