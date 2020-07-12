@@ -10,5 +10,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/spf13/viper v1.3.1
-	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
+	go.uber.org/zap v1.15.0
+	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529
 )

@@ -29,6 +29,12 @@ func (a *App) Initialize() {
 		log.Fatalf("Please provide `encryption.key`, `encryption.key_salt` and `encryption.password_pepper` for encrypting database.")
 	}
 
+	err := common.InitializeLogger()
+	if err != nil {
+		log.Fatalf("Error configuring the logger: %v", err)
+	}
+	common.Info("Message from app %s et %s", "toto", "tutu")
+
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
 
