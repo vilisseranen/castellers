@@ -12,7 +12,7 @@ var sugar *zap.SugaredLogger
 func InitializeLogger() error {
 	cfg := zap.Config{
 		Encoding:         "console",
-		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		Level:            zap.NewAtomicLevelAt(getZapLevel(GetConfigString("log.level"))),
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stdout"},
 		EncoderConfig: zapcore.EncoderConfig{
@@ -50,21 +50,38 @@ func Log(level, message string, args ...interface{}) {
 }
 
 func Debug(message string, args ...interface{}) {
-	Log("DEBUG", message, args)
+	Log("DEBUG", message, args...)
 }
 
 func Info(message string, args ...interface{}) {
-	Log("INFO", message, args)
+	Log("INFO", message, args...)
 }
 
 func Warn(message string, args ...interface{}) {
-	Log("WARN", message, args)
+	Log("WARN", message, args...)
 }
 
 func Error(message string, args ...interface{}) {
-	Log("ERROR", message, args)
+	Log("ERROR", message, args...)
 }
 
 func Fatal(message string, args ...interface{}) {
-	Log("FATAL", message, args)
+	Log("FATAL", message, args...)
+}
+
+func getZapLevel(level string) zapcore.Level {
+	switch level {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	case "fatal":
+		return zapcore.FatalLevel
+	default:
+		return zapcore.InfoLevel
+	}
 }

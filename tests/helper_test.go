@@ -2,8 +2,6 @@ package tests
 
 import (
 	"database/sql"
-	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -52,7 +50,7 @@ func (test *TestHelper) executeRequest(req *http.Request) *httptest.ResponseReco
 
 func (test *TestHelper) checkResponseCode(expected, actual int) error {
 	if expected != actual {
-		return fmt.Errorf("Expected response code %d. Got %d\n", expected, actual)
+		return common.Error("Expected response code %d. Got %d\n", expected, actual)
 	}
 	return nil
 }
@@ -60,20 +58,20 @@ func (test *TestHelper) checkResponseCode(expected, actual int) error {
 func (test *TestHelper) addEvent(uuid, name string, startDate, endDate int) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	stmt, err := tx.Prepare("INSERT INTO events(uuid, name, startDate, endDate, type, description, locationName, lat, lng) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);")
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(uuid, name, startDate, endDate, "presentation", "", "", 0.0, 0.0)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	tx.Commit()
 }
@@ -89,16 +87,16 @@ func (test *TestHelper) addAnAdmin() {
 func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, extra, roles, memberType, email, contact, code string) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	tx, err := db.Begin()
 
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(
@@ -114,7 +112,7 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		common.Encrypt(contact),
 		code)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	tx.Commit()
 }
@@ -122,7 +120,7 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 func (test *TestHelper) removeExistingTables() {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	db.Exec("DROP TABLE IF EXISTS schema_version")
 	db.Exec("DROP TABLE IF EXISTS events")
@@ -135,7 +133,7 @@ func (test *TestHelper) removeExistingTables() {
 func (test *TestHelper) clearTables() {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	db.Exec("DELETE FROM events")
 	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'events'")

@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 const PARTICIPATION_TABLE = "participation"
@@ -68,13 +70,11 @@ func (p *Participation) Present() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT count(*) FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
 	defer stmt.Close()
 	if err != nil {
-		fmt.Println("1")
 		return err
 	}
 	c := 0
 	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&c)
 	if err != nil {
-		fmt.Println("2")
 		return err
 	}
 
@@ -82,13 +82,11 @@ func (p *Participation) Present() error {
 	if c == 0 {
 		stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (event_uuid, member_uuid, presence, answer) VALUES (?, ?, ?, ?)", PARTICIPATION_TABLE))
 		if err != nil {
-			fmt.Println("3")
-			fmt.Printf("%v\n", err)
+			common.Error("%v", err)
 			return err
 		}
 		_, err = stmt.Exec(p.EventUUID, p.MemberUUID, stringOrNull(p.Presence), "")
 		if err != nil {
-			fmt.Println("4")
 			return err
 		}
 	} else if c == 1 {

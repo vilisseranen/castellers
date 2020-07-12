@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 const notificationsTable = "notifications"
@@ -31,14 +32,14 @@ type Notification struct {
 func (n *Notification) CreateNotification() error {
 	tx, err := db.Begin()
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (notificationType, authorUUID, objectUUID, sendDate) VALUES (?, ?, ?, ?)",
 		notificationsTable))
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	defer stmt.Close()
@@ -48,7 +49,7 @@ func (n *Notification) CreateNotification() error {
 		stringOrNull(n.ObjectUUID),
 		n.SendDate)
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	tx.Commit()
@@ -61,7 +62,7 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 		"SELECT id, notificationType, authorUUID, objectUUID, sendDate FROM %s WHERE sendDate <= ? AND delivered=0",
 		notificationsTable), now)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer rows.Close()
 	notifications := []Notification{}
@@ -81,14 +82,14 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 func (n *Notification) UpdateNotificationStatus() error {
 	tx, err := db.Begin()
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"UPDATE %s SET delivered = ? WHERE id = ?",
 		notificationsTable))
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	defer stmt.Close()
@@ -96,7 +97,7 @@ func (n *Notification) UpdateNotificationStatus() error {
 		n.Delivered,
 		n.ID)
 	if err != nil {
-		fmt.Printf("%v\n", n)
+		common.Error("%v\n", n)
 		return err
 	}
 	tx.Commit()

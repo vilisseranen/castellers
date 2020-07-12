@@ -3,7 +3,6 @@ package controller
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -60,22 +59,22 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-		fmt.Println("Error validating Height: " + m.Height)
+		common.Error("Error validating Height: " + m.Height)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-		fmt.Println("Error validating Weight: " + m.Weight)
+		common.Error("Error validating Weight: " + m.Weight)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
-		fmt.Println("Error validating roles: " + err.Error())
+		common.Error("Error validating roles: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := model.ValidateLanguage(m.Language); err != nil {
-		fmt.Println("Error validating language: " + err.Error())
+		common.Error("Error validating language: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -86,7 +85,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	UUID := vars["admin_uuid"]
 	a := model.Member{UUID: UUID}
 	if err := a.Get(); err != nil {
-		fmt.Println("Failed to get admin for CreateMember.")
+		common.Error("Failed to get admin for CreateMember.")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -117,22 +116,22 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-		fmt.Println("Error validating Height: " + m.Height)
+		common.Error("Error validating Height: " + m.Height)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-		fmt.Println("Error validating Weight: " + m.Weight)
+		common.Error("Error validating Weight: " + m.Weight)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
-		fmt.Println("Error validating roles: " + err.Error())
+		common.Error("Error validating roles: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := model.ValidateLanguage(m.Language); err != nil {
-		fmt.Println("Error validating language: " + err.Error())
+		common.Error("Error validating language: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -198,7 +197,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	UUID = vars["admin_uuid"]
 	a := model.Member{UUID: UUID}
 	if err := a.Get(); err != nil {
-		fmt.Println("Failed to get admin.")
+		common.Error("Failed to get admin.")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

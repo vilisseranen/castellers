@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"net/smtp"
 )
@@ -58,32 +57,32 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 	// Build top of the email
 	top := new(bytes.Buffer)
 	if err := buildEmailTop(top, emailTop{title_translated}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	// Build body
 	t, err := template.ParseFiles("templates/email_register_body.html")
 	if err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	body := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailRegisterInfo{memberName, language, adminName, adminExtra, activateLink, imageSource}
 	if err = t.Execute(body, emailInfo); err != nil {
-		fmt.Println("Error generating template: " + err.Error())
+		Error("Error generating template: " + err.Error())
 		return err
 	}
 	// Build bottom of the email
 	bottom := new(bytes.Buffer)
 	if err := buildEmailBottom(bottom, emailBottom{language, imageSource, profileLink}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	email := header + top.String() + body.String() + bottom.String()
 	// Send mail
 	if err = sendMail([]string{to}, email); err != nil {
-		fmt.Println("Error sending Email: " + err.Error())
+		Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil
@@ -104,32 +103,32 @@ func SendReminderEmail(to, memberName, language, participationLink, profileLink,
 	// Build top of the email
 	top := new(bytes.Buffer)
 	if err := buildEmailTop(top, emailTop{title_translated}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	// Build body
 	t, err := template.ParseFiles("templates/email_reminder_body.html")
 	if err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	body := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailReminderInfo{memberName, language, participationLink, imageSource, answer, participation, eventName, eventDate}
 	if err = t.Execute(body, emailInfo); err != nil {
-		fmt.Println("Error generating template: " + err.Error())
+		Error("Error generating template: " + err.Error())
 		return err
 	}
 	// Build bottom of the email
 	bottom := new(bytes.Buffer)
 	if err := buildEmailBottom(bottom, emailBottom{language, imageSource, profileLink}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	email := header + top.String() + body.String() + bottom.String()
 	// Send mail
 	if err = sendMail([]string{to}, email); err != nil {
-		fmt.Println("Error sending Email: " + err.Error())
+		Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil
@@ -151,32 +150,32 @@ func SendSummaryEmail(to, memberName, language, profileLink, eventName, eventDat
 	// Build top of the email
 	top := new(bytes.Buffer)
 	if err := buildEmailTop(top, emailTop{title_translated}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	// Build body
 	t, err := template.ParseFiles("templates/email_summary_body.html")
 	if err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	body := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
 	emailInfo := emailSummaryInfo{memberName, language, imageSource, members, eventName, eventDate}
 	if err = t.Execute(body, emailInfo); err != nil {
-		fmt.Println("Error generating template: " + err.Error())
+		Error("Error generating template: " + err.Error())
 		return err
 	}
 	// Build bottom of the email
 	bottom := new(bytes.Buffer)
 	if err := buildEmailBottom(bottom, emailBottom{language, imageSource, profileLink}); err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	email := header + top.String() + body.String() + bottom.String()
 	// Send mail
 	if err = sendMail([]string{to}, email); err != nil {
-		fmt.Println("Error sending Email: " + err.Error())
+		Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil
@@ -195,11 +194,11 @@ func buildHeader(title, to string) string {
 func buildEmailTop(buffer *bytes.Buffer, content emailTop) error {
 	t, err := template.ParseFiles("templates/email_top.html")
 	if err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	if err = t.Execute(buffer, content); err != nil {
-		fmt.Println("Error generating template: " + err.Error())
+		Error("Error generating template: " + err.Error())
 		return err
 	}
 	return nil
@@ -208,11 +207,11 @@ func buildEmailTop(buffer *bytes.Buffer, content emailTop) error {
 func buildEmailBottom(buffer *bytes.Buffer, content emailBottom) error {
 	t, err := template.ParseFiles("templates/email_bottom.html")
 	if err != nil {
-		fmt.Println("Error parsing template: " + err.Error())
+		Error("Error parsing template: " + err.Error())
 		return err
 	}
 	if err = t.Execute(buffer, content); err != nil {
-		fmt.Println("Error generating template: " + err.Error())
+		Error("Error generating template: " + err.Error())
 		return err
 	}
 	return nil
@@ -223,7 +222,7 @@ func sendMail(to []string, body string) error {
 	auth = smtp.PlainAuth("", GetConfigString("smtp_username"), GetConfigString("smtp_password"), GetConfigString("smtp_server"))
 	addr := GetConfigString("smtp_server") + ":" + GetConfigString("smtp_port")
 	if err := smtp.SendMail(addr, auth, GetConfigString("smtp_username"), to, []byte(body)); err != nil {
-		fmt.Println(err)
+		Error(err.Error())
 		return err
 	}
 	return nil

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"sort"
 	"time"
 
@@ -36,7 +35,7 @@ func checkAndSendNotification() {
 	n := model.Notification{}
 	notificationsToSend, err := n.GetNotificationsReady()
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		common.Error("%v\n", err)
 	}
 	// Check all notifications that are ready
 	for _, notification := range notificationsToSend {
@@ -79,14 +78,14 @@ func checkAndSendNotification() {
 			err := event.Get()
 			if err != nil {
 				// Cannot get the event, complete failure
-				fmt.Printf("%v\n", err)
+				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
 			}
 			if event.StartDate < uint(time.Now().Unix()) {
 				// Event has begun or is finished, we don't send the notification
-				fmt.Printf("Event %v has already started.\n", event.UUID)
+				common.Info("Event %v has already started.\n", event.UUID)
 				notification.Delivered = model.NotificationTooLate
 				notification.UpdateNotificationStatus()
 				continue
@@ -97,7 +96,7 @@ func checkAndSendNotification() {
 			members, err := m.GetAll()
 			if err != nil {
 				// Cannot get the members, complete failure
-				fmt.Printf("%v\n", err)
+				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
@@ -112,7 +111,7 @@ func checkAndSendNotification() {
 					case sql.ErrNoRows:
 						p.Answer = ""
 					default:
-						fmt.Printf("%v\n", err)
+						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
@@ -133,14 +132,14 @@ func checkAndSendNotification() {
 					}
 					var location, err = time.LoadLocation("America/Montreal")
 					if err != nil {
-						fmt.Printf("%v\n", err)
+						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
 					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 					// get eventDate as a string
 					if err := common.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
-						fmt.Printf("%v\n", err)
+						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
@@ -159,14 +158,14 @@ func checkAndSendNotification() {
 			err := event.Get()
 			if err != nil {
 				// Cannot get the event, complete failure
-				fmt.Printf("%v\n", err)
+				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
 			}
 			if event.StartDate < uint(time.Now().Unix()) {
 				// Event has begun or is finished, we don't send the notification
-				fmt.Printf("Event %v has already started.\n", event.UUID)
+				common.Info("Event %v has already started.\n", event.UUID)
 				notification.Delivered = model.NotificationTooLate
 				notification.UpdateNotificationStatus()
 				continue
@@ -175,7 +174,7 @@ func checkAndSendNotification() {
 			members, err := m.GetAll()
 			if err != nil {
 				// Cannot get the members, complete failure
-				fmt.Printf("%v\n", err)
+				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
@@ -210,7 +209,7 @@ func checkAndSendNotification() {
 						profileLink := loginLink + "&next=memberEdit/" + member.UUID
 						var location, err = time.LoadLocation("America/Montreal")
 						if err != nil {
-							fmt.Printf("%v\n", err)
+							common.Error("%v\n", err)
 							failures += 1
 							continue
 						}
@@ -219,7 +218,7 @@ func checkAndSendNotification() {
 						// TO FIX
 						if err := common.SendSummaryEmail(member.Email, member.FirstName, member.Language,
 							profileLink, event.Name, eventDate, ""); err != nil {
-							fmt.Printf("%v\n", err)
+							common.Error("%v\n", err)
 							failures += 1
 							continue
 						}
@@ -242,7 +241,7 @@ func generateEventsNotificationsReminder() {
 	e := model.Event{}
 	events, err := e.GetUpcomingEventsWithoutNotification(model.TypeUpcomingEvent)
 	if err != nil {
-		fmt.Println("Error generating event notifications.")
+		common.Error("Error generating event notifications.")
 		return
 	}
 	n := model.Notification{NotificationType: model.TypeUpcomingEvent}
@@ -253,7 +252,7 @@ func generateEventsNotificationsReminder() {
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()
 			if err != nil {
-				fmt.Printf("Error creating event notification for event: %v.", event.UUID)
+				common.Error("Error creating event notification for event: %v.", event.UUID)
 			}
 		} else {
 			continue
@@ -265,7 +264,7 @@ func generateEventsNotificationsSummary() {
 	e := model.Event{}
 	events, err := e.GetUpcomingEventsWithoutNotification(model.TypeSummaryEvent)
 	if err != nil {
-		fmt.Println("Error generating event notifications.")
+		common.Error("Error generating event notifications.")
 		return
 	}
 	n := model.Notification{NotificationType: model.TypeSummaryEvent}
@@ -276,7 +275,7 @@ func generateEventsNotificationsSummary() {
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()
 			if err != nil {
-				fmt.Printf("Error creating event notification for event: %v.", event.UUID)
+				common.Error("Error creating event notification for event: %v.", event.UUID)
 			}
 		} else {
 			continue

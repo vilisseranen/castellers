@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
-	"log"
 )
 
 const uuidSize = 40
@@ -18,7 +17,7 @@ func GenerateUUID() string {
 	data := make([]byte, 10)
 	_, err := rand.Read(data)
 	if err != nil {
-		log.Fatal(err)
+		Fatal(err.Error())
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))[:uuidSize]
 }
@@ -27,7 +26,7 @@ func GenerateCode() string {
 	data := make([]byte, 10)
 	_, err := rand.Read(data)
 	if err != nil {
-		log.Fatal(err)
+		Fatal(err.Error())
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))[:codeSize]
 }
