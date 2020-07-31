@@ -2,6 +2,7 @@ package tests
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -50,7 +51,7 @@ func (test *TestHelper) executeRequest(req *http.Request) *httptest.ResponseReco
 
 func (test *TestHelper) checkResponseCode(expected, actual int) error {
 	if expected != actual {
-		return common.Error("Expected response code %d. Got %d\n", expected, actual)
+		return fmt.Errorf("Expected response code %d. Got %d", expected, actual)
 	}
 	return nil
 }
