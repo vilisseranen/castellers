@@ -55,7 +55,7 @@ func InitializeDB(dbname string) {
 		if schemaInstalled(version) == false {
 			content, err := ioutil.ReadFile(fmt.Sprintf("sql/%s.sql", version))
 			if err == nil {
-				common.Warn("Updating schema to %s\n", version)
+				common.Info("Updating schema to %s\n", version)
 				tx, err := db.Begin()
 				if err != nil {
 					common.Fatal(err.Error())

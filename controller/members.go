@@ -59,12 +59,12 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-		common.Error("Error validating Height: " + m.Height)
+		common.Info("Error validating Height: " + m.Height)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-		common.Error("Error validating Weight: " + m.Weight)
+		common.Info("Error validating Weight: " + m.Weight)
 		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
 		return
 	}
