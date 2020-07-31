@@ -12,15 +12,20 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func createHash(key, salt string) []byte {
-	iterations := GetConfigInt("encryption.iterations")
-	return pbkdf2.Key([]byte(key), []byte(salt), iterations, 32, sha256.New)
+var encryption_key []byte
+
+func getKey() []byte {
+	if encryption_key == nil {
+		key := GetConfigString("encryption.key")
+		salt := GetConfigString("encryption.key_salt")
+		iterations := GetConfigInt("encryption.iterations")
+		encryption_key = pbkdf2.Key([]byte(key), []byte(salt), iterations, 32, sha256.New)
+	}
+	return encryption_key
 }
 
 func Encrypt(data string) []byte {
-	passphrase := GetConfigString("encryption.key")
-	salt := GetConfigString("encryption.key_salt")
-	block, _ := aes.NewCipher(createHash(passphrase, salt))
+	block, _ := aes.NewCipher(getKey())
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		panic(err.Error())
@@ -34,10 +39,7 @@ func Encrypt(data string) []byte {
 }
 
 func Decrypt(data []byte) string {
-	passphrase := GetConfigString("encryption.key")
-	salt := GetConfigString("encryption.key_salt")
-	key := createHash(passphrase, salt)
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(getKey())
 	if err != nil {
 		panic(err.Error())
 	}
