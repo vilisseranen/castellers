@@ -2,7 +2,8 @@ package model
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 const RECURRING_EVENTS_TABLE = "recurring_events"
@@ -17,7 +18,7 @@ type RecurringEvent struct {
 func (r *RecurringEvent) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, description, interval FROM %s WHERE uuid= ?", RECURRING_EVENTS_TABLE))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(r.UUID).Scan(&r.Name, &r.Description, &r.Interval)

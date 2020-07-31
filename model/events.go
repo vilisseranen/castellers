@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 // TODO: implement deleted flag on events
@@ -38,7 +39,7 @@ type Event struct {
 func (e *Event) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.Description, &e.LocationName, &e.Location.Lat, &e.Location.Lng)
@@ -48,7 +49,7 @@ func (e *Event) Get() error {
 func (e *Event) GetAttendance() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(e.UUID).Scan(&e.Attendance)
@@ -59,7 +60,7 @@ func (e *Event) GetAttendance() error {
 func (e *Event) GetAll(start, count int) ([]Event, error) {
 	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE startDate > ? ORDER BY startDate LIMIT ?", EVENTS_TABLE), start, count)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer rows.Close()
 
@@ -81,7 +82,7 @@ func (e *Event) GetAll(start, count int) ([]Event, error) {
 func (e *Event) UpdateEvent() error {
 	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(
@@ -100,7 +101,7 @@ func (e *Event) UpdateEvent() error {
 func (e *Event) DeleteEvent() error {
 	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(e.UUID)
@@ -140,7 +141,7 @@ func (e *Event) GetUpcomingEventsWithoutNotification(eventType string) ([]Event,
 		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') ORDER BY startDate",
 		EVENTS_TABLE, eventType), time.Now().Unix())
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer rows.Close()
 

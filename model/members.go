@@ -3,7 +3,6 @@ package model
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/vilisseranen/castellers/common"
@@ -37,14 +36,14 @@ type Member struct {
 func (m *Member) CreateMember() error {
 	tx, err := db.Begin()
 	if err != nil {
-		fmt.Printf("%v\n", m)
+		common.Error("%v\n", m)
 		return err
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MembersTable))
 	if err != nil {
-		fmt.Printf("%v\n", m)
+		common.Error("%v\n", m)
 		return err
 	}
 	defer stmt.Close()
@@ -62,7 +61,7 @@ func (m *Member) CreateMember() error {
 		stringOrNull(m.Code),
 		stringOrNull(m.Language))
 	if err != nil {
-		fmt.Printf("%v\n", m)
+		common.Error("%v\n", m)
 		return err
 	}
 	err = tx.Commit()
@@ -119,7 +118,7 @@ func (m *Member) EditMember(callerType string) error {
 		err = errors.New("")
 	}
 	if err != nil {
-		fmt.Printf("%v\n", m)
+		common.Error("%v\n", m)
 		return err
 	}
 	err = tx.Commit()
@@ -131,7 +130,7 @@ func (m *Member) Get() error {
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
 		MembersTable))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	var rolesAsString string
@@ -156,7 +155,7 @@ func (m *Member) GetAll() ([]Member, error) {
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
 		MembersTable))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer rows.Close()
 
@@ -190,7 +189,7 @@ func (m *Member) DeleteMember() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		MembersTable))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(m.UUID)
@@ -207,7 +206,7 @@ func (m *Member) sanitizeEmptyRoles() {
 func (m *Member) Activate() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MembersTable))
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(m.UUID)

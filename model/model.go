@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/vilisseranen/castellers/common"
 )
 
 const initQuery = `CREATE TABLE IF NOT EXISTS schema_version
@@ -23,24 +23,24 @@ func InitializeDB(dbname string) {
 	var err error
 	db, err = sql.Open("sqlite3", dbname)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	// Prepare the schema_version table
 	_, err = db.Exec(initQuery)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 
 	// List all update files
 	files, err := ioutil.ReadDir("sql/")
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	vs := make([]*semver.Version, len(files))
 	for i, f := range files {
 		v, err := semver.NewVersion(f.Name()[:len(f.Name())-4])
 		if err != nil {
-			log.Fatal(err)
+			common.Fatal(err.Error())
 		} else {
 			vs[i] = v
 		}
@@ -55,33 +55,33 @@ func InitializeDB(dbname string) {
 		if schemaInstalled(version) == false {
 			content, err := ioutil.ReadFile(fmt.Sprintf("sql/%s.sql", version))
 			if err == nil {
-				fmt.Printf("Updating schema to %s\n", version)
+				common.Info("Updating schema to %s\n", version)
 				tx, err := db.Begin()
 				if err != nil {
-					log.Fatal(err)
+					common.Fatal(err.Error())
 				}
 				_, err = tx.Exec(string(content))
 				if err != nil {
-					log.Fatal(err)
+					common.Fatal(err.Error())
 				}
 				stmt, err := tx.Prepare("INSERT INTO schema_version (version, installed) VALUES(?, 1);")
 				defer stmt.Close()
 				if err != nil {
-					log.Fatal(err)
+					common.Fatal(err.Error())
 				}
 				_, err = stmt.Exec(version)
 				if err != nil {
-					log.Fatal(err)
+					common.Fatal(err.Error())
 				}
 				err = tx.Commit()
 				if err != nil {
-					log.Fatal(err)
+					common.Fatal(err.Error())
 				}
 			} else {
-				log.Fatal(err)
+				common.Fatal(err.Error())
 			}
 		} else {
-			fmt.Printf("Schema %s already installed.\n", version)
+			common.Info("Schema %s already installed.\n", version)
 		}
 	}
 
@@ -99,13 +99,13 @@ func schemaInstalled(version string) bool {
 	installed := 0
 	stmt, err := db.Prepare("SELECT COUNT(id) FROM schema_version WHERE installed = 1 AND version = ?;")
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(
 		version).Scan(&installed)
 	if err != nil {
-		log.Fatal(err)
+		common.Fatal(err.Error())
 	}
 	return installed == 1
 }

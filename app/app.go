@@ -29,12 +29,17 @@ func (a *App) Initialize() {
 		log.Fatalf("Please provide `encryption.key`, `encryption.key_salt` and `encryption.password_pepper` for encrypting database.")
 	}
 
+	err := common.InitializeLogger()
+	if err != nil {
+		log.Fatalf("Error configuring the logger: %v", err)
+	}
+
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
 
 	f, err := os.OpenFile(common.GetConfigString("log_file"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalf("Error opening file: %v", err)
+		common.Fatal("Error opening file: %v", err)
 	}
 
 	// Define logger
