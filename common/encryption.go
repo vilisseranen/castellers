@@ -14,7 +14,7 @@ import (
 
 var encryption_key []byte
 
-func createHash() []byte {
+func getKey() []byte {
 	if encryption_key == nil {
 		key := GetConfigString("encryption.key")
 		salt := GetConfigString("encryption.key_salt")
@@ -25,7 +25,7 @@ func createHash() []byte {
 }
 
 func Encrypt(data string) []byte {
-	block, _ := aes.NewCipher(createHash())
+	block, _ := aes.NewCipher(getKey())
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		panic(err.Error())
@@ -39,7 +39,7 @@ func Encrypt(data string) []byte {
 }
 
 func Decrypt(data []byte) string {
-	block, err := aes.NewCipher(createHash())
+	block, err := aes.NewCipher(getKey())
 	if err != nil {
 		panic(err.Error())
 	}
