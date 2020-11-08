@@ -9,6 +9,7 @@ import (
 )
 
 const MembersTable = "members"
+const MembersCredentialsTable = "members_credentials"
 
 const MemberTypeAdmin = "admin"
 const MemberTypeMember = "member"
@@ -31,6 +32,13 @@ type Member struct {
 	Language      string   `json:"language"`
 	Participation string   `json:"participation"`
 	Presence      string   `json:"presence"`
+}
+
+type Credentials struct {
+	UUID           string
+	Username       string
+	Password       string
+	PasswordHashed []byte
 }
 
 func (m *Member) CreateMember() error {
@@ -210,5 +218,28 @@ func (m *Member) Activate() error {
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(m.UUID)
+	return err
+}
+
+func (c *Credentials) CreateCredentials(username string, password []byte) error {
+	stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MembersCredentialsTable))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(c.UUID, username, password)
+	return err
+}
+
+func (c *Credentials) GetCredentials() error {
+	stmt, err := db.Prepare(fmt.Sprintf(
+		"SELECT uuid, password FROM %s WHERE username= ?",
+		MembersCredentialsTable))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	common.Debug("username: %s", c.Username)
+	err = stmt.QueryRow(c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
 }

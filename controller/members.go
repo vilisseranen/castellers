@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -212,6 +213,32 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 
 func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+}
+
+func CreateCredentials(w http.ResponseWriter, r *http.Request) {
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		fmt.Println(err)
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c := model.Credentials{UUID: tokenAuth.UserId}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&c); err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	password, err := common.GenerateFromPassword(c.Password)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = c.CreateCredentials(c.Username, password)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, "")
 }
 
 // Returns true if it's valid, false otherwise

@@ -56,6 +56,8 @@ func ReadConfig() {
 	viper.BindEnv("encryption.key", "APP_KEY")
 	viper.BindEnv("encryption.key_salt", "APP_KEY_SALT")
 	viper.BindEnv("encryption.password_pepper", "APP_PASSWORD_PEPPER")
+	viper.BindEnv("jwt.access_secret", "APP_ACCESS_SECRET")
+	viper.BindEnv("jwt.refresh_secret", "APP_REFRESH_SECRET")
 
 	var c config
 	err = viper.Unmarshal(&c)
