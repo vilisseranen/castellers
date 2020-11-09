@@ -61,20 +61,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
 		return
 	}
-	member := model.Member{UUID: credentialsInDB.UUID}
-	if err := member.Get(); err != nil {
+	permissions, err := getMemberPermissions(credentialsInDB.UUID)
+	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	var permissions []string
-	if member.Type == model.MemberTypeMember {
-		permissions = append(permissions, model.MemberTypeMember)
-	}
-	if member.Type == model.MemberTypeAdmin {
-		permissions = append(permissions, model.MemberTypeMember)
-		permissions = append(permissions, model.MemberTypeAdmin)
-	}
-	token, err := createToken(member.UUID, permissions)
+	token, err := createToken(credentialsInDB.UUID, permissions)
 	if err != nil {
 		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
 		return
@@ -153,15 +145,18 @@ func extractTokenString(r *http.Request) string {
 	return ""
 }
 
-func verifyToken(r *http.Request) (*jwt.Token, error) {
-	tokenString := extractTokenString(r)
-	common.Debug("tokenString: " + tokenString)
+func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			common.Debug("Incorrect signing method")
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(common.GetConfigString("jwt.access_secret")), nil
+		if tokenType == "access" {
+			return []byte(common.GetConfigString("jwt.access_secret")), nil
+		} else if tokenType == "refresh" {
+			return []byte(common.GetConfigString("jwt.refresh_secret")), nil
+		}
+		return nil, errors.New("Unsupported token type")
 	})
 	if err != nil {
 		return nil, err
@@ -175,7 +170,8 @@ func verifyToken(r *http.Request) (*jwt.Token, error) {
 }
 
 func ExtractToken(r *http.Request) (*AccessTokenDetails, error) {
-	token, err := verifyToken(r)
+	tokenString := extractTokenString(r)
+	token, err := verifyToken(tokenString, "access")
 	if err != nil {
 		common.Debug(err.Error())
 		return nil, err
@@ -256,6 +252,65 @@ func checkTokenInCache(token *jwt.Token) (string, error) {
 	return "", err
 }
 
+func RefreshToken(w http.ResponseWriter, r *http.Request) {
+	mapToken := map[string]string{}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&mapToken); err != nil {
+		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	refreshToken := mapToken["refresh_token"]
+
+	token, err := verifyToken(refreshToken, "refresh")
+	//if there is an error, the token must have expired
+	if err != nil {
+		RespondWithError(w, http.StatusUnauthorized, "Refresh token expired")
+		return
+	}
+	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
+		RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		refreshUuid, ok := claims["token_uuid"].(string)
+		if !ok {
+			RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		userUuid, ok := claims["user_uuid"].(string)
+		if !ok {
+			RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		//Delete the previous Refresh Token
+		deleted, delErr := deleteTokenInCache(refreshUuid)
+		if delErr != nil || deleted == 0 { //if any goes wrong
+			RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+			return
+		}
+		permissions, err := getMemberPermissions(userUuid)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		//Create new pairs of refresh and access tokens
+		ts, createErr := createToken(userUuid, permissions)
+		if createErr != nil {
+			RespondWithError(w, http.StatusForbidden, createErr.Error())
+			return
+		}
+		tokens := map[string]string{
+			"access_token":  ts.AccessToken,
+			"refresh_token": ts.RefreshToken,
+		}
+		RespondWithJSON(w, http.StatusCreated, tokens)
+	} else {
+		RespondWithError(w, http.StatusUnauthorized, "refresh expired")
+	}
+
+}
+
 func Test(w http.ResponseWriter, r *http.Request) {
 	token, err := createToken("123", []string{createCredentialsPermission})
 	if err != nil {
@@ -263,4 +318,20 @@ func Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, token.AccessToken)
+}
+
+func getMemberPermissions(uuid string) ([]string, error) {
+	member := model.Member{UUID: uuid}
+	if err := member.Get(); err != nil {
+		return []string{}, err
+	}
+	var permissions []string
+	if member.Type == model.MemberTypeMember {
+		permissions = append(permissions, model.MemberTypeMember)
+	}
+	if member.Type == model.MemberTypeAdmin {
+		permissions = append(permissions, model.MemberTypeMember)
+		permissions = append(permissions, model.MemberTypeAdmin)
+	}
+	return permissions, nil
 }
