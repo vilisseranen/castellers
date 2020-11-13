@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/vilisseranen/castellers/controller"
+	"github.com/vilisseranen/castellers/model"
 )
 
 func CreateRouter(staticDir string) *mux.Router {
@@ -20,9 +21,12 @@ func CreateRouter(staticDir string) *mux.Router {
 	r.HandleFunc("/api/logout", controller.Logout).Methods("POST")
 	r.HandleFunc("/api/refresh", controller.RefreshToken).Methods("POST")
 
+	// Special tokens
+	r.HandleFunc("/api/create_credentials", checkTokenType(controller.CreateCredentials, controller.CreateCredentialsPermission)).Methods("POST")
+	r.HandleFunc("/api/reset_credentials", checkTokenType(controller.ResetCredentials, controller.ResetCredentialsPermission)).Methods("POST")
+
 	// Requires a member token
-	r.HandleFunc("/api/test", checkTokenType(controller.Test, "member")).Methods("GET")
-	r.HandleFunc("/api/createCredentials", checkTokenType(controller.CreateCredentials, "create_credentials")).Methods("POST")
+	r.HandleFunc("/api/test", checkTokenType(controller.Test, model.MemberTypeMember)).Methods("GET")
 
 	// Requires member uuid
 	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.ParticipateEvent)).Methods("POST")

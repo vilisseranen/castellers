@@ -35,10 +35,10 @@ type Member struct {
 }
 
 type Credentials struct {
-	UUID           string
-	Username       string
-	Password       string
-	PasswordHashed []byte
+	UUID           string `json:"-"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	PasswordHashed []byte `json:"-"`
 }
 
 func (m *Member) CreateMember() error {
@@ -228,6 +228,16 @@ func (c *Credentials) CreateCredentials(username string, password []byte) error 
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(c.UUID, username, password)
+	return err
+}
+
+func (c *Credentials) ResetCredentials(username string, password []byte) error {
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET username = ?, password = ? WHERE uuid = ?", MembersCredentialsTable))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(username, password, c.UUID)
 	return err
 }
 

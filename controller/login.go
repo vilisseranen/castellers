@@ -35,8 +35,8 @@ type AccessTokenDetails struct {
 	Permissions []string
 }
 
-const createCredentialsPermission = "create_credentials"
-const resetCredentialsPermission = "reset_credentials"
+const CreateCredentialsPermission = "create_credentials"
+const ResetCredentialsPermission = "reset_credentials"
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var credentialsInRequest model.Credentials
@@ -312,7 +312,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
-	token, err := createToken("123", []string{createCredentialsPermission})
+	token, err := createToken("123", []string{CreateCredentialsPermission})
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, "Cannot create create_credentials token")
 		return
