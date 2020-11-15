@@ -81,19 +81,18 @@ func checkTokenType(h handler, requestedType string) handler {
 			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
 			return
 		}
-		if !stringInSlice(requestedType, tokenAuth.Permissions) {
+		if !common.StringInSlice(requestedType, tokenAuth.Permissions) {
 			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
 			return
 		}
+		if requestedType == model.MemberTypeMember {
+			vars := mux.Vars(r)
+			uuid := vars["member_uuid"]
+			if uuid != tokenAuth.UserId {
+				controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+				return
+			}
+		}
 		h(w, r)
 	}
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }

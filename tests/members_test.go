@@ -165,10 +165,10 @@ func TestUpdateMember(t *testing.T) {
 
 func TestPromoteSelf(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 
 	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
@@ -184,7 +184,7 @@ func TestPromoteSelf(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusForbidden, response.Code); err != nil {
@@ -261,10 +261,10 @@ func TestDeleteSelfAdmin(t *testing.T) {
 
 func TestGetMember(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 
 	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -280,11 +280,11 @@ func TestGetMember(t *testing.T) {
 }
 func TestGetMemberType(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
-	h.addAnAdmin()
+	access_token_member := h.addAMember()
+	access_token_admin := h.addAnAdmin()
 
 	req, _ := http.NewRequest("GET", "/api/members/deadfeed", nil)
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -299,7 +299,7 @@ func TestGetMemberType(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("GET", "/api/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token_member)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -386,10 +386,10 @@ func TestCreateMemberWrongWeight(t *testing.T) {
 
 func TestUpdateSelf(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 
 	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	h.checkResponseCode(http.StatusOK, response.Code)
 
@@ -403,7 +403,7 @@ func TestUpdateSelf(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
 	h.checkResponseCode(http.StatusAccepted, response.Code)

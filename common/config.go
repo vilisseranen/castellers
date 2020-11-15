@@ -37,6 +37,7 @@ func ReadConfig() {
 	viper.SetDefault("summary_time_before_event", 86400)     // 1 day
 	viper.SetDefault("encryption.iterations", 10000)         // For hashing encryption key
 	viper.SetDefault("encryption.password_hashing_cost", 10) // For hashing passwords
+	viper.SetDefault("redis_dsn", "localhost:6379")          // Redis connection
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -51,6 +52,7 @@ func ReadConfig() {
 	viper.BindEnv("domain")
 	viper.BindEnv("debug")
 	viper.BindEnv("smtp_server")
+	viper.BindEnv("redis_dsn")
 	viper.BindEnv("reminder_time_before_event")
 	viper.BindEnv("summary_time_before_event")
 	viper.BindEnv("encryption.key", "APP_KEY")

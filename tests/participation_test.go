@@ -11,13 +11,13 @@ import (
 
 func TestParticipateEvent(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"maybe"}`)
 
 	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {

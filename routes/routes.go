@@ -25,14 +25,12 @@ func CreateRouter(staticDir string) *mux.Router {
 	r.HandleFunc("/api/create_credentials", checkTokenType(controller.CreateCredentials, controller.CreateCredentialsPermission)).Methods("POST")
 	r.HandleFunc("/api/reset_credentials", checkTokenType(controller.ResetCredentials, controller.ResetCredentialsPermission)).Methods("POST")
 
-	// Requires a member token
+	// Requires a token with member permission
 	r.HandleFunc("/api/test", checkTokenType(controller.Test, model.MemberTypeMember)).Methods("GET")
-
-	// Requires member uuid
-	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkMember(controller.ParticipateEvent)).Methods("POST")
-	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.GetMember)).Methods("GET")
-	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkMember(controller.EditMember)).Methods("PUT")
-	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}/events", checkMember(controller.GetEvents)).Methods("GET")
+	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.GetMember, model.MemberTypeMember)).Methods("GET")
+	r.HandleFunc("/api/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.ParticipateEvent, model.MemberTypeMember)).Methods("POST")
+	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.EditMember, model.MemberTypeMember)).Methods("PUT")
+	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}/events", checkTokenType(controller.GetEvents, model.MemberTypeMember)).Methods("GET")
 
 	// Requires admin uuid
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkAdmin(controller.CreateEvent)).Methods("POST")

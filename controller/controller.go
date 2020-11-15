@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 
 	"github.com/go-redis/redis"
 	"github.com/vilisseranen/castellers/common"
@@ -27,10 +26,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 func InitializeRedis() {
 	//Initializing redis
-	dsn := os.Getenv("REDIS_DSN")
-	if len(dsn) == 0 {
-		dsn = "localhost:6379"
-	}
+	dsn := common.GetConfigString("redis_dsn")
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr: dsn, //redis port
 	})

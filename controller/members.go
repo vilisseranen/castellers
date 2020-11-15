@@ -26,9 +26,15 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if r.Header.Get("Permission") != model.MemberTypeAdmin {
+	au, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
+		return
+	}
+	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
 		m.Roles = []string{}
 		m.Extra = ""
+
 	}
 	RespondWithJSON(w, http.StatusOK, m)
 }
@@ -136,14 +142,35 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	code := r.Header.Get("X-Member-Code")
+	// Make sure we are not changing the profile of somebody else
 	vars := mux.Vars(r)
-	adminUuid := vars["admin_uuid"]
-	if !validateChangeType(m, code, adminUuid) {
-		RespondWithError(w, http.StatusForbidden, "Cannot change type.")
-		return
+	UUID := vars["member_uuid"]
+	m.UUID = UUID
+
+	// Check if we can change role
+	// If caller is admin, we can change the role
+	// If caller is member, we cannot change he role
+	au, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
 	}
-	if err := m.EditMember(r.Header.Get("Permission")); err != nil {
+	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
+		// get current user and use existing values for roles, extra and type
+		existingMember := model.Member{UUID: UUID}
+		if err := existingMember.Get(); err != nil {
+			switch err {
+			case sql.ErrNoRows:
+				RespondWithError(w, http.StatusNotFound, "Member not found")
+			default:
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+			}
+			return
+		}
+		m.Roles = existingMember.Roles
+		m.Extra = existingMember.Extra
+
+	}
+	if err := m.EditMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

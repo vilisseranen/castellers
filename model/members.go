@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -76,55 +75,31 @@ func (m *Member) CreateMember() error {
 	return err
 }
 
-func (m *Member) EditMember(callerType string) error {
+func (m *Member) EditMember() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	switch callerType {
-	case MemberTypeAdmin:
-		stmt, err := tx.Prepare(fmt.Sprintf(
-			"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
-			MembersTable))
-		if err != nil {
-			return err
-		}
-		defer stmt.Close()
-		_, err = stmt.Exec(
-			common.Encrypt(m.FirstName),
-			common.Encrypt(m.LastName),
-			common.Encrypt(m.Height),
-			common.Encrypt(m.Weight),
-			common.Encrypt(strings.Join(m.Roles, ",")),
-			common.Encrypt(m.Extra),
-			common.Encrypt(m.Type),
-			common.Encrypt(m.Email),
-			common.Encrypt(m.Contact),
-			m.Language,
-			m.Subscribed,
-			stringOrNull(m.UUID))
-	case MemberTypeMember:
-		stmt, err := tx.Prepare(fmt.Sprintf(
-			"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
-			MembersTable))
-		if err != nil {
-			return err
-		}
-		defer stmt.Close()
-		_, err = stmt.Exec(
-			common.Encrypt(m.FirstName),
-			common.Encrypt(m.LastName),
-			common.Encrypt(m.Height),
-			common.Encrypt(m.Weight),
-			common.Encrypt(m.Type),
-			common.Encrypt(m.Email),
-			common.Encrypt(m.Contact),
-			stringOrNull(m.Language),
-			m.Subscribed,
-			stringOrNull(m.UUID))
-	default:
-		err = errors.New("")
+	stmt, err := tx.Prepare(fmt.Sprintf(
+		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
+		MembersTable))
+	if err != nil {
+		return err
 	}
+	defer stmt.Close()
+	_, err = stmt.Exec(
+		common.Encrypt(m.FirstName),
+		common.Encrypt(m.LastName),
+		common.Encrypt(m.Height),
+		common.Encrypt(m.Weight),
+		common.Encrypt(strings.Join(m.Roles, ",")),
+		common.Encrypt(m.Extra),
+		common.Encrypt(m.Type),
+		common.Encrypt(m.Email),
+		common.Encrypt(m.Contact),
+		m.Language,
+		m.Subscribed,
+		stringOrNull(m.UUID))
 	if err != nil {
 		common.Error("%v\n", m)
 		return err

@@ -30,3 +30,12 @@ func GenerateCode() string {
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(data))[:codeSize]
 }
+
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}

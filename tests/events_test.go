@@ -11,12 +11,12 @@ import (
 
 func TestCreateEvent(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040, "type":"presentation"}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
