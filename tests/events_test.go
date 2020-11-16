@@ -52,12 +52,12 @@ func TestCreateEvent(t *testing.T) {
 
 func TestCreateEventNoDate(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","type":"presentation"}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -93,12 +93,12 @@ func TestGetNonExistentEvent(t *testing.T) {
 
 func TestCreateEventNonAdmin(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusUnauthorized, response.Code); err != nil {
@@ -122,12 +122,12 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 func TestCreateWeeklyEvent(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}, "type":"practice"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -163,12 +163,12 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 func TestCreateDailyEvent(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}, "type":"practice"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -281,7 +281,7 @@ func TestGetEvents(t *testing.T) {
 func TestUpdateEvent(t *testing.T) {
 	h.clearTables()
 	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := h.executeRequest(req)
@@ -292,7 +292,7 @@ func TestUpdateEvent(t *testing.T) {
 	payload := []byte(`{"name": "test event - updated name", "startDate":1579218314,"endDate":1579228214,"recurring":{"interval":"1w","until":0},"type":"practice","location":{"lat":45.50073714334654,"lng":-73.6241186484186},"locationName":"Brébeuf","description":"new description"}`)
 
 	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
 	// Make sure the update request is successful
@@ -327,7 +327,7 @@ func TestUpdateEvent(t *testing.T) {
 func TestDeleteEvent(t *testing.T) {
 	h.clearTables()
 	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
 	response := h.executeRequest(req)
@@ -336,7 +336,7 @@ func TestDeleteEvent(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/events/deadbeef", nil)
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
@@ -351,12 +351,12 @@ func TestDeleteEvent(t *testing.T) {
 
 func TestCreateEventEndBeforeBeginning(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1528046040, "endDate":1527894960}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
@@ -366,12 +366,12 @@ func TestCreateEventEndBeforeBeginning(t *testing.T) {
 
 func TestCreateEventEmptyName(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"","startDate":1527894960, "endDate":1528046040}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
@@ -382,12 +382,12 @@ func TestCreateEventEmptyName(t *testing.T) {
 func TestUpdateEventEndBeforeBeginning(t *testing.T) {
 	h.clearTables()
 	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"An event","startDate":1528052400, "endDate":1518063200}`)
 
 	req, _ := http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
@@ -397,12 +397,12 @@ func TestUpdateEventEndBeforeBeginning(t *testing.T) {
 
 func TestCreateEventWithLocationAndDescription(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada", "type":"presentation", "locationName": "Brébeuf", "location": {"lat": 45.50073714334654, "lng": -73.6241186484186}, "description": "First event description"}`)
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {

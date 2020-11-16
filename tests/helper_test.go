@@ -26,8 +26,8 @@ type TestHelper struct {
 }
 
 func TestMain(m *testing.M) {
-	redis := miniredis.NewMiniRedis()
-	err := redis.StartAddr(":6380")
+	redis, err := miniredis.Run()
+	defer redis.Close()
 	if err != nil {
 		log.Fatalf("Cannot create mock redis: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Setenv("APP_KEY", "fsjKJWJIJIJndndokspfkshtgrfghggcf4q32324")
 	os.Setenv("APP_KEY_SALT", "dtgftgft7hftgth")
 	os.Setenv("APP_PASSWORD_PEPPER", "gkjsneisuefsi")
-	os.Setenv("APP_REDIS_DSN", "localhost:6380")
+	os.Setenv("APP_REDIS_DSN", redis.Addr())
 	os.Setenv("APP_ACCESS_SECRET", "sefsefsefsefhftgdfs")
 	os.Setenv("APP_REFRESHSECRET", "zsgrxdrgzdrgsfefsef")
 

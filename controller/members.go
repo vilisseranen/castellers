@@ -166,6 +166,10 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+		if existingMember.Type != m.Type {
+			RespondWithError(w, http.StatusForbidden, UnauthorizedMessage)
+			return
+		}
 		m.Roles = existingMember.Roles
 		m.Extra = existingMember.Extra
 

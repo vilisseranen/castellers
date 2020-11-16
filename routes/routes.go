@@ -32,19 +32,19 @@ func CreateRouter(staticDir string) *mux.Router {
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.EditMember, model.MemberTypeMember)).Methods("PUT")
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}/events", checkTokenType(controller.GetEvents, model.MemberTypeMember)).Methods("GET")
 
-	// Requires admin uuid
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkAdmin(controller.CreateEvent)).Methods("POST")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkAdmin(controller.GetEvents)).Methods("GET")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkAdmin(controller.UpdateEvent)).Methods("PUT")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkAdmin(controller.DeleteEvent)).Methods("DELETE")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}/members", checkAdmin(controller.GetEventParticipation)).Methods("GET")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.PresenceEvent)).Methods("POST")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkAdmin(controller.CreateMember)).Methods("POST")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkAdmin(controller.GetMembers)).Methods("GET")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.GetMember)).Methods("GET")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.EditMember)).Methods("PUT")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkAdmin(controller.DeleteMember)).Methods("DELETE")
-	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}/registration", checkAdmin(controller.SendRegistrationEmail)).Methods("GET")
+	// Requires a token with admin permission
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkTokenType(controller.CreateEvent, model.MemberTypeAdmin)).Methods("POST")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkTokenType(controller.GetEvents, model.MemberTypeAdmin)).Methods("GET")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkTokenType(controller.UpdateEvent, model.MemberTypeAdmin)).Methods("PUT")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteEvent, model.MemberTypeAdmin)).Methods("DELETE")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}/members", checkTokenType(controller.GetEventParticipation, model.MemberTypeAdmin)).Methods("GET")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.PresenceEvent, model.MemberTypeAdmin)).Methods("POST")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkTokenType(controller.CreateMember, model.MemberTypeAdmin)).Methods("POST")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members", checkTokenType(controller.GetMembers, model.MemberTypeAdmin)).Methods("GET")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.GetMember, model.MemberTypeAdmin)).Methods("GET")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.EditMember, model.MemberTypeAdmin)).Methods("PUT")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.DeleteMember, model.MemberTypeAdmin)).Methods("DELETE")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}/registration", checkTokenType(controller.SendRegistrationEmail, model.MemberTypeAdmin)).Methods("GET")
 
 	return r
 }

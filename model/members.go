@@ -224,7 +224,6 @@ func (c *Credentials) GetCredentials() error {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
-	common.Debug("username: %s", c.Username)
 	err = stmt.QueryRow(c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
 }

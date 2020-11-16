@@ -173,8 +173,6 @@ func ExtractToken(r *http.Request) (*AccessTokenDetails, error) {
 	tokenString := extractTokenString(r)
 	token, err := verifyToken(tokenString, "access")
 	if err != nil {
-		common.Debug(err.Error())
-		common.Debug("returning an error")
 		return nil, err
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
