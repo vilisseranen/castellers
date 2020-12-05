@@ -16,8 +16,13 @@ func checkTokenType(h handler, requestedType string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenAuth, err := controller.ExtractToken(r)
 		if err != nil {
+			// TODO: find a better way to determine if the token has expired.
+			if err.Error() == "Token is expired" {
+				controller.RespondWithError(w, http.StatusForbidden, controller.UnauthorizedMessage)
+			} else {
+				controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+			}
 			common.Debug("Token invalid: %s", err.Error())
-			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
 			return
 		}
 		if !common.StringInSlice(requestedType, tokenAuth.Permissions) {
