@@ -99,10 +99,10 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 func createToken(uuid string, permissions []string) (*TokenDetails, error) {
 	td := &TokenDetails{}
-	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
+	td.AtExpires = time.Now().Add(time.Minute * time.Duration(common.GetConfigInt("jwt.access_ttl_minutes"))).Unix()
 	td.AccessUuid = common.GenerateUUID()
 
-	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
+	td.RtExpires = time.Now().Add(time.Hour * 24 * time.Duration(common.GetConfigInt("jwt.refresh_ttl_days"))).Unix()
 	td.RefreshUuid = common.GenerateUUID()
 
 	var err error
@@ -159,6 +159,9 @@ func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
 		return nil, errors.New("Unsupported token type")
 	})
 	if err != nil {
+		// if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorExpired {
+
+		// }
 		return nil, err
 	}
 	_, err = checkTokenInCache(token)
@@ -211,8 +214,10 @@ func ExtractToken(r *http.Request) (*AccessTokenDetails, error) {
 }
 
 func saveTokenInCache(uuid string, td *TokenDetails) error {
-	at := time.Unix(td.AtExpires, 0)
-	rt := time.Unix(td.RtExpires, 0)
+	// We add 1 second because we check in redis after we check the token
+	// The token could be removed from redis right after we do the static validation
+	at := time.Unix(td.AtExpires+1, 0)
+	rt := time.Unix(td.RtExpires+1, 0)
 	now := time.Now()
 
 	errAccess := RedisClient.Set(td.AccessUuid, uuid, at.Sub(now)).Err()
