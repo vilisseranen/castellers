@@ -66,7 +66,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	token, err := createToken(credentialsInDB.UUID, permissions)
+	token, err := createToken(credentialsInDB.UUID, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 	if err != nil {
 		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
 		return
@@ -97,12 +97,12 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusAccepted, "Successfully logged out")
 }
 
-func createToken(uuid string, permissions []string) (*TokenDetails, error) {
+func createToken(uuid string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
 	td := &TokenDetails{}
-	td.AtExpires = time.Now().Add(time.Minute * time.Duration(common.GetConfigInt("jwt.access_ttl_minutes"))).Unix()
+	td.AtExpires = time.Now().Add(time.Minute * time.Duration(access_ttl_minutes)).Unix()
 	td.AccessUuid = common.GenerateUUID()
 
-	td.RtExpires = time.Now().Add(time.Hour * 24 * time.Duration(common.GetConfigInt("jwt.refresh_ttl_days"))).Unix()
+	td.RtExpires = time.Now().Add(time.Hour * 24 * time.Duration(refresh_ttl_days)).Unix()
 	td.RefreshUuid = common.GenerateUUID()
 
 	var err error
@@ -299,7 +299,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//Create new pairs of refresh and access tokens
-		ts, createErr := createToken(userUuid, permissions)
+		ts, createErr := createToken(userUuid, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 		if createErr != nil {
 			RespondWithError(w, http.StatusForbidden, createErr.Error())
 			return
@@ -312,11 +312,15 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	} else {
 		RespondWithError(w, http.StatusUnauthorized, "refresh expired")
 	}
+}
 
+func CreateCredentialsToken() (string, error) {
+	token, err := createToken("123", []string{CreateCredentialsPermission}, 1440, 0) // token 24h ttl
+	return token.AccessToken, err
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
-	token, err := createToken("123", []string{CreateCredentialsPermission})
+	token, err := createToken("123", []string{CreateCredentialsPermission}, 1440, 0) // token 24h ttl
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, "Cannot create create_credentials token")
 		return

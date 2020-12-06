@@ -59,10 +59,17 @@ func checkAndSendNotification() {
 				continue
 			}
 			// Send the email
-			if common.GetConfigBool("debug") == false { // Don't send email in debug
+			if common.GetConfigBool("smtp_enabled") {
+				// Get a token to create credentials
+				createCredentialsToken, err := CreateCredentialsToken()
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
 				loginLink := common.GetConfigString("domain") + "/login?" +
 					"m=" + m.UUID +
-					"&c=" + m.Code
+					"&c=" + m.Code + createCredentialsToken
 				profileLink := loginLink + "&next=memberEdit/" + m.UUID
 				if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
