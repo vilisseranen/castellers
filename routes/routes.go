@@ -34,7 +34,7 @@ func CreateRouter(staticDir string) *mux.Router {
 	r.HandleFunc("/api/members/{member_uuid:[0-9a-f]+}/events", checkTokenType(controller.GetEvents, model.MemberTypeMember)).Methods("GET")
 
 	// Requires a token with admin permission
-	 r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkTokenType(controller.CreateEvent, model.MemberTypeAdmin)).Methods("POST")
+	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkTokenType(controller.CreateEvent, model.MemberTypeAdmin)).Methods("POST")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events", checkTokenType(controller.GetEvents, model.MemberTypeAdmin)).Methods("GET")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkTokenType(controller.UpdateEvent, model.MemberTypeAdmin)).Methods("PUT")
 	r.HandleFunc("/api/admins/{admin_uuid:[0-9a-f]+}/events/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteEvent, model.MemberTypeAdmin)).Methods("DELETE")
