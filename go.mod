@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/nicksnyder/go-i18n/v2 v2.1.1
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
@@ -22,7 +23,6 @@ require (
 	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 	golang.org/x/sys v0.0.0-20191010194322-b09406accb47 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/text v0.3.4
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/yaml.v2 v2.2.4 // indirect
 )

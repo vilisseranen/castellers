@@ -46,6 +46,7 @@ func (a *App) Initialize() {
 	}
 
 	controller.InitializeRedis()
+	common.InitializeTranslations()
 
 	// Define logger
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)

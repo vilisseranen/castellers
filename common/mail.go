@@ -12,6 +12,15 @@ type emailRegisterInfo struct {
 	AdminName, AdminExtra string
 	LoginLink             string
 	ImageSource           string
+	Welcome               string
+	WelcomeText           string
+	NewRegistration       string
+	NewRegistrationText   string
+	Instructions          string
+	Thanks                string
+	Confirmation          string
+	ConfirmationText      string
+	Activation            string
 }
 
 type emailReminderInfo struct {
@@ -42,17 +51,8 @@ type emailBottom struct {
 	ProfileLink string
 }
 
-func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, activateLink, profileLink string) error {
-	// Prepare header
-	var title_translated string
-	switch language {
-	case "fr":
-		title_translated = "Inscription"
-	case "en":
-		title_translated = "Inscription"
-	case "cat":
-		title_translated = "Inscriptió"
-	}
+func SendRegistrationEmail(to, memberName, languageUser, adminName, adminExtra, activateLink, profileLink string) error {
+	title_translated := Translate("registration_title", languageUser)
 	header := buildHeader(title_translated, to)
 	// Build top of the email
 	top := new(bytes.Buffer)
@@ -68,14 +68,25 @@ func SendRegistrationEmail(to, memberName, language, adminName, adminExtra, acti
 	}
 	body := new(bytes.Buffer)
 	imageSource := GetConfigString("domain") + "/static/img/"
-	emailInfo := emailRegisterInfo{memberName, language, adminName, adminExtra, activateLink, imageSource}
+	emailInfo := emailRegisterInfo{
+		memberName, languageUser, adminName, adminExtra, activateLink, imageSource,
+		Translate("registration_welcome", languageUser),
+		Translate("registration_welcome_text", languageUser),
+		Translate("registration_new_title", languageUser),
+		Translate("registration_new_text", languageUser),
+		Translate("registration_instructions", languageUser),
+		Translate("registration_thanks", languageUser),
+		Translate("registration_confirmation_title", languageUser),
+		Translate("registration_confirmation_text", languageUser),
+		Translate("registration_activation", languageUser),
+	}
 	if err = t.Execute(body, emailInfo); err != nil {
 		Error("Error generating template: " + err.Error())
 		return err
 	}
 	// Build bottom of the email
 	bottom := new(bytes.Buffer)
-	if err := buildEmailBottom(bottom, emailBottom{language, imageSource, profileLink}); err != nil {
+	if err := buildEmailBottom(bottom, emailBottom{languageUser, imageSource, profileLink}); err != nil {
 		Error("Error parsing template: " + err.Error())
 		return err
 	}
