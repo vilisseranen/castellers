@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	h.app = app.App{}
 	os.Setenv("APP_DB_NAME", "test_database.db")
 	os.Setenv("APP_LOG_FILE", "castellers.log")
-	os.Setenv("APP_SMTP_SERVER", "192.168.1.100:25")
+	os.Setenv("APP_SMTP_ENABLED", "false")
 	os.Setenv("APP_DEBUG", "true")
 	os.Setenv("APP_KEY", "fsjKJWJIJIJndndokspfkshtgrfghggcf4q32324")
 	os.Setenv("APP_KEY_SALT", "dtgftgft7hftgth")
@@ -43,6 +43,8 @@ func TestMain(m *testing.M) {
 	os.Setenv("APP_REDIS_DSN", redis.Addr())
 	os.Setenv("APP_ACCESS_SECRET", "sefsefsefsefhftgdfs")
 	os.Setenv("APP_REFRESHSECRET", "zsgrxdrgzdrgsfefsef")
+	os.Setenv("APP_ACCESS_SECRET", "fgdsrgdgsefsefesfse")
+	os.Setenv("APP_ACCESS_SECRET", "enfksjenfksuefhuiuu")
 
 	h.removeExistingTables()
 	h.app.Initialize()
