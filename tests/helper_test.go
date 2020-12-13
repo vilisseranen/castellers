@@ -42,9 +42,7 @@ func TestMain(m *testing.M) {
 	os.Setenv("APP_PASSWORD_PEPPER", "gkjsneisuefsi")
 	os.Setenv("APP_REDIS_DSN", redis.Addr())
 	os.Setenv("APP_ACCESS_SECRET", "sefsefsefsefhftgdfs")
-	os.Setenv("APP_REFRESHSECRET", "zsgrxdrgzdrgsfefsef")
-	os.Setenv("APP_ACCESS_SECRET", "fgdsrgdgsefsefesfse")
-	os.Setenv("APP_ACCESS_SECRET", "enfksjenfksuefhuiuu")
+	os.Setenv("APP_REFRESH_SECRET", "zsgrxdrgzdrgsfefsef")
 
 	h.removeExistingTables()
 	h.app.Initialize()
