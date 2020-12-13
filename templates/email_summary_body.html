@@ -98,7 +98,7 @@
                 <td style="padding: 40px 40px 20px 40px; text-align: left;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 26px; color: #333333; font-weight: bold;">
-                    {{ .EventFormmated }}
+                    {{ .EventFormatted }}
                   </h1>
                 </td>
               </tr>
@@ -112,22 +112,22 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {{range .Members}}
+                  {{ range .Members }}
                   <tr>
-                    <td>{{.FirstName}}</td>
-                    <td>{{.LastName}}</td>
-                    <td>{{.Roles}}</td>
+                    <td>{{ .FirstName }}</td>
+                    <td>{{ .LastName }}</td>
+                    <td>{{ .Roles }}</td>
                     <td>
-                      {{if .Participation == "yes"}}
-                      {{.ParticipateYes}}
-                      {{else if .Participation == "no"}}
-                      {{.ParticipateNo}}
-                      {{else}}
-                      {{ .NoAnswer }}
-                      {{end}}
+                      {{ if eq .Participation "yes" }}
+                      {{ $.ParticipateYes }}
+                      {{ else if eq .Participation "no" }}
+                      {{ $.ParticipateNo }}
+                      {{ else }}
+                      {{ $.NoAnswer }}
+                      {{ end }}
                     </td>
                   </tr>
-                  {{end}}
+                  {{ end }}
                 </tbody>
               </table>
               <table height="20px">
