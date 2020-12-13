@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -196,23 +197,22 @@ func (m *Member) Activate() error {
 	return err
 }
 
-func (c *Credentials) CreateCredentials(username string, password []byte) error {
-	stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MembersCredentialsTable))
+func (c *Credentials) ResetCredentials(username string, password []byte) error {
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MembersCredentialsTable))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	_, err = stmt.Exec(c.UUID)
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	stmt.Close()
+	stmt, err = db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MembersCredentialsTable))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(c.UUID, username, password)
-	return err
-}
-
-func (c *Credentials) ResetCredentials(username string, password []byte) error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET username = ?, password = ? WHERE uuid = ?", MembersCredentialsTable))
-	if err != nil {
-		common.Fatal(err.Error())
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(username, password, c.UUID)
 	return err
 }
 
@@ -226,4 +226,32 @@ func (c *Credentials) GetCredentials() error {
 	defer stmt.Close()
 	err = stmt.QueryRow(c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
+}
+
+func (c *Credentials) GetCredentialsByUUID() error {
+	stmt, err := db.Prepare(fmt.Sprintf(
+		"SELECT username FROM %s WHERE uuid= ?",
+		MembersCredentialsTable))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(c.UUID).Scan(&c.Username)
+	return err
+}
+
+func (m *Member) GetByEmail() error {
+	members, err := m.GetAll()
+	if err != nil {
+		return err
+	}
+	for _, member := range members {
+		if member.Email == m.Email {
+			*m = member
+		}
+	}
+	if m.UUID == "" {
+		return errors.New("No member found with this email")
+	}
+	return nil
 }

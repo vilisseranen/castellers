@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS members_credentials
 	username TEXT NOT NULL,
 	password BLOB NOT NULL,
 	FOREIGN KEY(uuid) REFERENCES members(uuid),
-	UNIQUE(username)
+	UNIQUE(uuid), UNIQUE(username)
 );

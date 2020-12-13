@@ -61,16 +61,16 @@ func checkAndSendNotification() {
 			// Send the email
 			if common.GetConfigBool("smtp_enabled") {
 				// Get a token to create credentials
-				createCredentialsToken, err := CreateCredentialsToken()
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 1440)
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
-				loginLink := common.GetConfigString("domain") + "/login?" +
-					"m=" + m.UUID +
-					"&c=" + m.Code + createCredentialsToken
-				profileLink := loginLink + "&next=memberEdit/" + m.UUID
+				loginLink := common.GetConfigString("domain") + "/reset?" +
+					"t=" + resetCredentialsToken +
+					"&a=activation"
+				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
 				if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
@@ -240,6 +240,39 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
+		case model.TypeForgotPassword:
+			m := model.Member{UUID: notification.ObjectUUID}
+			err := m.Get()
+			if err != nil {
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			if common.GetConfigBool("smtp_enabled") {
+				// Get a token to create credentials
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 60)
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+				credentials := model.Credentials{UUID: m.UUID}
+				err = credentials.GetCredentialsByUUID()
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+				resetLink := common.GetConfigString("domain") + "/reset?" +
+					"t=" + resetCredentialsToken +
+					"&a=reset&u=" + credentials.Username
+				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
+				if err := common.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+			}
 		}
 	}
 }

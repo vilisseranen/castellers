@@ -14,11 +14,6 @@ import (
 	"github.com/vilisseranen/castellers/model"
 )
 
-type Credentials struct {
-	ID   string `json:"id"`
-	Code string `json:"code"`
-}
-
 type TokenDetails struct {
 	AccessToken  string
 	RefreshToken string
@@ -35,7 +30,6 @@ type AccessTokenDetails struct {
 	Permissions []string
 }
 
-const CreateCredentialsPermission = "create_credentials"
 const ResetCredentialsPermission = "reset_credentials"
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -61,21 +55,28 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
 		return
 	}
-	permissions, err := getMemberPermissions(credentialsInDB.UUID)
+	tokens, err := createMemberToken(credentialsInDB.UUID)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	token, err := createToken(credentialsInDB.UUID, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	RespondWithJSON(w, http.StatusOK, tokens)
+}
+
+func createMemberToken(uuid string) (map[string]string, error) {
+	permissions, err := getMemberPermissions(uuid)
 	if err != nil {
-		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
-		return
+		return nil, err
+	}
+	token, err := createToken(uuid, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	if err != nil {
+		return nil, err
 	}
 	tokens := map[string]string{
 		"access_token":  token.AccessToken,
 		"refresh_token": token.RefreshToken,
 	}
-	RespondWithJSON(w, http.StatusOK, tokens)
+	return tokens, nil
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
@@ -314,18 +315,9 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateCredentialsToken() (string, error) {
-	token, err := createToken("123", []string{CreateCredentialsPermission}, 1440, 0) // token 24h ttl
+func ResetCredentialsToken(uuid string, ttl int) (string, error) {
+	token, err := createToken(uuid, []string{ResetCredentialsPermission}, ttl, 0)
 	return token.AccessToken, err
-}
-
-func Test(w http.ResponseWriter, r *http.Request) {
-	token, err := createToken("123", []string{CreateCredentialsPermission}, 1440, 0) // token 24h ttl
-	if err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Cannot create create_credentials token")
-		return
-	}
-	RespondWithJSON(w, http.StatusOK, token.AccessToken)
 }
 
 func getMemberPermissions(uuid string) ([]string, error) {
@@ -342,4 +334,22 @@ func getMemberPermissions(uuid string) ([]string, error) {
 		permissions = append(permissions, model.MemberTypeAdmin)
 	}
 	return permissions, nil
+}
+
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var member model.Member
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&member); err != nil {
+		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	err := member.GetByEmail()
+	if err == nil {
+		n := model.Notification{NotificationType: model.TypeForgotPassword, AuthorUUID: member.UUID, ObjectUUID: member.UUID, SendDate: int(time.Now().Unix())}
+		if err := n.CreateNotification(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	RespondWithJSON(w, http.StatusAccepted, "")
 }

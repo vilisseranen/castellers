@@ -4,9 +4,7 @@
     <!-- Visually Hidden Preheader Text : BEGIN -->
     <div
       style="display:none;font-size:1px;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;font-family: sans-serif;">
-      {{ if eq .Language "fr" }}Inscriptions pour le prochain évènement{{ end }}
-      {{ if eq .Language "en" }}Inscriptions to the next event{{ end }}
-      {{ if eq .Language "cat" }}Inscriptions to the next event{{ end }}
+      {{ .Subject }}
     </div>
     <!-- Visually Hidden Preheader Text : END -->
 
@@ -53,16 +51,14 @@
 
                           <h1
                             style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 30px; line-height: 36px; color: #ffffff; font-weight: bold;">
-                            Bonjour {{ .MemberName }}.</h1>
+                            {{ .Greetings }} {{ .MemberName }}.</h1>
                         </td>
                       </tr>
                       <tr>
                         <td valign="top"
                           style="text-align: center; padding: 10px 20px 15px 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #eeeeee;">
                           <p style="margin: 0;">
-                            {{ if eq .Language "fr" }}Voici les inscriptions pour le prochain évènement :{{ end }}
-                            {{ if eq .Language "en" }}This is the inscriptions for the next event:{{ end }}
-                            {{ if eq .Language "cat" }}This is the inscriptions for the next event:{{ end }}
+                            {{ .Inscriptions }}
                           </p>
                         </td>
                       </tr>
@@ -102,19 +98,17 @@
                 <td style="padding: 40px 40px 20px 40px; text-align: left;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 26px; color: #333333; font-weight: bold;">
-                    {{ if eq .Language "fr" }}{{ .EventName}} le {{ .EventDate}}.{{ end }}
-                    {{ if eq .Language "en" }}{{ .EventName}} on the {{ .EventDate}}.{{ end }}
-                    {{ if eq .Language "cat" }}{{ .EventName}} el {{ .EventDate}}.{{ end }}
+                    {{ .EventFormmated }}
                   </h1>
                 </td>
               </tr>
               <table class="pure-table pure-table-bordered" style="border: 1px solid #ccc; margin: 50px auto;">
                 <thead style="background: #3498db; color: white; font-weight:bold;">
                   <tr>
-                    <th>Prénom</th>
-                    <th>Nom</th>
-                    <th>Roles</th>
-                    <th>Réponse</th>
+                    <th>{{ .FirstName }}</th>
+                    <th>{{ .Name }}</th>
+                    <th>{{ .Roles }}</th>
+                    <th>{{ .Answer }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -124,12 +118,12 @@
                     <td>{{.LastName}}</td>
                     <td>{{.Roles}}</td>
                     <td>
-                      {{if .Participation}}
-                      {{.Participation}}
+                      {{if .Participation == "yes"}}
+                      {{.ParticipateYes}}
+                      {{else if .Participation == "no"}}
+                      {{.ParticipateNo}}
                       {{else}}
-                      {{ if eq $.Language "fr" }}Pas de réponse{{ end }}
-                      {{ if eq $.Language "en" }}No answer{{ end }}
-                      {{ if eq $.Language "cat" }}No answer{{ end }}
+                      {{ .NoAnswer }}
                       {{end}}
                     </td>
                   </tr>
