@@ -3,6 +3,8 @@ package mail
 import (
 	"bytes"
 	"html/template"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 type emailRegisterInfo struct {
@@ -24,12 +26,12 @@ type emailRegisterInfo struct {
 func (e emailRegisterInfo) GetBody() (string, error) {
 	t, err := template.ParseFiles("templates/email_register_body.html")
 	if err != nil {
-		Error("Error parsing template: " + err.Error())
+		common.Error("Error parsing template: " + err.Error())
 		return "", err
 	}
 	body := new(bytes.Buffer)
 	if err = t.Execute(body, e); err != nil {
-		Error("Error generating template: " + err.Error())
+		common.Error("Error generating template: " + err.Error())
 		return "", err
 	}
 	return body.String(), nil
@@ -37,23 +39,23 @@ func (e emailRegisterInfo) GetBody() (string, error) {
 
 func SendRegistrationEmail(to, memberName, languageUser, adminName, adminExtra, activateLink, profileLink string) error {
 	email := emailInfo{}
-	email.Top = emailTop{Title: Translate("registration_title", languageUser), To: to}
+	email.Top = emailTop{Title: common.Translate("registration_title", languageUser), To: to}
 	email.Body = emailRegisterInfo{
 		MemberName: memberName,
 		AdminName:  adminName, AdminExtra: adminExtra,
 		LoginLink:           activateLink,
-		ImageSource:         GetConfigString("domain") + "/static/img/",
-		Welcome:             Translate("registration_welcome", languageUser),
-		WelcomeText:         Translate("registration_welcome_text", languageUser),
-		NewRegistration:     Translate("registration_new_title", languageUser),
-		NewRegistrationText: Translate("registration_new_text", languageUser),
-		Instructions:        Translate("registration_instructions", languageUser),
-		Thanks:              Translate("registration_thanks", languageUser),
-		Confirmation:        Translate("registration_confirmation_title", languageUser),
-		ConfirmationText:    Translate("registration_confirmation_text", languageUser),
-		Activation:          Translate("registration_activation", languageUser),
+		ImageSource:         common.GetConfigString("domain") + "/static/img/",
+		Welcome:             common.Translate("registration_welcome", languageUser),
+		WelcomeText:         common.Translate("registration_welcome_text", languageUser),
+		NewRegistration:     common.Translate("registration_new_title", languageUser),
+		NewRegistrationText: common.Translate("registration_new_text", languageUser),
+		Instructions:        common.Translate("registration_instructions", languageUser),
+		Thanks:              common.Translate("registration_thanks", languageUser),
+		Confirmation:        common.Translate("registration_confirmation_title", languageUser),
+		ConfirmationText:    common.Translate("registration_confirmation_text", languageUser),
+		Activation:          common.Translate("registration_activation", languageUser),
 	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: Translate("email_my_profile", languageUser), Suggestions: Translate("email_suggestions", languageUser)}
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
 	emailBodyString, err := email.buildEmail()
 	if err != nil {
 		return err
@@ -61,7 +63,7 @@ func SendRegistrationEmail(to, memberName, languageUser, adminName, adminExtra, 
 	emailString := emailBodyString
 	// Send mail
 	if err = sendMail([]string{to}, emailString); err != nil {
-		Error("Error sending Email: " + err.Error())
+		common.Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil

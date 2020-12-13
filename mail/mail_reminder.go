@@ -3,6 +3,8 @@ package mail
 import (
 	"bytes"
 	"html/template"
+
+	"github.com/vilisseranen/castellers/common"
 )
 
 type emailReminderInfo struct {
@@ -27,12 +29,12 @@ type emailReminderInfo struct {
 func (e emailReminderInfo) GetBody() (string, error) {
 	t, err := template.ParseFiles("templates/email_reminder_body.html")
 	if err != nil {
-		Error("Error parsing template: " + err.Error())
+		common.Error("Error parsing template: " + err.Error())
 		return "", err
 	}
 	body := new(bytes.Buffer)
 	if err = t.Execute(body, e); err != nil {
-		Error("Error generating template: " + err.Error())
+		common.Error("Error generating template: " + err.Error())
 		return "", err
 	}
 	return body.String(), nil
@@ -40,26 +42,26 @@ func (e emailReminderInfo) GetBody() (string, error) {
 
 func SendReminderEmail(to, memberName, languageUser, participationLink, profileLink, answer, participation, eventName, eventDate string) error {
 	email := emailInfo{}
-	email.Top = emailTop{Title: Translate("reminder_subject", languageUser), To: to}
+	email.Top = emailTop{Title: common.Translate("reminder_subject", languageUser), To: to}
 	email.Body = emailReminderInfo{
-		Subject:           Translate("reminder_subject", languageUser),
-		Greetings:         Translate("reminder_greetings", languageUser),
-		AnswerNoText:      Translate("reminder_text_answered_no", languageUser),
-		AnswerYesText:     Translate("reminder_text_answered_yes", languageUser),
-		PleaseAnswer:      Translate("reminder_please_answer", languageUser),
-		CurrentAnswer:     Translate("reminder_current_answer", languageUser),
-		AnswerNo:          Translate("reminder_answer_no", languageUser),
-		AnswerYes:         Translate("reminder_answer_yes", languageUser),
-		AnswerChanged:     Translate("reminder_answer_changed", languageUser),
-		Availability:      Translate("reminder_availability", languageUser),
-		Confirm:           Translate("reminder_confirm", languageUser),
+		Subject:           common.Translate("reminder_subject", languageUser),
+		Greetings:         common.Translate("reminder_greetings", languageUser),
+		AnswerNoText:      common.Translate("reminder_text_answered_no", languageUser),
+		AnswerYesText:     common.Translate("reminder_text_answered_yes", languageUser),
+		PleaseAnswer:      common.Translate("reminder_please_answer", languageUser),
+		CurrentAnswer:     common.Translate("reminder_current_answer", languageUser),
+		AnswerNo:          common.Translate("reminder_answer_no", languageUser),
+		AnswerYes:         common.Translate("reminder_answer_yes", languageUser),
+		AnswerChanged:     common.Translate("reminder_answer_changed", languageUser),
+		Availability:      common.Translate("reminder_availability", languageUser),
+		Confirm:           common.Translate("reminder_confirm", languageUser),
 		MemberName:        memberName,
 		ParticipationLink: participationLink,
-		ImageSource:       GetConfigString("domain") + "/static/img/",
+		ImageSource:       common.GetConfigString("domain") + "/static/img/",
 		Answer:            answer, Participation: participation,
-		EventFormatted: eventName + " " + Translate("reminder_on_the", languageUser) + " " + eventDate + ".",
+		EventFormatted: eventName + " " + common.Translate("reminder_on_the", languageUser) + " " + eventDate + ".",
 	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: Translate("email_my_profile", languageUser), Suggestions: Translate("email_suggestions", languageUser)}
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
 
 	emailBodyString, err := email.buildEmail()
 	if err != nil {
@@ -68,7 +70,7 @@ func SendReminderEmail(to, memberName, languageUser, participationLink, profileL
 	emailString := emailBodyString
 	// Send mail
 	if err = sendMail([]string{to}, emailString); err != nil {
-		Error("Error sending Email: " + err.Error())
+		common.Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil

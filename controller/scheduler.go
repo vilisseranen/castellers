@@ -8,6 +8,7 @@ import (
 	"github.com/robfig/cron"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -71,7 +72,7 @@ func checkAndSendNotification() {
 					"t=" + resetCredentialsToken +
 					"&a=activation"
 				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+				if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
@@ -145,7 +146,7 @@ func checkAndSendNotification() {
 					}
 					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 					// get eventDate as a string
-					if err := common.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
+					if err := mail.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -222,9 +223,8 @@ func checkAndSendNotification() {
 						}
 						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 						// get eventDate as a string
-						// TO FIX
-						if err := common.SendSummaryEmail(member.Email, member.FirstName, member.Language,
-							profileLink, event.Name, eventDate, ""); err != nil {
+						if err := mail.SendSummaryEmail(member.Email, member.FirstName, member.Language,
+							profileLink, event.Name, eventDate, members); err != nil {
 							common.Error("%v\n", err)
 							failures += 1
 							continue
@@ -267,7 +267,7 @@ func checkAndSendNotification() {
 					"t=" + resetCredentialsToken +
 					"&a=reset&u=" + credentials.Username
 				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := common.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
+				if err := mail.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
