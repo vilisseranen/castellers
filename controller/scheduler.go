@@ -23,7 +23,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate reminder notifications
-	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
+	s.cron.AddFunc("@every 10s", generateEventsNotificationsReminder)
 
 	// Look for upcoming events and generate summary notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
@@ -130,15 +130,23 @@ func checkAndSendNotification() {
 						"m=" + member.UUID +
 						"&c=" + member.Code
 					profileLink := loginLink + "&next=memberEdit/" + member.UUID
-					participationLink := loginLink + "&next=events" +
-						"&action=participateEvent" +
-						"&objectUUID=" + event.UUID +
-						"&payload="
+					token, err := ParticipateEventToken(member.UUID, 2880)
+					if err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					participationLink := common.GetConfigString("domain") + "/events?" +
+						"a=participate" +
+						"&e=" + event.UUID +
+						"&u=" + member.UUID +
+						"&t=" + token +
+						"&p="
 					answer := "false"
 					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
 						answer = "true"
 					}
-					var location, err = time.LoadLocation("America/Montreal")
+					location, err := time.LoadLocation("America/Montreal")
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1

@@ -39,3 +39,13 @@ func StringInSlice(a string, list []string) bool {
 	}
 	return false
 }
+
+// Returns true if both slices have at list one element in common
+func StringInBothSlices(a, b []string) bool {
+	for _, c := range a {
+		if StringInSlice(c, b) {
+			return true
+		}
+	}
+	return false
+}

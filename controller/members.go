@@ -3,7 +3,6 @@ package controller
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -239,7 +238,6 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
-
 }
 
 func missingRequiredFields(m model.Member) bool {
@@ -249,7 +247,6 @@ func missingRequiredFields(m model.Member) bool {
 func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		fmt.Println(err)
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -264,15 +261,26 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// if username is not provided, fetch it in DB
+	if c.Username == "" {
+		err := c.GetCredentialsByUUID()
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			return
+		}
+	}
 	err = c.ResetCredentials(c.Username, password)
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	_, err = deleteTokenInCache(tokenAuth.TokenUuid)
-	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
-		return
+	// resetCredentialsToken should only be used once
+	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
+		_, err = deleteTokenInCache(tokenAuth.TokenUuid)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusOK, "")
 }

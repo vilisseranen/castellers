@@ -12,7 +12,7 @@ import (
 
 type handler func(w http.ResponseWriter, r *http.Request)
 
-func checkTokenType(h handler, requestedType string) handler {
+func checkTokenType(h handler, requestedType ...string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenAuth, err := controller.ExtractToken(r)
 		if err != nil {
@@ -25,11 +25,11 @@ func checkTokenType(h handler, requestedType string) handler {
 			common.Debug("Token invalid: %s", err.Error())
 			return
 		}
-		if !common.StringInSlice(requestedType, tokenAuth.Permissions) {
+		if !common.StringInBothSlices(requestedType, tokenAuth.Permissions) {
 			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
 			return
 		}
-		if requestedType == model.MemberTypeMember {
+		if common.StringInSlice(model.MemberTypeMember, requestedType) {
 			vars := mux.Vars(r)
 			uuid := vars["member_uuid"]
 			if uuid != tokenAuth.UserId {

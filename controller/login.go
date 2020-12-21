@@ -31,6 +31,7 @@ type AccessTokenDetails struct {
 }
 
 const ResetCredentialsPermission = "reset_credentials"
+const ParticipateEventPermission = "participate_event"
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var credentialsInRequest model.Credentials
@@ -317,6 +318,11 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 func ResetCredentialsToken(uuid string, ttl int) (string, error) {
 	token, err := createToken(uuid, []string{ResetCredentialsPermission}, ttl, 0)
+	return token.AccessToken, err
+}
+
+func ParticipateEventToken(uuid string, ttl int) (string, error) {
+	token, err := createToken(uuid, []string{ParticipateEventPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 

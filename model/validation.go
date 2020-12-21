@@ -42,7 +42,7 @@ func ValidateRoles(roles []string) error {
 	validRoles := ValidRoleList
 	index := -1
 	for _, roleToTest := range roles {
-		validRoles = validRoles[index+1 : len(validRoles)]
+		validRoles = validRoles[index+1:]
 		index = sort.SearchStrings(validRoles, roleToTest)
 		if index == len(validRoles) || roleToTest != validRoles[index] {
 			return errors.New("Invalid roles")
