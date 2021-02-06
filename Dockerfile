@@ -13,7 +13,7 @@ ENV GOROOT=/usr/lib/go \
 EXPOSE 8080
 
 COPY . /gopath/src/castellers
-COPY templates /templates
+COPY mail/templates /mail/templates
 COPY sql /sql
 COPY VERSION /VERSION
 
