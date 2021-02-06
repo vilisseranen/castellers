@@ -126,10 +126,7 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					loginLink := common.GetConfigString("domain") + "/login?" +
-						"m=" + member.UUID +
-						"&c=" + member.Code
-					profileLink := loginLink + "&next=memberEdit/" + member.UUID
+					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
 					token, err := ParticipateEventToken(member.UUID, 2880)
 					if err != nil {
 						common.Error("%v\n", err)
@@ -219,10 +216,7 @@ func checkAndSendNotification() {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
 					if member.Subscribed == 1 {
-						loginLink := common.GetConfigString("domain") + "/login?" +
-							"m=" + member.UUID +
-							"&c=" + member.Code
-						profileLink := loginLink + "&next=memberEdit/" + member.UUID
+						profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
 						var location, err = time.LoadLocation("America/Montreal")
 						if err != nil {
 							common.Error("%v\n", err)

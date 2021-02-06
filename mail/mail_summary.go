@@ -26,7 +26,7 @@ type emailSummaryInfo struct {
 }
 
 func (e emailSummaryInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("templates/email_summary_body.html")
+	t, err := template.ParseFiles("mail/templates/email_summary_body.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err

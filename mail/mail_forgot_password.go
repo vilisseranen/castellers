@@ -24,7 +24,7 @@ type emailForgotInfo struct {
 }
 
 func (e emailForgotInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("templates/email_forgot_body.html")
+	t, err := template.ParseFiles("mail/templates/email_forgot_body.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err

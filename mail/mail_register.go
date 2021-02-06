@@ -24,7 +24,7 @@ type emailRegisterInfo struct {
 }
 
 func (e emailRegisterInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("templates/email_register_body.html")
+	t, err := template.ParseFiles("mail/templates/email_register_body.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err

@@ -47,7 +47,7 @@ func (e emailInfo) buildEmail() (string, error) {
 }
 
 func (e emailTop) GetTop() (string, error) {
-	t, err := template.ParseFiles("templates/email_top.html")
+	t, err := template.ParseFiles("mail/templates/email_top.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err
@@ -73,7 +73,7 @@ func buildHeader(title, to string) string {
 
 func (e emailBottom) GetBottom() (string, error) {
 	e.ImageSource = common.GetConfigString("domain") + "/static/img/"
-	t, err := template.ParseFiles("templates/email_bottom.html")
+	t, err := template.ParseFiles("mail/templates/email_bottom.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err
