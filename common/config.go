@@ -33,10 +33,14 @@ func ReadConfig() {
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
 	viper.SetDefault("smtp_server", "127.0.0.1:25")
+	viper.SetDefault("smtp_enabled", true)
 	viper.SetDefault("reminder_time_before_event", 172800)   // 2 days
 	viper.SetDefault("summary_time_before_event", 86400)     // 1 day
 	viper.SetDefault("encryption.iterations", 10000)         // For hashing encryption key
 	viper.SetDefault("encryption.password_hashing_cost", 10) // For hashing passwords
+	viper.SetDefault("redis_dsn", "localhost:6379")          // Redis connection
+	viper.SetDefault("jwt.access_ttl_minutes", 15)
+	viper.SetDefault("jwt.refresh_ttl_days", 15)
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -51,11 +55,17 @@ func ReadConfig() {
 	viper.BindEnv("domain")
 	viper.BindEnv("debug")
 	viper.BindEnv("smtp_server")
+	viper.BindEnv("smtp_enabled")
+	viper.BindEnv("redis_dsn")
 	viper.BindEnv("reminder_time_before_event")
 	viper.BindEnv("summary_time_before_event")
 	viper.BindEnv("encryption.key", "APP_KEY")
 	viper.BindEnv("encryption.key_salt", "APP_KEY_SALT")
 	viper.BindEnv("encryption.password_pepper", "APP_PASSWORD_PEPPER")
+	viper.BindEnv("jwt.access_secret", "APP_ACCESS_SECRET")
+	viper.BindEnv("jwt.refresh_secret", "APP_REFRESH_SECRET")
+	viper.BindEnv("jwt.access_ttl_minutes", "APP_ACCESS_TTL_MINUTES")
+	viper.BindEnv("jwt.refresh_ttl_days", "APP_REFRESH_TTL_DAYS")
 
 	var c config
 	err = viper.Unmarshal(&c)

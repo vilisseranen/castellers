@@ -11,13 +11,13 @@ import (
 
 func TestParticipateEvent(t *testing.T) {
 	h.clearTables()
-	h.addAMember()
+	access_token := h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"maybe"}`)
 
 	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -35,13 +35,13 @@ func TestParticipateEvent(t *testing.T) {
 func TestPresenceEvent(t *testing.T) {
 	h.clearTables()
 	h.addAMember()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -58,14 +58,14 @@ func TestPresenceEvent(t *testing.T) {
 
 func TestGetParticipants(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
-	h.addAMember()
+	access_token_admin := h.addAnAdmin()
+	access_token_member := h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"answer":"yes"}`)
 
 	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "toto")
+	req.Header.Add("Authorization", "Bearer "+access_token_member)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -75,7 +75,7 @@ func TestGetParticipants(t *testing.T) {
 	payload = []byte(`{"answer":"no"}`)
 
 	req, _ = http.NewRequest("POST", "/api/events/deadbeef/members/deadfeed", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -83,7 +83,7 @@ func TestGetParticipants(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -109,14 +109,14 @@ func TestGetParticipants(t *testing.T) {
 
 func TestGetPresence(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 	h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
@@ -124,7 +124,7 @@ func TestGetPresence(t *testing.T) {
 	}
 
 	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -143,14 +143,14 @@ func TestGetPresence(t *testing.T) {
 
 func TestPresenceWrongEvent(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 	h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/123/members/deadbeef", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
@@ -161,14 +161,14 @@ func TestPresenceWrongEvent(t *testing.T) {
 
 func TestPresenceWrongMember(t *testing.T) {
 	h.clearTables()
-	h.addAnAdmin()
+	access_token := h.addAnAdmin()
 	h.addAMember()
 	h.addEvent("deadbeef", "diada", 1528048800, 1528059600)
 
 	payload := []byte(`{"presence":"yes"}`)
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/123", bytes.NewBuffer(payload))
-	req.Header.Add("X-Member-Code", "tutu")
+	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {

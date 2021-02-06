@@ -12,8 +12,13 @@ import (
 
 func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	eventUUID := vars["event_uuid"]
-	memberUUID := vars["member_uuid"]
+	memberUUID := tokenAuth.UserId
 	event := model.Event{UUID: eventUUID}
 	member := model.Member{UUID: memberUUID}
 	if err := event.Get(); err != nil {

@@ -4,13 +4,10 @@
     <!-- Visually Hidden Preheader Text : BEGIN -->
     <div
       style="display:none;font-size:1px;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;font-family: sans-serif;">
-      {{ if eq .Language "fr" }}Bienvenue{{ end }}
-      {{ if eq .Language "en" }}Welcome{{ end }}
-      {{ if eq .Language "cat" }}Benvinguda{{ end }}
-      <!-- TODO -->
-      Bienvenue
+      {{ .Subject }}
     </div>
     <!-- Visually Hidden Preheader Text : END -->
+
     <div style="max-width: 680px; margin: auto;" class="email-container">
       <!--[if mso]>
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="680" align="center">
@@ -54,20 +51,20 @@
 
                           <h1
                             style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 30px; line-height: 36px; color: #ffffff; font-weight: bold;">
-                            {{ if eq .Language "fr" }}Bienvenue {{ .MemberName }}.{{ end }}
-                            {{ if eq .Language "en" }}Welcome {{ .MemberName }}.{{ end }}
-                            {{ if eq .Language "cat" }}Welcome {{ .MemberName }}.{{ end }}
-                            <!-- TODO -->
-                          </h1>
+                            {{ .Greetings }} {{ .MemberName }}.</h1>
                         </td>
                       </tr>
                       <tr>
-                        <td valign="top"
+                        <td class="gave_answer_{{ .Answer}} answer_false" valign="top"
                           style="text-align: center; padding: 10px 20px 15px 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #eeeeee;">
                           <p style="margin: 0;">
-                            {{ if eq .Language "fr" }}Nous sommes ravis de te compter parmis nous !{{ end }}
-                            {{ if eq .Language "en" }}We are happy to have you with us!{{ end }}
-                            {{ if eq .Language "cat" }}We are happy to have you with us!{{ end }}
+                            {{ .AnswerNoText }}
+                          </p>
+                        </td>
+                        <td class="gave_answer_{{ .Answer}} answer_true" valign="top"
+                          style="text-align: center; padding: 10px 20px 15px 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #eeeeee;">
+                          <p style="margin: 0;">
+                            {{ .AnswerYesText }}
                           </p>
                         </td>
                       </tr>
@@ -107,26 +104,23 @@
                 <td style="padding: 40px 40px 20px 40px; text-align: left;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 26px; color: #333333; font-weight: bold;">
-                    {{ if eq .Language "fr" }}Nouvelle inscription{{ end }}
-                    {{ if eq .Language "en" }}New registration{{ end }}
-                    {{ if eq .Language "cat" }}New registration{{ end }}
-                    <!-- TODO -->
+                    {{ .EventFormatted }}
                   </h1>
                 </td>
               </tr>
               <tr>
-                <td
+                <td class="gave_answer_{{ .Answer}} answer_false"
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:bold;">
                   <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Si tu reçois ce message, c'est que nous t'avons ajouté aux membres
-                    réguliers des Castellers de Montréal.{{ end }}
-                    {{ if eq .Language "en" }}If you have received this message, it means we have added you to the
-                    regular
-                    members of the Castellers de Montréal.{{ end }}
-                    {{ if eq .Language "cat" }}If you have received this message, it means we have added you to the
-                    regular
-                    members of the Castellers de Montréal.{{ end }}
-                    <!-- TODO -->
+                    {{ .PleaseAnswer }}
+                  </p>
+                </td>
+                <td class="gave_answer_{{ .Answer}} answer_true"
+                  style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:bold;">
+                  <p style="margin: 0;">
+                    {{ .CurrentAnswer }} <span style="text-decoration: underline;"
+                      class="participate_{{ .Participation}} participation_no">{{ .AnswerNo }}</span><span
+                      style="text-decoration: underline;" class="participate_{{ .Participation}} participation_yes">{{ .AnswerYes }}</span>. {{ .AnswerChanged }}
                   </p>
                 </td>
               </tr>
@@ -134,67 +128,7 @@
                 <td
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:normal;">
                   <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Grâce à ce système, tu vas pouvoir nous informer de tes disponibilités
-                    pour les pratiques et les
-                    évènements.
-                    Nous t'enverrons régulièrement des courriels te permettant de nous dire si tu seras présents ou
-                    non.{{ end }}
-                    {{ if eq .Language "en" }}Using this system, you will be able to inform us of your availability for
-                    practices and events.
-                    We will regularly send you emails so that you can tell us if you will be there or not.{{ end }}
-                    {{ if eq .Language "cat" }}Using this system, you will be able to inform us of your availability for
-                    practices and events.
-                    We will regularly send you emails so that you can tell us if you will be there or not.{{ end }}
-                    <!-- TODO -->
-                  </p>
-                </td>
-              </tr>
-
-              <tr>
-                <td
-                  style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:normal;">
-                  <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Merci de ta participation, nous avons hâte de bâtir des castells avec toi
-                    !{{ end }}
-                    {{ if eq .Language "en" }}Thank you for joining us, we are looking forward to building castells with
-                    you!{{ end }}
-                    {{ if eq .Language "cat" }}Thank you for joining us, we are looking forward to building castells
-                    with you!{{ end }}
-                    <!-- TODO -->
-                  </p>
-                </td>
-              </tr>
-
-              <tr>
-                <td align="left" style="padding: 0px 40px 40px 40px;">
-
-                  <table width="180" align="left">
-                    <tr>
-                      <td width="110">
-
-                        <table width="" cellpadding="0" cellspacing="0" border="0">
-                          <tr>
-                            <td align="left"
-                              style="font-family: sans-serif; font-size:14px; line-height:20px; color:#222222; font-weight:bold;"
-                              class="body-text">
-                              <p style="font-family: 'Montserrat', sans-serif; font-size:14px; line-height:20px; color:#222222; font-weight:bold; padding:0; margin:0;"
-                                class="body-text">{{ .AdminName }}</p>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td align="left"
-                              style="font-family: sans-serif; font-size:14px; line-height:20px; color:#666666;"
-                              class="body-text">
-                              <p style="font-family: sans-serif; font-size:14px; line-height:20px; color:#666666; padding:0; margin:0;"
-                                class="body-text">{{ .AdminExtra }}</p>
-                            </td>
-                          </tr>
-                        </table>
-
-                      </td>
-                    </tr>
-                  </table>
-
+                    .</p>
                 </td>
               </tr>
 
@@ -211,7 +145,8 @@
                 <td style="padding: 40px 40px 5px 40px; text-align: center;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 24px; color: #ffffff; font-weight: bold;">
-                    Confirmation
+                    {{ .Availability }}
+
                   </h1>
                 </td>
               </tr>
@@ -219,14 +154,7 @@
                 <td
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 17px; line-height: 23px; color: #aad4ea; text-align: center; font-weight:normal;">
                   <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Pour confirmer que tu souhaites bien faire des castells avec nous, active
-                    ton compte en cliquant sur ce lien:{{ end }}
-                    {{ if eq .Language "en" }}To confirm that you actually want to build castells with us, activate your
-                    account by clicking this link:{{ end }}
-                    {{ if eq .Language "cat" }}To confirm that you actually want to build castells with us, activate
-                    your
-                    account by clicking this link:{{ end }}
-                    <!-- TODO -->
+                    {{ .Confirm }}
                   </p>
                 </td>
               </tr>
@@ -235,17 +163,24 @@
 
                   <!-- Button : BEGIN -->
                   <table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0"
-                    class="center-on-narrow">
+                    border-spacing="20px 10px" class="center-on-narrow">
                     <tr>
                       <td style="border-radius: 50px; background: #ffffff; text-align: center;" class="button-td">
-                        <a href="{{ .LoginLink }}"
+                        <a href="{{ .ParticipationLink }}yes"
                           style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
                           class="button-a">
-                          <span style="color:#26a4d3;" class="button-link">
-                            {{ if eq .Language "fr" }}Activer mon compte{{ end }}
-                            {{ if eq .Language "en" }}Activate my account{{ end }}
-                            {{ if eq .Language "cat" }}Activate my account{{ end }}
-                            <!-- TODO -->
+                          <span style="color:#20470b;" class="button-link">
+                            {{ .AnswerYes }}
+                          </span>
+                        </a>
+                      </td>
+                      <td width="10px"></td>
+                      <td style="border-radius: 50px; background: #ffffff; text-align: center;" class="button-td">
+                        <a href="{{ .ParticipationLink }}no"
+                          style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
+                          class="button-a">
+                          <span style="color:#b8322d;" class="button-link">
+                            {{ .AnswerNo }}
                           </span>
                         </a>
                       </td>

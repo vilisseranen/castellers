@@ -25,9 +25,15 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if r.Header.Get("Permission") != model.MemberTypeAdmin {
+	au, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
+		return
+	}
+	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
 		m.Roles = []string{}
 		m.Extra = ""
+
 	}
 	RespondWithJSON(w, http.StatusOK, m)
 }
@@ -135,14 +141,39 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	code := r.Header.Get("X-Member-Code")
+	// Make sure we are not changing the profile of somebody else
 	vars := mux.Vars(r)
-	adminUuid := vars["admin_uuid"]
-	if !validateChangeType(m, code, adminUuid) {
-		RespondWithError(w, http.StatusForbidden, "Cannot change type.")
-		return
+	UUID := vars["member_uuid"]
+	m.UUID = UUID
+
+	// Check if we can change role
+	// If caller is admin, we can change the role
+	// If caller is member, we cannot change he role
+	au, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
 	}
-	if err := m.EditMember(r.Header.Get("Permission")); err != nil {
+	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
+		// get current user and use existing values for roles, extra and type
+		existingMember := model.Member{UUID: UUID}
+		if err := existingMember.Get(); err != nil {
+			switch err {
+			case sql.ErrNoRows:
+				RespondWithError(w, http.StatusNotFound, "Member not found")
+			default:
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+			}
+			return
+		}
+		if existingMember.Type != m.Type {
+			RespondWithError(w, http.StatusForbidden, UnauthorizedMessage)
+			return
+		}
+		m.Roles = existingMember.Roles
+		m.Extra = existingMember.Extra
+
+	}
+	if err := m.EditMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -207,11 +238,51 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
-
 }
 
 func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+}
+
+func ResetCredentials(w http.ResponseWriter, r *http.Request) {
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c := model.Credentials{UUID: tokenAuth.UserId}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&c); err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	password, err := common.GenerateFromPassword(c.Password)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// if username is not provided, fetch it in DB
+	if c.Username == "" {
+		err := c.GetCredentialsByUUID()
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			return
+		}
+	}
+	err = c.ResetCredentials(c.Username, password)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	// resetCredentialsToken should only be used once
+	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
+		_, err = deleteTokenInCache(tokenAuth.TokenUuid)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	RespondWithJSON(w, http.StatusOK, "")
 }
 
 // Returns true if it's valid, false otherwise

@@ -8,6 +8,7 @@ import (
 	"github.com/robfig/cron"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -22,7 +23,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate reminder notifications
-	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
+	s.cron.AddFunc("@every 10s", generateEventsNotificationsReminder)
 
 	// Look for upcoming events and generate summary notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
@@ -59,12 +60,19 @@ func checkAndSendNotification() {
 				continue
 			}
 			// Send the email
-			if common.GetConfigBool("debug") == false { // Don't send email in debug
-				loginLink := common.GetConfigString("domain") + "/login?" +
-					"m=" + m.UUID +
-					"&c=" + m.Code
-				profileLink := loginLink + "&next=memberEdit/" + m.UUID
-				if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+			if common.GetConfigBool("smtp_enabled") {
+				// Get a token to create credentials
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 1440)
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+				loginLink := common.GetConfigString("domain") + "/reset?" +
+					"t=" + resetCredentialsToken +
+					"&a=activation"
+				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
+				if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
@@ -118,19 +126,24 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					loginLink := common.GetConfigString("domain") + "/login?" +
-						"m=" + member.UUID +
-						"&c=" + member.Code
-					profileLink := loginLink + "&next=memberEdit/" + member.UUID
-					participationLink := loginLink + "&next=events" +
-						"&action=participateEvent" +
-						"&objectUUID=" + event.UUID +
-						"&payload="
+					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
+					token, err := ParticipateEventToken(member.UUID, 2880)
+					if err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					participationLink := common.GetConfigString("domain") + "/events?" +
+						"a=participate" +
+						"&e=" + event.UUID +
+						"&u=" + member.UUID +
+						"&t=" + token +
+						"&p="
 					answer := "false"
 					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
 						answer = "true"
 					}
-					var location, err = time.LoadLocation("America/Montreal")
+					location, err := time.LoadLocation("America/Montreal")
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1
@@ -138,7 +151,7 @@ func checkAndSendNotification() {
 					}
 					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 					// get eventDate as a string
-					if err := common.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
+					if err := mail.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -203,10 +216,7 @@ func checkAndSendNotification() {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
 					if member.Subscribed == 1 {
-						loginLink := common.GetConfigString("domain") + "/login?" +
-							"m=" + member.UUID +
-							"&c=" + member.Code
-						profileLink := loginLink + "&next=memberEdit/" + member.UUID
+						profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
 						var location, err = time.LoadLocation("America/Montreal")
 						if err != nil {
 							common.Error("%v\n", err)
@@ -215,9 +225,8 @@ func checkAndSendNotification() {
 						}
 						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 						// get eventDate as a string
-						// TO FIX
-						if err := common.SendSummaryEmail(member.Email, member.FirstName, member.Language,
-							profileLink, event.Name, eventDate, ""); err != nil {
+						if err := mail.SendSummaryEmail(member.Email, member.FirstName, member.Language,
+							profileLink, event.Name, eventDate, members); err != nil {
 							common.Error("%v\n", err)
 							failures += 1
 							continue
@@ -233,6 +242,39 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
+		case model.TypeForgotPassword:
+			m := model.Member{UUID: notification.ObjectUUID}
+			err := m.Get()
+			if err != nil {
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			if common.GetConfigBool("smtp_enabled") {
+				// Get a token to create credentials
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 60)
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+				credentials := model.Credentials{UUID: m.UUID}
+				err = credentials.GetCredentialsByUUID()
+				if err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+				resetLink := common.GetConfigString("domain") + "/reset?" +
+					"t=" + resetCredentialsToken +
+					"&a=reset&u=" + credentials.Username
+				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
+				if err := mail.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
+			}
 		}
 	}
 }

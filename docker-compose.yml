@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+  castellers:
+    container_name: castellers
+    image: vilisseranen/castellers:latest
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.castellers.rule=Host(`api.clemissa.info`)"
+      - "traefik.http.services.castellers.loadBalancer.server.port=8080"
+    volumes:
+      - /data/docker-data/app_var_log:/var/log
+      - /data/docker-data/app_data:/data
+      - /data/docker-data/app_etc:/etc/castellers
+
+    networks:
+      - traefik_proxy
+      - internal
+
+networks:
+  internal:
+  traefik_proxy:
+    external: true

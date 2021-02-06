@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -42,12 +43,12 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Send the email
-	if common.GetConfigBool("debug") == false { // Don't send email in debug
+	if common.GetConfigBool("smtp_enabled") {
 		loginLink := common.GetConfigString("domain") + "/login?" +
 			"m=" + m.UUID +
 			"&c=" + m.Code
 		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := common.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
+		if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
 			err = m.DeleteMember()
 			if err != nil {
 				// Log?

@@ -12,6 +12,7 @@ const notificationsTable = "notifications"
 const TypeMemberRegistration = "memberRegistration"
 const TypeUpcomingEvent = "upcomingEvent"
 const TypeSummaryEvent = "summaryEvent"
+const TypeForgotPassword = "forgotPassword"
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1

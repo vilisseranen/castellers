@@ -25,8 +25,11 @@ func (a *App) Initialize() {
 
 	common.ReadConfig()
 
-	if len(common.GetConfigString("encryption.key")) == 0 || len(common.GetConfigString("encryption.key_salt")) == 0 || len(common.GetConfigString("encryption.password_pepper")) == 0 {
-		log.Fatalf("Please provide `encryption.key`, `encryption.key_salt` and `encryption.password_pepper` for encrypting database.")
+	requiredConfigs := []string{"encryption.key", "encryption.key_salt", "encryption.password_pepper", "jwt.access_secret", "jwt.refresh_secret"}
+	for _, config := range requiredConfigs {
+		if len(common.GetConfigString(config)) == 0 {
+			log.Fatalf("The configuration value for %s is required", config)
+		}
 	}
 
 	err := common.InitializeLogger()
@@ -41,6 +44,9 @@ func (a *App) Initialize() {
 	if err != nil {
 		common.Fatal("Error opening file: %v", err)
 	}
+
+	controller.InitializeRedis()
+	common.InitializeTranslations()
 
 	// Define logger
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)

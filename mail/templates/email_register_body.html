@@ -4,12 +4,9 @@
     <!-- Visually Hidden Preheader Text : BEGIN -->
     <div
       style="display:none;font-size:1px;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;font-family: sans-serif;">
-      {{ if eq .Language "fr" }}Rappel{{ end }}
-      {{ if eq .Language "en" }}Reminder{{ end }}
-      {{ if eq .Language "cat" }}Recordatori{{ end }}
+      {{ .Welcome }}
     </div>
     <!-- Visually Hidden Preheader Text : END -->
-
     <div style="max-width: 680px; margin: auto;" class="email-container">
       <!--[if mso]>
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="680" align="center">
@@ -53,30 +50,15 @@
 
                           <h1
                             style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 30px; line-height: 36px; color: #ffffff; font-weight: bold;">
-                            Bonjour {{ .MemberName }}.</h1>
+                            {{ .Welcome }} {{ .MemberName }}.
+                          </h1>
                         </td>
                       </tr>
                       <tr>
-                        <td class="gave_answer_{{ .Answer}} answer_false" valign="top"
+                        <td valign="top"
                           style="text-align: center; padding: 10px 20px 15px 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #eeeeee;">
                           <p style="margin: 0;">
-                            {{ if eq .Language "fr" }}Voici un message pour te rappeler d'indiquer ta présence au
-                            prochain évènement.{{ end }}
-                            {{ if eq .Language "en" }}This is a message to remind you to tell us if you will attend the
-                            next upcoming event.{{ end }}
-                            {{ if eq .Language "cat" }}This is a message to remind you to tell us if you will attend the
-                            next upcoming event.{{ end }}
-                          </p>
-                        </td>
-                        <td class="gave_answer_{{ .Answer}} answer_true" valign="top"
-                          style="text-align: center; padding: 10px 20px 15px 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #eeeeee;">
-                          <p style="margin: 0;">
-                            {{ if eq .Language "fr" }}Voici un message pour te rappeler ce que tu nous as indiqué comme
-                            disponibilité.{{ end }}
-                            {{ if eq .Language "en" }}This is a message to remind you about your response for the next
-                            upcoming event.{{ end }}
-                            {{ if eq .Language "cat" }}This is a message to remind you about your response for the next
-                            upcoming event.{{ end }}
+                            {{ .WelcomeText }}
                           </p>
                         </td>
                       </tr>
@@ -116,36 +98,15 @@
                 <td style="padding: 40px 40px 20px 40px; text-align: left;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 26px; color: #333333; font-weight: bold;">
-                    {{ if eq .Language "fr" }}{{ .EventName}} le {{ .EventDate}}.{{ end }}
-                    {{ if eq .Language "en" }}{{ .EventName}} on the {{ .EventDate}}.{{ end }}
-                    {{ if eq .Language "cat" }}{{ .EventName}} el {{ .EventDate}}.{{ end }}
+                    {{ .NewRegistration }}
                   </h1>
                 </td>
               </tr>
               <tr>
-                <td class="gave_answer_{{ .Answer}} answer_false"
+                <td
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:bold;">
                   <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Merci de nous indiquer si tu pourras être présent ou non.{{ end }}
-                    {{ if eq .Language "en" }}Please tell us if you are going to be there.{{ end }}
-                    {{ if eq .Language "cat" }}Please tell us if you are going to be there.{{ end }}
-                  </p>
-                </td>
-                <td class="gave_answer_{{ .Answer}} answer_true"
-                  style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:bold;">
-                  <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Voici ce que tu nous a indiqué : <span style="text-decoration: underline;"
-                      class="participate_{{ .Participation}} participation_no">Je ne pourrai pas participer</span><span
-                      style="text-decoration: underline;" class="participate_{{ .Participation}} participation_yes">Je
-                      serai présent</span>. Tu peux mettre à jour ta disponibilité si celle-ci a changée.{{ end }}
-                    {{ if eq .Language "en" }}This is what you told us: <span style="text-decoration: underline;"
-                      class="participate_{{ .Participation}} participation_no">I won't participate</span><span
-                      style="text-decoration: underline;" class="participate_{{ .Participation}} participation_yes">I
-                      will be there</span>. You can update your availability if it has changed.{{ end }}
-                    {{ if eq .Language "cat" }}This is what you told us: <span style="text-decoration: underline;"
-                      class="participate_{{ .Participation}} participation_no">I won't participate</span><span
-                      style="text-decoration: underline;" class="participate_{{ .Participation}} participation_yes">I
-                      will be there</span>. You can update your availability if it has changed.{{ end }}
+                    {{ .NewRegistrationText}}
                   </p>
                 </td>
               </tr>
@@ -153,7 +114,50 @@
                 <td
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:normal;">
                   <p style="margin: 0;">
-                    .</p>
+                    {{ .Instructions }}
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td
+                  style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; text-align: left; font-weight:normal;">
+                  <p style="margin: 0;">
+                    {{ .Thanks }}
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="padding: 0px 40px 40px 40px;">
+
+                  <table width="180" align="left">
+                    <tr>
+                      <td width="110">
+
+                        <table width="" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td align="left"
+                              style="font-family: sans-serif; font-size:14px; line-height:20px; color:#222222; font-weight:bold;"
+                              class="body-text">
+                              <p style="font-family: 'Montserrat', sans-serif; font-size:14px; line-height:20px; color:#222222; font-weight:bold; padding:0; margin:0;"
+                                class="body-text">{{ .AdminName }}</p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="left"
+                              style="font-family: sans-serif; font-size:14px; line-height:20px; color:#666666;"
+                              class="body-text">
+                              <p style="font-family: sans-serif; font-size:14px; line-height:20px; color:#666666; padding:0; margin:0;"
+                                class="body-text">{{ .AdminExtra }}</p>
+                            </td>
+                          </tr>
+                        </table>
+
+                      </td>
+                    </tr>
+                  </table>
+
                 </td>
               </tr>
 
@@ -170,10 +174,7 @@
                 <td style="padding: 40px 40px 5px 40px; text-align: center;">
                   <h1
                     style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 24px; color: #ffffff; font-weight: bold;">
-                    {{ if eq .Language "fr" }}Disponibilité{{ end }}
-                    {{ if eq .Language "en" }}Availability{{ end }}
-                    {{ if eq .Language "cat" }}Availability{{ end }}
-
+                    {{ .Confirmation }}
                   </h1>
                 </td>
               </tr>
@@ -181,12 +182,7 @@
                 <td
                   style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 17px; line-height: 23px; color: #aad4ea; text-align: center; font-weight:normal;">
                   <p style="margin: 0;">
-                    {{ if eq .Language "fr" }}Pour confirmer ou changer ta disponibilité, cliques sur une des deux
-                    options :{{ end }}
-                    {{ if eq .Language "en" }}To confirm or change your availability, click on one of the two
-                    options:{{ end }}
-                    {{ if eq .Language "cat" }}To confirm or change your availability, click on one of the two
-                    options:{{ end }}
+                    {{ .ConfirmationText }}
                   </p>
                 </td>
               </tr>
@@ -195,28 +191,14 @@
 
                   <!-- Button : BEGIN -->
                   <table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0"
-                    border-spacing="20px 10px" class="center-on-narrow">
+                    class="center-on-narrow">
                     <tr>
                       <td style="border-radius: 50px; background: #ffffff; text-align: center;" class="button-td">
-                        <a href="{{ .ParticipationLink }}yes"
+                        <a href="{{ .LoginLink }}"
                           style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
                           class="button-a">
-                          <span style="color:#20470b;" class="button-link">
-                            {{ if eq .Language "fr" }}Je serai présent{{ end }}
-                            {{ if eq .Language "en" }}I will be there{{ end }}
-                            {{ if eq .Language "cat" }}I will be there{{ end }}
-                          </span>
-                        </a>
-                      </td>
-                      <td width="10px"></td>
-                      <td style="border-radius: 50px; background: #ffffff; text-align: center;" class="button-td">
-                        <a href="{{ .ParticipationLink }}no"
-                          style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
-                          class="button-a">
-                          <span style="color:#b8322d;" class="button-link">
-                            {{ if eq .Language "fr" }}Je ne pourrai pas participer{{ end }}
-                            {{ if eq .Language "en" }}I won't participate{{ end }}
-                            {{ if eq .Language "cat" }}I won't participate{{ end }}
+                          <span style="color:#26a4d3;" class="button-link">
+                            {{ .Activation }}
                           </span>
                         </a>
                       </td>
