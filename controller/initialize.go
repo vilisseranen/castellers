@@ -3,9 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/vilisseranen/castellers/common"
-	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -42,23 +42,13 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// Send the email
-	if common.GetConfigBool("smtp_enabled") {
-		loginLink := common.GetConfigString("domain") + "/login?" +
-			"m=" + m.UUID +
-			"&c=" + m.Code
-		profileLink := loginLink + "&next=memberEdit/" + m.UUID
-		if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, m.FirstName, m.Extra, loginLink, profileLink); err != nil {
-			err = m.DeleteMember()
-			if err != nil {
-				// Log?
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
-				return
-			}
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+	// Queue the notification
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: m.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	if err := n.CreateNotification(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
+
 	RespondWithJSON(w, http.StatusCreated, m)
 }
 
