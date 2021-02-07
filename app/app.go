@@ -52,7 +52,7 @@ func (a *App) Initialize() {
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
 
 	// Define CORS handlers
-	headersOk := handlers.AllowedHeaders([]string{"*"})
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
 	originsOk := handlers.AllowedOrigins([]string{common.GetConfigString("domain")})
 	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
 	a.handler = handlers.CORS(originsOk, headersOk, methodsOk)(a.handler)
