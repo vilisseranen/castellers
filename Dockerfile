@@ -14,6 +14,7 @@ EXPOSE 8080
 
 COPY . /gopath/src/castellers
 COPY mail/templates /mail/templates
+COPY translations /translations
 COPY sql /sql
 COPY VERSION /VERSION
 
