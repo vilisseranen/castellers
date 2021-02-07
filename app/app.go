@@ -52,10 +52,11 @@ func (a *App) Initialize() {
 	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
 
 	// Define CORS handlers
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{common.GetConfigString("domain")})
 	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
-	a.handler = handlers.CORS(originsOk, headersOk, methodsOk)(a.handler)
+	allowCredentials := handlers.AllowCredentials()
+	a.handler = handlers.CORS(originsOk, headersOk, methodsOk, allowCredentials)(a.handler)
 }
 
 func (a *App) Run(addr string) {
