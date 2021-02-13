@@ -198,6 +198,11 @@ func (m *Member) Activate() error {
 }
 
 func (c *Credentials) ResetCredentials(username string, password []byte) error {
+	member := Member{UUID: c.UUID}
+	err := member.Activate()
+	if err != nil {
+		common.Fatal(err.Error())
+	}
 	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MembersCredentialsTable))
 	if err != nil {
 		common.Fatal(err.Error())
