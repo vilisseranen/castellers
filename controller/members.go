@@ -121,7 +121,14 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	if !emailAvailable(m) {
+	// If email is changing, we need to check if it is used
+	currentMember := model.Member{UUID: m.UUID}
+	err := currentMember.Get()
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		return
+	}
+	if currentMember.Email != m.Email && !emailAvailable(m) {
 		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
 		return
 	}
