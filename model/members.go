@@ -14,6 +14,8 @@ const MembersCredentialsTable = "members_credentials"
 const MemberTypeAdmin = "admin"
 const MemberTypeMember = "member"
 
+const MemberEmailNotFoundMessage = "No member found with this email"
+
 type Member struct {
 	UUID          string   `json:"uuid"`
 	FirstName     string   `json:"firstName"` // Encrypted
@@ -256,7 +258,7 @@ func (m *Member) GetByEmail() error {
 		}
 	}
 	if m.UUID == "" {
-		return errors.New("No member found with this email")
+		return errors.New(MemberEmailNotFoundMessage)
 	}
 	return nil
 }
