@@ -24,12 +24,19 @@ before_install:
 script:
 - go test -v ./...
 
-before_deploy: bash build.sh latest
+before_deploy: bash build.sh
 
 deploy:
-  edge: true
-  provider: script
-  script: bash deploy.sh latest
-  on:
-    go: '1.13'
-    branch: master
+  - provider: script
+    edge: true
+    script: bash deploy.sh dev
+    on:
+      go: '1.13'
+      all_branches: true
+      condition: $TRAVIS_BRANCH != master
+  - provider: script
+    edge: true
+    script: bash deploy.sh latest
+    on:
+      go: '1.13'
+      branch: master

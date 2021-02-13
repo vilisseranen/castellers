@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 echo "Building docker image..."
-sudo docker build -t vilisseranen/castellers:$1 .
+echo -x 'sudo docker build -t vilisseranen/castellers:latest -t vilisseranen/castellers:latest -t vilisseranen/castellers:`cat VERSION` .'
