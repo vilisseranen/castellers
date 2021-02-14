@@ -34,6 +34,7 @@ var ValidLanguageList = []string{
 var ValidEventTypes = []string{
 	"presentation",
 	"practice",
+	"social",
 }
 
 func ValidateRoles(roles []string) error {
