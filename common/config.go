@@ -53,6 +53,7 @@ func ReadConfig() {
 	viper.BindEnv("log_file")
 	viper.BindEnv("db_name")
 	viper.BindEnv("domain")
+	viper.BindEnv("cdn")
 	viper.BindEnv("debug")
 	viper.BindEnv("smtp_server")
 	viper.BindEnv("smtp_enabled")
@@ -71,6 +72,10 @@ func ReadConfig() {
 	err = viper.Unmarshal(&c)
 	if err != nil {
 		panic(fmt.Errorf("Unable to parse configuration, %v", err))
+	}
+
+	if !viper.IsSet("cdn") {
+		viper.Set("cdn", viper.GetString("domain"))
 	}
 }
 
