@@ -37,7 +37,7 @@ type Event struct {
 }
 
 func (e *Event) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ?", EVENTS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -58,7 +58,7 @@ func (e *Event) GetAttendance() error {
 }
 
 func (e *Event) GetAll(start, count int) ([]Event, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE startDate > ? ORDER BY startDate LIMIT ?", EVENTS_TABLE), start, count)
+	rows, err := db.Query(fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE startDate > ?  AND deleted=0 ORDER BY startDate LIMIT ?", EVENTS_TABLE), start, count)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -99,7 +99,7 @@ func (e *Event) UpdateEvent() error {
 }
 
 func (e *Event) DeleteEvent() error {
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid= ?", EVENTS_TABLE))
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -138,7 +138,7 @@ func (e *Event) CreateEvent() error {
 
 func (e *Event) GetUpcomingEventsWithoutNotification(eventType string) ([]Event, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') ORDER BY startDate",
+		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') AND deleted=0 ORDER BY startDate",
 		EVENTS_TABLE, eventType), time.Now().Unix())
 	if err != nil {
 		common.Fatal(err.Error())
