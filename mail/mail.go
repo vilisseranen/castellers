@@ -72,7 +72,7 @@ func buildHeader(title, to string) string {
 }
 
 func (e emailBottom) GetBottom() (string, error) {
-	e.ImageSource = common.GetConfigString("domain") + "/static/img/"
+	e.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 	t, err := template.ParseFiles("mail/templates/email_bottom.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())

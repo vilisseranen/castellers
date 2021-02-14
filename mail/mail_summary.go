@@ -55,7 +55,7 @@ func SendSummaryEmail(to, memberName, languageUser, profileLink, eventName, even
 		ParticipateNo:  common.Translate("summary_participate_no", languageUser),
 		NoAnswer:       common.Translate("summary_no_answer", languageUser),
 		MemberName:     memberName,
-		ImageSource:    common.GetConfigString("domain") + "/static/img/",
+		ImageSource:    common.GetConfigString("cdn") + "/static/img/",
 		Members:        members,
 	}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
