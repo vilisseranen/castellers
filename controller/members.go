@@ -60,6 +60,10 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if !emailAvailable(m) {
+		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		return
+	}
 	if missingRequiredFields(m) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
 		return
@@ -117,6 +121,17 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	// If email is changing, we need to check if it is used
+	currentMember := model.Member{UUID: m.UUID}
+	err := currentMember.Get()
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		return
+	}
+	if currentMember.Email != m.Email && !emailAvailable(m) {
+		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		return
+	}
 	if missingRequiredFields(m) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
 		return
@@ -242,6 +257,14 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 
 func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+}
+
+func emailAvailable(m model.Member) bool {
+	err := m.GetByEmail()
+	if err != nil && err.Error() == model.MemberEmailNotFoundMessage {
+		return true
+	}
+	return false
 }
 
 func ResetCredentials(w http.ResponseWriter, r *http.Request) {
