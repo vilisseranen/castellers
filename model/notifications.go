@@ -13,6 +13,7 @@ const TypeMemberRegistration = "memberRegistration"
 const TypeUpcomingEvent = "upcomingEvent"
 const TypeSummaryEvent = "summaryEvent"
 const TypeForgotPassword = "forgotPassword"
+const TypeEventDeleted = "eventDeleted"
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1

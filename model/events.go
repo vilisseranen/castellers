@@ -46,6 +46,16 @@ func (e *Event) Get() error {
 	return err
 }
 
+func (e *Event) GetDeletedEvent() error {
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=1", EVENTS_TABLE))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.Description, &e.LocationName, &e.Location.Lat, &e.Location.Lng)
+	return err
+}
+
 func (e *Event) GetAttendance() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
 	if err != nil {
