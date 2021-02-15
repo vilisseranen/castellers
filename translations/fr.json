@@ -41,5 +41,9 @@
     "summary_answer": "Réponse",
     "summary_no_answer": "Pas de réponse",
     "summary_participate_yes": "Oui",
-    "summary_participate_no": "Non"
+    "summary_participate_no": "Non",
+    "deleted_event_subject": "Annulation d'un évènement",
+    "deleted_event_greetings": "Bonjour",
+    "deleted_event_intro": "Ceci est un message pour te prévenir qu'un évènement a été annulé.",
+    "deleted_event_text": "Cet évènement a été annulé."
 }

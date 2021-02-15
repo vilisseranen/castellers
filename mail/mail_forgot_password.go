@@ -51,7 +51,7 @@ func SendForgotPasswordEmail(to, memberName, languageUser, resetLink, profileLin
 		Reset:                  common.Translate("forgot_reset", languageUser),
 		ResetText:              common.Translate("forgot_reset_text", languageUser),
 		ResetButton:            common.Translate("forgot_reset", languageUser),
-		ImageSource:            common.GetConfigString("domain") + "/static/img/",
+		ImageSource:            common.GetConfigString("cdn") + "/static/img/",
 		ResetLink:              resetLink, Language: languageUser}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
 

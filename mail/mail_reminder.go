@@ -57,7 +57,7 @@ func SendReminderEmail(to, memberName, languageUser, participationLink, profileL
 		Confirm:           common.Translate("reminder_confirm", languageUser),
 		MemberName:        memberName,
 		ParticipationLink: participationLink,
-		ImageSource:       common.GetConfigString("domain") + "/static/img/",
+		ImageSource:       common.GetConfigString("cdn") + "/static/img/",
 		Answer:            answer, Participation: participation,
 		EventFormatted: eventName + " " + common.Translate("reminder_on_the", languageUser) + " " + eventDate + ".",
 	}

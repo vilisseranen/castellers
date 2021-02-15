@@ -275,6 +275,56 @@ func checkAndSendNotification() {
 					continue
 				}
 			}
+		case model.TypeEventDeleted:
+			// This is a reminder for an upcoming event
+			event := model.Event{UUID: notification.ObjectUUID}
+			err := event.GetDeletedEvent()
+			if err != nil {
+				// Cannot get the event, complete failure
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			// Get All members
+			m := model.Member{}
+			members, err := m.GetAll()
+			if err != nil {
+				// Cannot get the members, complete failure
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			failures := 0
+			for _, member := range members {
+				// Send the email
+				if member.Subscribed == 1 {
+					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
+					location, err := time.LoadLocation("America/Montreal")
+					if err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
+					// get eventDate as a string
+					if err := mail.SendDeletedEventEmail(member.Email, member.FirstName, member.Language, profileLink, event.Name, eventDate); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if failures == len(members) {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus()
+
 		}
 	}
 }
