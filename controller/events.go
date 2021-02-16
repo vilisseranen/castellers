@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -183,7 +185,13 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
+	adminUUID := vars["admin_uuid"]
 	var e model.Event
+	eventBeforeUpdate := model.Event{UUID: UUID}
+	if err := eventBeforeUpdate.Get(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
 		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -199,6 +207,17 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	e.UUID = UUID
 
 	if err := e.UpdateEvent(); err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Encode payload
+	payload := mail.EmailModifiedPayload{EventBeforeUpdate: eventBeforeUpdate, EventAfterUpdate: e}
+	payloadBytes := new(bytes.Buffer)
+	json.NewEncoder(payloadBytes).Encode(payload)
+
+	n := model.Notification{NotificationType: model.TypeEventModified, AuthorUUID: adminUUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

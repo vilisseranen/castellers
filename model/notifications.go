@@ -14,6 +14,7 @@ const TypeUpcomingEvent = "upcomingEvent"
 const TypeSummaryEvent = "summaryEvent"
 const TypeForgotPassword = "forgotPassword"
 const TypeEventDeleted = "eventDeleted"
+const TypeEventModified = "eventModified"
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1
@@ -29,6 +30,7 @@ type Notification struct {
 	ObjectUUID       string
 	SendDate         int
 	Delivered        int
+	Payload          []byte
 }
 
 func (n *Notification) CreateNotification() error {
@@ -37,8 +39,9 @@ func (n *Notification) CreateNotification() error {
 		common.Error("%v\n", n)
 		return err
 	}
+
 	stmt, err := tx.Prepare(fmt.Sprintf(
-		"INSERT INTO %s (notificationType, authorUUID, objectUUID, sendDate) VALUES (?, ?, ?, ?)",
+		"INSERT INTO %s (notificationType, authorUUID, objectUUID, sendDate, payload) VALUES (?, ?, ?, ?, ?)",
 		notificationsTable))
 	if err != nil {
 		common.Error("%v\n", n)
@@ -49,7 +52,8 @@ func (n *Notification) CreateNotification() error {
 		stringOrNull(n.NotificationType),
 		stringOrNull(n.AuthorUUID),
 		stringOrNull(n.ObjectUUID),
-		n.SendDate)
+		n.SendDate,
+		n.Payload)
 	if err != nil {
 		common.Error("%v\n", n)
 		return err
@@ -61,7 +65,7 @@ func (n *Notification) CreateNotification() error {
 func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	now := time.Now().Unix()
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT id, notificationType, authorUUID, objectUUID, sendDate FROM %s WHERE sendDate <= ? AND delivered=0",
+		"SELECT id, notificationType, authorUUID, objectUUID, sendDate, payload FROM %s WHERE sendDate <= ? AND delivered=0",
 		notificationsTable), now)
 	if err != nil {
 		common.Fatal(err.Error())
@@ -70,7 +74,7 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	notifications := []Notification{}
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, &n.NotificationType, &n.AuthorUUID, &n.ObjectUUID, &n.SendDate); err != nil {
+		if err = rows.Scan(&n.ID, &n.NotificationType, &n.AuthorUUID, &n.ObjectUUID, &n.SendDate, &n.Payload); err != nil {
 			return nil, err
 		}
 		notifications = append(notifications, n)

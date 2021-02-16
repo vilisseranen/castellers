@@ -45,5 +45,14 @@
     "deleted_event_subject": "Annulation d'un évènement",
     "deleted_event_greetings": "Bonjour",
     "deleted_event_intro": "Ceci est un message pour te prévenir qu'un évènement a été annulé.",
-    "deleted_event_text": "Cet évènement a été annulé."
+    "deleted_event_text": "Cet évènement a été annulé.",
+    "modified_event_subject": "Modification d'un évènement",
+    "modified_event_greetings": "Bonjour",
+    "modified_event_intro": "Ceci est un message pour te prévenir qu'un évènement a été modifié.",
+    "modified_event_text": "Voici un résumé des changements:",
+    "modified_event_name": "Nom",
+    "modified_event_start_date": "Début",
+    "modified_event_end_date": "Fin",
+    "modified_event_description": "Description",
+    "modified_event_location": "Localisation"
 }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"encoding/json"
 	"sort"
 	"time"
 
@@ -276,7 +277,6 @@ func checkAndSendNotification() {
 				}
 			}
 		case model.TypeEventDeleted:
-			// This is a reminder for an upcoming event
 			event := model.Event{UUID: notification.ObjectUUID}
 			err := event.GetDeletedEvent()
 			if err != nil {
@@ -324,7 +324,43 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
+		case model.TypeEventModified:
+			// Get All members
+			m := model.Member{}
+			members, err := m.GetAll()
+			if err != nil {
+				// Cannot get the members, complete failure
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			failures := 0
+			for _, member := range members {
+				// Send the email
+				if member.Subscribed == 1 {
+					var payload mail.EmailModifiedPayload
+					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
 
+					if err := mail.SendModifiedEventEmail(member, payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if failures == len(members) {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus()
 		}
 	}
 }
