@@ -227,7 +227,6 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
-	adminUUID := vars["admin_uuid"]
 	e := model.Event{UUID: UUID}
 	if err := e.Get(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -237,7 +236,10 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	n := model.Notification{NotificationType: model.TypeEventDeleted, AuthorUUID: adminUUID, ObjectUUID: UUID, SendDate: int(time.Now().Unix())}
+	payload := mail.EmailDeletedEventPayload{EventDeleted: e}
+	payloadBytes := new(bytes.Buffer)
+	json.NewEncoder(payloadBytes).Encode(payload)
+	n := model.Notification{NotificationType: model.TypeEventDeleted, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -277,21 +277,12 @@ func checkAndSendNotification() {
 				}
 			}
 		case model.TypeEventDeleted:
-			event := model.Event{UUID: notification.ObjectUUID}
-			err := event.GetDeletedEvent()
-			if err != nil {
-				// Cannot get the event, complete failure
-				common.Error("%v\n", err)
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
 			// Get All members
 			m := model.Member{}
 			members, err := m.GetAll()
 			if err != nil {
 				// Cannot get the members, complete failure
-				common.Error("%v\n", err)
+				common.Error("Error getting members: %v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
@@ -300,16 +291,15 @@ func checkAndSendNotification() {
 			for _, member := range members {
 				// Send the email
 				if member.Subscribed == 1 {
-					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
-					location, err := time.LoadLocation("America/Montreal")
-					if err != nil {
+
+					var payload mail.EmailDeletedEventPayload
+					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
-					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
-					// get eventDate as a string
-					if err := mail.SendDeletedEventEmail(member.Email, member.FirstName, member.Language, profileLink, event.Name, eventDate); err != nil {
+
+					if err := mail.SendDeletedEventEmail(member, payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
