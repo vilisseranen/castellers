@@ -63,6 +63,7 @@ func SendReminderEmail(payload EmailReminderPayload) error {
 	}
 	location, err := time.LoadLocation("America/Montreal")
 	if err != nil {
+		common.Error("%v\n", err)
 		return err
 	}
 	eventDate := time.Unix(int64(payload.Event.StartDate), 0).In(location).Format("02-01-2006")

@@ -189,17 +189,9 @@ func checkAndSendNotification() {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
 					if member.Subscribed == 1 {
-						profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
-						var location, err = time.LoadLocation("America/Montreal")
-						if err != nil {
-							common.Error("%v\n", err)
-							failures += 1
-							continue
-						}
-						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 						// get eventDate as a string
-						if err := mail.SendSummaryEmail(member.Email, member.FirstName, member.Language,
-							profileLink, event.Name, eventDate, members); err != nil {
+						payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
+						if err := mail.SendSummaryEmail(payload); err != nil {
 							common.Error("%v\n", err)
 							failures += 1
 							continue
