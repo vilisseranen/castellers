@@ -10,7 +10,8 @@ import (
 )
 
 type EmailDeletedEventPayload struct {
-	EventDeleted model.Event `json:"eventDeleted"`
+	Member       model.Member `json:"member"`
+	EventDeleted model.Event  `json:"eventDeleted"`
 }
 type emailDeletedEventInfo struct {
 	Subject           string
@@ -37,9 +38,9 @@ func (e emailDeletedEventInfo) GetBody() (string, error) {
 	return body.String(), nil
 }
 
-func SendDeletedEventEmail(member model.Member, payload EmailDeletedEventPayload) error {
+func SendDeletedEventEmail(payload EmailDeletedEventPayload) error {
 
-	profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
+	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	location, err := time.LoadLocation("America/Montreal")
 	if err != nil {
 		common.Error("%v\n", err)
@@ -48,17 +49,17 @@ func SendDeletedEventEmail(member model.Member, payload EmailDeletedEventPayload
 	eventDate := time.Unix(int64(payload.EventDeleted.StartDate), 0).In(location).Format("02-01-2006")
 
 	email := emailInfo{}
-	email.Top = emailTop{Title: common.Translate("deleted_event_subject", member.Language), To: member.Email}
+	email.Top = emailTop{Title: common.Translate("deleted_event_subject", payload.Member.Language), To: payload.Member.Email}
 	email.Body = emailDeletedEventInfo{
-		Subject:           common.Translate("deleted_event_subject", member.Language),
-		Greetings:         common.Translate("deleted_event_greetings", member.Language),
-		MemberName:        member.FirstName,
+		Subject:           common.Translate("deleted_event_subject", payload.Member.Language),
+		Greetings:         common.Translate("deleted_event_greetings", payload.Member.Language),
+		MemberName:        payload.Member.FirstName,
 		ImageSource:       common.GetConfigString("cdn") + "/static/img/",
-		EventFormatted:    payload.EventDeleted.Name + " " + common.Translate("reminder_on_the", member.Language) + " " + eventDate + ".",
-		DeletedEventIntro: common.Translate("deleted_event_intro", member.Language),
-		DeletedEventText:  common.Translate("deleted_event_text", member.Language),
+		EventFormatted:    payload.EventDeleted.Name + " " + common.Translate("reminder_on_the", payload.Member.Language) + " " + eventDate + ".",
+		DeletedEventIntro: common.Translate("deleted_event_intro", payload.Member.Language),
+		DeletedEventText:  common.Translate("deleted_event_text", payload.Member.Language),
 	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", member.Language), Suggestions: common.Translate("email_suggestions", member.Language)}
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 
 	emailBodyString, err := email.buildEmail()
 	if err != nil {
@@ -66,7 +67,7 @@ func SendDeletedEventEmail(member model.Member, payload EmailDeletedEventPayload
 	}
 	emailString := emailBodyString
 	// Send mail
-	if err = sendMail([]string{member.Email}, emailString); err != nil {
+	if err = sendMail([]string{payload.Member.Email}, emailString); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

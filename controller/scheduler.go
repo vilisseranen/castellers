@@ -259,8 +259,9 @@ func checkAndSendNotification() {
 						failures += 1
 						continue
 					}
+					payload.Member = member
 
-					if err := mail.SendDeletedEventEmail(member, payload); err != nil {
+					if err := mail.SendDeletedEventEmail(payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -296,8 +297,8 @@ func checkAndSendNotification() {
 						failures += 1
 						continue
 					}
-
-					if err := mail.SendModifiedEventEmail(member, payload); err != nil {
+					payload.Member = member
+					if err := mail.SendModifiedEventEmail(payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
