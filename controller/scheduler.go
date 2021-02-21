@@ -230,11 +230,8 @@ func checkAndSendNotification() {
 					notification.UpdateNotificationStatus()
 					continue
 				}
-				resetLink := common.GetConfigString("domain") + "/reset?" +
-					"t=" + resetCredentialsToken +
-					"&a=reset&u=" + credentials.Username
-				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := mail.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
+				payload := mail.EmailForgotPasswordPayload{Member: m, Token: resetCredentialsToken, Credentials: credentials}
+				if err := mail.SendForgotPasswordEmail(payload); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
