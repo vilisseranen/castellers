@@ -116,32 +116,15 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
 					token, err := ParticipateEventToken(member.UUID, 2880)
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
-					participationLink := common.GetConfigString("domain") + "/events?" +
-						"a=participate" +
-						"&e=" + event.UUID +
-						"&u=" + member.UUID +
-						"&t=" + token +
-						"&p="
-					answer := "false"
-					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
-						answer = "true"
-					}
-					location, err := time.LoadLocation("America/Montreal")
-					if err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
+					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token}
 					// get eventDate as a string
-					if err := mail.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
+					if err := mail.SendReminderEmail(payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
