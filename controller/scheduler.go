@@ -45,35 +45,24 @@ func checkAndSendNotification() {
 		notification.UpdateNotificationStatus()
 		switch notificationType := notification.NotificationType; notificationType {
 		case model.TypeMemberRegistration:
-			// This is a user registration
-			m := model.Member{UUID: notification.ObjectUUID}
-			a := model.Member{UUID: notification.AuthorUUID}
-			err := m.Get()
-			if err != nil {
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
-			err = a.Get()
-			if err != nil {
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
 			// Send the email
 			if common.GetConfigBool("smtp_enabled") {
+				var payload mail.EmailRegisterPayload
+				if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+					common.Error("%v\n", err)
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 1440)
+				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, 1440)
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
-				loginLink := common.GetConfigString("domain") + "/reset?" +
-					"t=" + resetCredentialsToken +
-					"&a=activation"
-				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+				payload.Token = resetCredentialsToken
+				if err := mail.SendRegistrationEmail(payload); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
