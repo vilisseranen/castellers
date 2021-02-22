@@ -129,10 +129,15 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	currentMember := model.Member{UUID: m.UUID}
 	err := currentMember.Get()
 	if err != nil {
-		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		common.Info("Member cannt be found")
+		RespondWithError(w, http.StatusBadRequest, ErrorGetMemberMessage)
 		return
 	}
 	if currentMember.Email != m.Email && !emailAvailable(m) {
+		common.Debug(currentMember.Email)
+		common.Debug(m.Email)
+		common.Debug("%s", emailAvailable(m))
+		common.Info("Email %s is not available", m.Email)
 		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
 		return
 	}
@@ -266,8 +271,10 @@ func missingRequiredFields(m model.Member) bool {
 func emailAvailable(m model.Member) bool {
 	err := m.GetByEmail()
 	if err != nil && err.Error() == model.MemberEmailNotFoundMessage {
+		common.Debug("Error getting by email: %s", err.Error())
 		return true
 	}
+	common.Debug("Email %s is available", m.Email)
 	return false
 }
 

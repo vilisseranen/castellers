@@ -10,6 +10,7 @@ import (
 
 const UnauthorizedMessage = "You are not authorized to perform this action."
 const EmailUnavailableMessage = "This email is already used by another member."
+const ErrorGetMemberMessage = "Error while getting member."
 
 var RedisClient *redis.Client
 
