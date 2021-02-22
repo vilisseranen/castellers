@@ -248,16 +248,20 @@ func (c *Credentials) GetCredentialsByUUID() error {
 }
 
 func (m *Member) GetByEmail() error {
+	found := false
 	members, err := m.GetAll()
 	if err != nil {
 		return err
 	}
 	for _, member := range members {
 		if member.Email == m.Email {
+			common.Debug("Found a member with email %s", m.Email)
 			*m = member
+			found = true
 		}
 	}
-	if m.UUID == "" {
+	if found == false {
+		common.Debug("Email %s not found.", m.Email)
 		return errors.New(MemberEmailNotFoundMessage)
 	}
 	return nil
