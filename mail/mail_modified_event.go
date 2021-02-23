@@ -2,7 +2,7 @@ package mail
 
 import (
 	"bytes"
-	"html/template"
+	"text/template"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
@@ -19,32 +19,6 @@ type change struct {
 	Type   string
 	Before string
 	After  string
-}
-
-type emailModifiedEventInfo struct {
-	Subject            string
-	Greetings          string
-	MemberName         string
-	ParticipationLink  string
-	ImageSource        string
-	EventFormatted     string
-	ModifiedEventIntro string
-	ModifiedEventText  string
-	Changes            []change
-}
-
-func (e emailModifiedEventInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("mail/templates/email_modified_event_body.html")
-	if err != nil {
-		common.Error("Error parsing template: " + err.Error())
-		return "", err
-	}
-	body := new(bytes.Buffer)
-	if err = t.Execute(body, e); err != nil {
-		common.Error("Error generating template: " + err.Error())
-		return "", err
-	}
-	return body.String(), nil
 }
 
 func SendModifiedEventEmail(payload EmailModifiedPayload) error {
@@ -92,28 +66,54 @@ func SendModifiedEventEmail(payload EmailModifiedPayload) error {
 	}
 
 	email := emailInfo{}
-	email.Top = emailTop{Title: common.Translate("modified_event_subject", payload.Member.Language), To: payload.Member.Email}
-	email.Body = emailModifiedEventInfo{
-		Subject:            common.Translate("modified_event_subject", payload.Member.Language),
-		Greetings:          common.Translate("modified_event_greetings", payload.Member.Language),
-		MemberName:         payload.Member.FirstName,
-		ImageSource:        common.GetConfigString("cdn") + "/static/img/",
-		EventFormatted:     payload.EventAfterUpdate.Name + " " + common.Translate("reminder_on_the", payload.Member.Language) + " " + eventDate + ".",
-		ModifiedEventIntro: common.Translate("modified_event_intro", payload.Member.Language),
-		ModifiedEventText:  common.Translate("modified_event_text", payload.Member.Language),
-		Changes:            changes,
+	email.Header = emailHeader{common.Translate("modified_event_subject", payload.Member.Language)}
+	email.Top = emailTop{
+		Title:    common.Translate("greetings", payload.Member.Language) + " " + payload.Member.FirstName,
+		Subtitle: common.Translate("modified_event_intro", payload.Member.Language),
+		To:       payload.Member.Email,
 	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
-
-	emailBodyString, err := email.buildEmail()
+	changesString, err := changesString(changes)
 	if err != nil {
 		return err
 	}
-	emailString := emailBodyString
-	// Send mail
-	if err = sendMail([]string{payload.Member.Email}, emailString); err != nil {
+	email.MainSections = []emailMain{{
+		Title:    payload.EventAfterUpdate.Name + " " + common.Translate("on_the", payload.Member.Language) + " " + eventDate + ".",
+		Subtitle: common.Translate("modified_event_text", payload.Member.Language),
+		Text:     changesString,
+	}}
+	email.Action = emailAction{
+		Title: common.Translate("modified_event_action_title", payload.Member.Language),
+		Text:  common.Translate("modified_event_action_text", payload.Member.Language),
+		Buttons: []Button{{
+			Text: common.Translate("modified_event_action_button", payload.Member.Language),
+			Link: common.GetConfigString("domain") + "/eventShow/" + payload.EventAfterUpdate.UUID,
+		}},
+	}
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
+	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
+
+	if err = sendMail(email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}
 	return nil
+}
+
+func changesString(changes []change) (string, error) {
+	const templateChanges = `
+	{{ range . }}
+	  <strong>{{ .Type }}:</strong> {{ .Before }} &#x2192; {{ .After}}
+	  <br/>
+	{{ end }}`
+	t, err := template.New("changes").Parse(templateChanges)
+	if err != nil {
+		common.Error("Error parsing template: " + err.Error())
+		return "", err
+	}
+	buffer := new(bytes.Buffer)
+	if err = t.Execute(buffer, changes); err != nil {
+		common.Error("Error generating template: " + err.Error())
+		return "", err
+	}
+	return buffer.String(), nil
 }

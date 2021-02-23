@@ -50,29 +50,40 @@ func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
 		"&a=reset&u=" + payload.Credentials.Username
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	email := emailInfo{}
-	email.Top = emailTop{Title: common.Translate("forgot_title", payload.Member.Language), To: payload.Member.Email}
-	email.Body = emailForgotInfo{
-		Subject:                common.Translate("forgot_title", payload.Member.Language),
-		MemberName:             payload.Member.FirstName,
-		SubjectInfo:            common.Translate("forgot_subject_info", payload.Member.Language),
-		ResetRequestedTitle:    common.Translate("forgot_reset_requested_title", payload.Member.Language),
-		ResetRequestedText:     common.Translate("forgot_reset_requested_text", payload.Member.Language),
-		ResetNotRequestedTitle: common.Translate("forgot_reset_not_requested_title", payload.Member.Language),
-		ResetNotRequestedText:  common.Translate("forgot_reset_not_requested_text", payload.Member.Language),
-		Reset:                  common.Translate("forgot_reset", payload.Member.Language),
-		ResetText:              common.Translate("forgot_reset_text", payload.Member.Language),
-		ResetButton:            common.Translate("forgot_reset", payload.Member.Language),
-		ImageSource:            common.GetConfigString("cdn") + "/static/img/",
-		ResetLink:              resetLink, Language: payload.Member.Language}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
-
-	emailBodyString, err := email.buildEmail()
-	if err != nil {
-		return err
+	email.Header = emailHeader{
+		Title: common.Translate("forgot_title", payload.Member.Language),
 	}
-	emailString := emailBodyString
-	// Send mail
-	if err = sendMail([]string{payload.Member.Email}, emailString); err != nil {
+	email.Top = emailTop{
+		Title:    common.Translate("forgot_title", payload.Member.Language),
+		To:       payload.Member.Email,
+		Subtitle: common.Translate("forgot_subject_info", payload.Member.Language),
+	}
+	email.MainSections = []emailMain{
+		{
+			Title: common.Translate("forgot_reset_not_requested_text", payload.Member.Language),
+			Text:  common.Translate("forgot_reset_not_requested_text", payload.Member.Language),
+		},
+		{
+			Title: common.Translate("forgot_reset_requested_title", payload.Member.Language),
+			Text:  common.Translate("forgot_reset_requested_text", payload.Member.Language),
+		},
+	}
+	email.Action = emailAction{
+		Title: common.Translate("forgot_reset", payload.Member.Language),
+		Text:  common.Translate("forgot_reset_text", payload.Member.Language),
+		Buttons: []Button{{
+			Text: common.Translate("forgot_reset", payload.Member.Language),
+			Link: resetLink},
+		},
+	}
+	email.Bottom = emailBottom{
+		ProfileLink: profileLink,
+		MyProfile:   common.Translate("email_my_profile", payload.Member.Language),
+		Suggestions: common.Translate("email_suggestions", payload.Member.Language),
+	}
+	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
+
+	if err := sendMail(email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}
