@@ -29,7 +29,7 @@ func InitializeLogger() error {
 		},
 	}
 	var err error
-	logger, err = cfg.Build()
+	logger, err = cfg.Build(zap.AddCallerSkip(2))
 	sugar = logger.Sugar()
 	return err
 }

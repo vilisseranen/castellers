@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -104,8 +106,10 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// Queue the notification
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	payload := mail.EmailRegisterPayload{Member: m, Author: a}
+	payloadBytes := new(bytes.Buffer)
+	json.NewEncoder(payloadBytes).Encode(payload)
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: m.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -125,10 +129,15 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	currentMember := model.Member{UUID: m.UUID}
 	err := currentMember.Get()
 	if err != nil {
-		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		common.Info("Member cannt be found")
+		RespondWithError(w, http.StatusBadRequest, ErrorGetMemberMessage)
 		return
 	}
 	if currentMember.Email != m.Email && !emailAvailable(m) {
+		common.Debug(currentMember.Email)
+		common.Debug(m.Email)
+		common.Debug("%s", emailAvailable(m))
+		common.Info("Email %s is not available", m.Email)
 		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
 		return
 	}
@@ -262,8 +271,10 @@ func missingRequiredFields(m model.Member) bool {
 func emailAvailable(m model.Member) bool {
 	err := m.GetByEmail()
 	if err != nil && err.Error() == model.MemberEmailNotFoundMessage {
+		common.Debug("Error getting by email: %s", err.Error())
 		return true
 	}
+	common.Debug("Email %s is available", m.Email)
 	return false
 }
 

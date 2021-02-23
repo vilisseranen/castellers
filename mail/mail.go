@@ -9,55 +9,65 @@ import (
 )
 
 type emailInfo struct {
-	Top    emailTop
-	Body   emailBody
-	Bottom emailBottom
+	Header       emailHeader
+	Top          emailTop
+	MainSections []emailMain
+	Action       emailAction
+	Bottom       emailBottom
+	ImageSource  string
+}
+
+type emailHeader struct {
+	Title string
 }
 
 type emailTop struct {
-	Title string
-	To    string
+	Title    string
+	Subtitle string
+	To       string
 }
 
-type emailBody interface {
-	GetBody() (string, error)
+type emailMain struct {
+	Title    string
+	Subtitle string
+	Text     string
+	Author   string
+}
+
+type emailAction struct {
+	Title   string
+	Text    string
+	Buttons []Button
+}
+
+type Button struct {
+	Text string
+	Link string
 }
 
 type emailBottom struct {
-	ImageSource string
 	ProfileLink string
 	MyProfile   string
 	Suggestions string
 }
 
-func (e emailInfo) buildEmail() (string, error) {
-	emailTop, err := e.Top.GetTop()
-	if err != nil {
-		return "", nil
-	}
-	emailBody, err := e.Body.GetBody()
-	if err != nil {
-		return "", nil
-	}
-	emailBottom, err := e.Bottom.GetBottom()
-	if err != nil {
-		return "", nil
-	}
-	return emailTop + emailBody + emailBottom, nil
+func unescape(s string) template.HTML {
+	return template.HTML(s)
 }
 
-func (e emailTop) GetTop() (string, error) {
-	t, err := template.ParseFiles("mail/templates/email_top.html")
+func (e emailInfo) buildEmail() (string, error) {
+	t, err := template.New("email.html").Funcs(template.FuncMap{"unescape": unescape}).ParseFiles("mail/templates/email.html")
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err
 	}
+	// t.Funcs(template.FuncMap{"unescape": unescape})
 	buffer := new(bytes.Buffer)
 	if err = t.Execute(buffer, e); err != nil {
 		common.Error("Error generating template: " + err.Error())
 		return "", err
 	}
-	header := buildHeader(e.Title, e.To)
+	header := buildHeader(e.Header.Title, e.Top.To)
 	return header + buffer.String(), nil
 }
 
@@ -71,26 +81,18 @@ func buildHeader(title, to string) string {
 		"\r\n"
 }
 
-func (e emailBottom) GetBottom() (string, error) {
-	e.ImageSource = common.GetConfigString("cdn") + "/static/img/"
-	t, err := template.ParseFiles("mail/templates/email_bottom.html")
-	if err != nil {
-		common.Error("Error parsing template: " + err.Error())
-		return "", err
-	}
-	buffer := new(bytes.Buffer)
-	if err = t.Execute(buffer, e); err != nil {
-		common.Error("Error generating template: " + err.Error())
-		return "", err
-	}
-	return buffer.String(), nil
-}
+func sendMail(email emailInfo) error {
 
-func sendMail(to []string, body string) error {
+	body, err := email.buildEmail()
+	if err != nil {
+		common.Error("Cannot build Email")
+		return err
+	}
+
 	var auth smtp.Auth
 	auth = smtp.PlainAuth("", common.GetConfigString("smtp_username"), common.GetConfigString("smtp_password"), common.GetConfigString("smtp_server"))
 	addr := common.GetConfigString("smtp_server") + ":" + common.GetConfigString("smtp_port")
-	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp_username"), to, []byte(body)); err != nil {
+	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp_username"), []string{email.Top.To}, []byte(body)); err != nil {
 		common.Error(err.Error())
 		return err
 	}

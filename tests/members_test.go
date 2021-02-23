@@ -313,6 +313,30 @@ func TestGetMemberType(t *testing.T) {
 	}
 }
 
+func TestGetMemberByEmailSuccess(t *testing.T) {
+	h.clearTables()
+	h.addAMember()
+
+	memberWithExistingEmail := model.Member{Email: "ramon@gerard.ca"}
+	memberWithExistingEmail.GetByEmail()
+
+	if memberWithExistingEmail.UUID != "deadbeef" {
+		t.Errorf("Expected member with email %s to retrieved with UUID %s but got UUID %s.", "ramon@gerard.ca", "deadbeef", memberWithExistingEmail.UUID)
+	}
+}
+
+func TestGetMemberByEmailFail(t *testing.T) {
+	h.clearTables()
+	h.addAMember()
+
+	memberWithExistingEmail := model.Member{Email: "toto@tutu.ca"}
+	err := memberWithExistingEmail.GetByEmail()
+
+	if err.Error() != model.MemberEmailNotFoundMessage {
+		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MemberEmailNotFoundMessage, err.Error())
+	}
+}
+
 func TestGetRoles(t *testing.T) {
 	h.clearTables()
 

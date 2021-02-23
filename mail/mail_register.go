@@ -1,68 +1,46 @@
 package mail
 
 import (
-	"bytes"
-	"html/template"
-
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/model"
 )
 
-type emailRegisterInfo struct {
-	MemberName            string
-	AdminName, AdminExtra string
-	LoginLink             string
-	ImageSource           string
-	Welcome               string
-	WelcomeText           string
-	NewRegistration       string
-	NewRegistrationText   string
-	Instructions          string
-	Thanks                string
-	Confirmation          string
-	ConfirmationText      string
-	Activation            string
+type EmailRegisterPayload struct {
+	Member model.Member `json:"member"`
+	Author model.Member `json:"author"`
+	Token  string       `json:"token"`
 }
 
-func (e emailRegisterInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("mail/templates/email_register_body.html")
-	if err != nil {
-		common.Error("Error parsing template: " + err.Error())
-		return "", err
-	}
-	body := new(bytes.Buffer)
-	if err = t.Execute(body, e); err != nil {
-		common.Error("Error generating template: " + err.Error())
-		return "", err
-	}
-	return body.String(), nil
-}
+func SendRegistrationEmail(payload EmailRegisterPayload) error {
+	loginLink := common.GetConfigString("domain") + "/reset?" +
+		"t=" + payload.Token +
+		"&a=activation"
+	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 
-func SendRegistrationEmail(to, memberName, languageUser, adminName, adminExtra, activateLink, profileLink string) error {
 	email := emailInfo{}
-	email.Top = emailTop{Title: common.Translate("registration_title", languageUser), To: to}
-	email.Body = emailRegisterInfo{
-		MemberName: memberName,
-		AdminName:  adminName, AdminExtra: adminExtra,
-		LoginLink:           activateLink,
-		ImageSource:         common.GetConfigString("cdn") + "/static/img/",
-		Welcome:             common.Translate("registration_welcome", languageUser),
-		WelcomeText:         common.Translate("registration_welcome_text", languageUser),
-		NewRegistration:     common.Translate("registration_new_title", languageUser),
-		NewRegistrationText: common.Translate("registration_new_text", languageUser),
-		Instructions:        common.Translate("registration_instructions", languageUser),
-		Thanks:              common.Translate("registration_thanks", languageUser),
-		Confirmation:        common.Translate("registration_confirmation_title", languageUser),
-		ConfirmationText:    common.Translate("registration_confirmation_text", languageUser),
-		Activation:          common.Translate("registration_activation", languageUser),
+	email.Header = emailHeader{Title: common.Translate("registration_title", payload.Member.Language)}
+	email.Top = emailTop{
+		Title:    common.Translate("registration_welcome", payload.Member.Language) + " " + payload.Member.FirstName,
+		Subtitle: common.Translate("registration_welcome_text", payload.Member.Language),
+		To:       payload.Member.Email}
+	email.MainSections = []emailMain{{
+		Title:    common.Translate("registration_new_title", payload.Member.Language),
+		Subtitle: common.Translate("registration_new_text", payload.Member.Language),
+		Text:     common.Translate("registration_instructions", payload.Member.Language) + "<br/><br/>" + common.Translate("registration_thanks", payload.Member.Language),
+		Author:   payload.Author.FirstName + " " + payload.Author.LastName,
+	}}
+	email.Action = emailAction{
+		Title: common.Translate("registration_confirmation_title", payload.Member.Language),
+		Text:  common.Translate("registration_confirmation_text", payload.Member.Language),
+		Buttons: []Button{{
+			Text: common.Translate("registration_activation", payload.Member.Language),
+			Link: loginLink,
+		}},
 	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
-	emailBodyString, err := email.buildEmail()
-	if err != nil {
-		return err
-	}
-	emailString := emailBodyString
-	// Send mail
-	if err = sendMail([]string{to}, emailString); err != nil {
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
+	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
+
+	if err := sendMail(email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

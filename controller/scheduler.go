@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"encoding/json"
 	"sort"
 	"time"
 
@@ -44,35 +45,24 @@ func checkAndSendNotification() {
 		notification.UpdateNotificationStatus()
 		switch notificationType := notification.NotificationType; notificationType {
 		case model.TypeMemberRegistration:
-			// This is a user registration
-			m := model.Member{UUID: notification.ObjectUUID}
-			a := model.Member{UUID: notification.AuthorUUID}
-			err := m.Get()
-			if err != nil {
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
-			err = a.Get()
-			if err != nil {
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
 			// Send the email
 			if common.GetConfigBool("smtp_enabled") {
+				var payload mail.EmailRegisterPayload
+				if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+					common.Error("%v\n", err)
+					notification.Delivered = model.NotificationDeliveryFailure
+					notification.UpdateNotificationStatus()
+					continue
+				}
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 1440)
+				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, 1440)
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
-				loginLink := common.GetConfigString("domain") + "/reset?" +
-					"t=" + resetCredentialsToken +
-					"&a=activation"
-				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := mail.SendRegistrationEmail(m.Email, m.FirstName, m.Language, a.FirstName, a.Extra, loginLink, profileLink); err != nil {
+				payload.Token = resetCredentialsToken
+				if err := mail.SendRegistrationEmail(payload); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
@@ -126,32 +116,15 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
 					token, err := ParticipateEventToken(member.UUID, 2880)
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
-					participationLink := common.GetConfigString("domain") + "/events?" +
-						"a=participate" +
-						"&e=" + event.UUID +
-						"&u=" + member.UUID +
-						"&t=" + token +
-						"&p="
-					answer := "false"
-					if p.Answer == common.AnswerYes || p.Answer == common.AnswerNo {
-						answer = "true"
-					}
-					location, err := time.LoadLocation("America/Montreal")
-					if err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
+					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token}
 					// get eventDate as a string
-					if err := mail.SendReminderEmail(member.Email, member.FirstName, member.Language, participationLink, profileLink, answer, p.Answer, event.Name, eventDate); err != nil {
+					if err := mail.SendReminderEmail(payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -216,17 +189,9 @@ func checkAndSendNotification() {
 				if member.Type == model.MemberTypeAdmin {
 					// Send the email
 					if member.Subscribed == 1 {
-						profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
-						var location, err = time.LoadLocation("America/Montreal")
-						if err != nil {
-							common.Error("%v\n", err)
-							failures += 1
-							continue
-						}
-						eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 						// get eventDate as a string
-						if err := mail.SendSummaryEmail(member.Email, member.FirstName, member.Language,
-							profileLink, event.Name, eventDate, members); err != nil {
+						payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
+						if err := mail.SendSummaryEmail(payload); err != nil {
 							common.Error("%v\n", err)
 							failures += 1
 							continue
@@ -265,33 +230,20 @@ func checkAndSendNotification() {
 					notification.UpdateNotificationStatus()
 					continue
 				}
-				resetLink := common.GetConfigString("domain") + "/reset?" +
-					"t=" + resetCredentialsToken +
-					"&a=reset&u=" + credentials.Username
-				profileLink := common.GetConfigString("domain") + "/memberEdit/" + m.UUID
-				if err := mail.SendForgotPasswordEmail(m.Email, m.FirstName, m.Language, resetLink, profileLink); err != nil {
+				payload := mail.EmailForgotPasswordPayload{Member: m, Token: resetCredentialsToken, Credentials: credentials}
+				if err := mail.SendForgotPasswordEmail(payload); err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
 			}
 		case model.TypeEventDeleted:
-			// This is a reminder for an upcoming event
-			event := model.Event{UUID: notification.ObjectUUID}
-			err := event.GetDeletedEvent()
-			if err != nil {
-				// Cannot get the event, complete failure
-				common.Error("%v\n", err)
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus()
-				continue
-			}
 			// Get All members
 			m := model.Member{}
 			members, err := m.GetAll()
 			if err != nil {
 				// Cannot get the members, complete failure
-				common.Error("%v\n", err)
+				common.Error("Error getting members: %v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
@@ -300,16 +252,16 @@ func checkAndSendNotification() {
 			for _, member := range members {
 				// Send the email
 				if member.Subscribed == 1 {
-					profileLink := common.GetConfigString("domain") + "/memberEdit/" + member.UUID
-					location, err := time.LoadLocation("America/Montreal")
-					if err != nil {
+
+					var payload mail.EmailDeletedEventPayload
+					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
 					}
-					eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
-					// get eventDate as a string
-					if err := mail.SendDeletedEventEmail(member.Email, member.FirstName, member.Language, profileLink, event.Name, eventDate); err != nil {
+					payload.Member = member
+
+					if err := mail.SendDeletedEventEmail(payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -324,7 +276,43 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
-
+		case model.TypeEventModified:
+			// Get All members
+			m := model.Member{}
+			members, err := m.GetAll()
+			if err != nil {
+				// Cannot get the members, complete failure
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			failures := 0
+			for _, member := range members {
+				// Send the email
+				if member.Subscribed == 1 {
+					var payload mail.EmailModifiedPayload
+					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					payload.Member = member
+					if err := mail.SendModifiedEventEmail(payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if failures == len(members) {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus()
 		}
 	}
 }

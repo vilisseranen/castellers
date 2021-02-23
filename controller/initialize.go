@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -42,8 +44,10 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// Queue the notification
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: m.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix())}
+	payload := mail.EmailRegisterPayload{Member: m, Author: m}
+	payloadBytes := new(bytes.Buffer)
+	json.NewEncoder(payloadBytes).Encode(payload)
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: m.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

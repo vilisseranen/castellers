@@ -3,16 +3,64 @@ package mail
 import (
 	"bytes"
 	"html/template"
+	"time"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
 
-type emailSummaryInfo struct {
-	Subject        string
-	Greetings      string
-	Inscriptions   string
-	EventFormatted string
+type EmailSummaryPayload struct {
+	Member       model.Member   `json:"member"`
+	Event        model.Event    `json:"event"`
+	Participants []model.Member `json:"participants"`
+}
+
+func SendSummaryEmail(payload EmailSummaryPayload) error {
+	common.Debug("Send summary Event Email")
+	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
+	var location, err = time.LoadLocation("America/Montreal")
+	if err != nil {
+		common.Error("%v\n", err)
+		return err
+	}
+	eventDate := time.Unix(int64(payload.Event.StartDate), 0).In(location).Format("02-01-2006")
+	summary := summary{
+		FirstName:      common.Translate("summary_first_name", payload.Member.Language),
+		Name:           common.Translate("summary_name", payload.Member.Language),
+		Roles:          common.Translate("summary_roles", payload.Member.Language),
+		Answer:         common.Translate("summary_answer", payload.Member.Language),
+		ParticipateYes: common.Translate("summary_participate_yes", payload.Member.Language),
+		ParticipateNo:  common.Translate("summary_participate_no", payload.Member.Language),
+		NoAnswer:       common.Translate("summary_no_answer", payload.Member.Language),
+		Members:        payload.Participants,
+	}
+
+	email := emailInfo{}
+	email.Header = emailHeader{common.Translate("summary_subject", payload.Member.Language)}
+	email.Top = emailTop{
+		Title:    common.Translate("greetings", payload.Member.Language) + " " + payload.Member.FirstName,
+		Subtitle: common.Translate("summary_inscriptions", payload.Member.Language),
+		To:       payload.Member.Email,
+	}
+	summaryTable, err := summaryTable(summary)
+	if err != nil {
+		return err
+	}
+	email.MainSections = []emailMain{{
+		Title: payload.Event.Name + " " + common.Translate("on_the", payload.Member.Language) + " " + eventDate + ".",
+		Text:  summaryTable,
+	}}
+	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
+	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
+
+	if err = sendMail(email); err != nil {
+		common.Error("Error sending Email: " + err.Error())
+		return err
+	}
+	return nil
+}
+
+type summary struct {
 	FirstName      string
 	Name           string
 	Roles          string
@@ -20,55 +68,47 @@ type emailSummaryInfo struct {
 	ParticipateYes string
 	ParticipateNo  string
 	NoAnswer       string
-	MemberName     string
-	ImageSource    string
 	Members        []model.Member
 }
 
-func (e emailSummaryInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("mail/templates/email_summary_body.html")
+func summaryTable(summary summary) (string, error) {
+	const templateChanges = `              <table class="pure-table pure-table-bordered" style="border: 1px solid #ccc; margin: 50px auto;">
+	<thead style="background: #3498db; color: white; font-weight:bold;">
+	  <tr>
+		<th>{{ .FirstName }}</th>
+		<th>{{ .Name }}</th>
+		<th>{{ .Roles }}</th>
+		<th>{{ .Answer }}</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {{ range .Members }}
+	  <tr>
+		<td>{{ .FirstName }}</td>
+		<td>{{ .LastName }}</td>
+		<td>{{ .Roles }}</td>
+		<td>
+		  {{ if eq .Participation "yes" }}
+		  {{ $.ParticipateYes }}
+		  {{ else if eq .Participation "no" }}
+		  {{ $.ParticipateNo }}
+		  {{ else }}
+		  {{ $.NoAnswer }}
+		  {{ end }}
+		</td>
+	  </tr>
+	  {{ end }}
+	</tbody>
+  </table>`
+	t, err := template.New("summary").Parse(templateChanges)
 	if err != nil {
 		common.Error("Error parsing template: " + err.Error())
 		return "", err
 	}
-	body := new(bytes.Buffer)
-	if err = t.Execute(body, e); err != nil {
+	buffer := new(bytes.Buffer)
+	if err = t.Execute(buffer, summary); err != nil {
 		common.Error("Error generating template: " + err.Error())
 		return "", err
 	}
-	return body.String(), nil
-}
-
-func SendSummaryEmail(to, memberName, languageUser, profileLink, eventName, eventDate string, members []model.Member) error {
-	email := emailInfo{}
-	email.Top = emailTop{Title: common.Translate("summary_subject", languageUser), To: to}
-	email.Body = emailSummaryInfo{
-		Subject:        common.Translate("summary_subject", languageUser),
-		Greetings:      common.Translate("summary_greetings", languageUser),
-		Inscriptions:   common.Translate("summary_inscriptions", languageUser),
-		EventFormatted: eventName + " " + common.Translate("reminder_on_the", languageUser) + " " + eventDate + ".",
-		FirstName:      common.Translate("summary_first_name", languageUser),
-		Name:           common.Translate("summary_name", languageUser),
-		Roles:          common.Translate("summary_roles", languageUser),
-		Answer:         common.Translate("summary_answer", languageUser),
-		ParticipateYes: common.Translate("summary_participate_yes", languageUser),
-		ParticipateNo:  common.Translate("summary_participate_no", languageUser),
-		NoAnswer:       common.Translate("summary_no_answer", languageUser),
-		MemberName:     memberName,
-		ImageSource:    common.GetConfigString("cdn") + "/static/img/",
-		Members:        members,
-	}
-	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", languageUser), Suggestions: common.Translate("email_suggestions", languageUser)}
-
-	emailBodyString, err := email.buildEmail()
-	if err != nil {
-		return err
-	}
-	emailString := emailBodyString
-	// Send mail
-	if err = sendMail([]string{to}, emailString); err != nil {
-		common.Error("Error sending Email: " + err.Error())
-		return err
-	}
-	return nil
+	return buffer.String(), nil
 }

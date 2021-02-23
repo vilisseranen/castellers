@@ -1,0 +1,1 @@
+ALTER TABLE notifications ADD payload BLOB;
