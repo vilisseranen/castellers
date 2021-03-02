@@ -22,8 +22,17 @@ var intervalRegex = regexp.MustCompile(`^([1-9]\d*)(w|d)$`)
 
 const intervalDaySecond = 60 * 60 * 24
 const intervalWeekSecond = 60 * 60 * 24 * 7
+const DEFAULT_LIMIT = 10
+const MAX_LIMIT = 100
 
 func GetEvent(w http.ResponseWriter, r *http.Request) {
+	tokenAuth, err := ExtractToken(r)
+	memberUUID := ""
+	if err != nil {
+		common.Debug("Cannot extract token. Treating request as unauthenticated")
+	} else {
+		memberUUID = tokenAuth.UserId
+	}
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 	e := model.Event{UUID: UUID}
@@ -36,20 +45,37 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if memberUUID != "" {
+		p := model.Participation{EventUUID: e.UUID, MemberUUID: memberUUID}
+		if err := p.GetParticipation(); err != nil {
+
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		e.Participation = p.Answer
+		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+			if err := e.GetAttendance(); err != nil {
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+			}
+		}
+	}
 	RespondWithJSON(w, http.StatusOK, e)
 }
 
 func GetEvents(w http.ResponseWriter, r *http.Request) {
-	count, _ := strconv.Atoi(r.FormValue("count"))
-	start, _ := strconv.Atoi(r.FormValue("start"))
-	if count < 1 {
-		count = 100
+	limit, _ := strconv.Atoi(r.FormValue("limit"))
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	pastEvents := false
+	if limit < 1 {
+		limit = DEFAULT_LIMIT
+	} else if limit > MAX_LIMIT {
+		limit = MAX_LIMIT
 	}
-	if start < 1 {
-		start = int(time.Now().Unix())
+	if page < 0 {
+		page = (page + 1) * -1
+		pastEvents = true
 	}
 	e := model.Event{}
-	events, err := e.GetAll(start, count)
+	events, err := e.GetAll(page, limit, pastEvents)
 	if err != nil {
 		switch err {
 		default:
