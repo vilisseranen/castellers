@@ -21,6 +21,7 @@ func CreateRouter(staticDir string) *mux.Router {
 	r.HandleFunc("/api/logout", controller.Logout).Methods("POST")
 	r.HandleFunc("/api/refresh", controller.RefreshToken).Methods("POST")
 	r.HandleFunc("/api/forgot_password", controller.ForgotPassword).Methods("POST")
+	r.HandleFunc("/api/version", controller.Version).Methods("GET")
 
 	// Special tokens
 	r.HandleFunc("/api/reset_credentials", checkTokenType(controller.ResetCredentials, controller.ResetCredentialsPermission)).Methods("POST")

@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"testing"
 )
@@ -61,5 +62,32 @@ func TestNotInitialized(t *testing.T) {
 
 	if err := h.checkResponseCode(http.StatusNoContent, response.Code); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestVersion(t *testing.T) {
+
+	b, err := ioutil.ReadFile("VERSION")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	correctVersion := string(b)
+
+	type version struct {
+		Version string `json:"version"`
+	}
+
+	req, _ := http.NewRequest("GET", "/api/version", nil)
+	response := h.executeRequest(req)
+
+	var v version
+	json.Unmarshal(response.Body.Bytes(), &v)
+
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	if v.Version != correctVersion {
+		t.Errorf("Expected version to be '%s'. Got '%s'", correctVersion, v.Version)
 	}
 }
