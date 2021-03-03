@@ -3,8 +3,10 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/vilisseranen/castellers/model"
 )
@@ -124,7 +126,11 @@ func TestCreateWeeklyEvent(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAnAdmin()
 
-	payload := []byte(`{"name":"diada","startDate":1529016300, "endDate":1529027100, "recurring": {"interval": "1w", "until": 1532645100}, "type":"practice"}`)
+	startDate := time.Now().Unix() + 3600
+	endDate := startDate + 3600
+	until := startDate + 3600*24*7*6
+
+	payload := []byte(fmt.Sprintf(`{"name":"diada","startDate":%d, "endDate":%d, "recurring": {"interval": "1w", "until": %d}, "type":"practice"}`, startDate, endDate, until))
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
@@ -134,7 +140,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
+	req, _ = http.NewRequest("GET", "/api/events?limit=10&page=0", nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -147,17 +153,28 @@ func TestCreateWeeklyEvent(t *testing.T) {
 		t.Errorf("Expected to have %v events. Got '%v'", 7, len(events))
 	}
 
+	var location, err = time.LoadLocation("America/Montreal")
+	if err != nil {
+		t.Error(err)
+	}
+	adjustedTimeStamp := uint(startDate)
+	intervalSeconds := uint(60 * 60 * 24 * 7)
+
 	for i, event := range events {
-		correctTimestamp := uint(1529016300 + i*(60*60*24*7))
 		if event.Name != "diada" {
 			t.Errorf("Expected event name to be '%v'. Got '%v'", "diada", event.Name)
 		}
-		if event.StartDate != correctTimestamp {
-			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, correctTimestamp, event.StartDate)
+		if event.StartDate != adjustedTimeStamp {
+			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, adjustedTimeStamp, event.StartDate)
 		}
 		if event.Type != "practice" {
 			t.Errorf("Expected event %v type to be '%v'. Got '%v'", i, "practice", event.Type)
 		}
+
+		_, thisEventZoneOffset := time.Unix(int64(adjustedTimeStamp), 0).In(location).Zone()
+		_, nextEventZoneOffset := time.Unix(int64(adjustedTimeStamp+intervalSeconds), 0).In(location).Zone()
+		offset := thisEventZoneOffset - nextEventZoneOffset
+		adjustedTimeStamp = uint(int(adjustedTimeStamp+intervalSeconds) + offset)
 	}
 }
 
@@ -165,7 +182,11 @@ func TestCreateDailyEvent(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAnAdmin()
 
-	payload := []byte(`{"name":"diada","startDate":1529157600, "endDate":1529193600, "recurring": {"interval": "1d", "until": 1529244000}, "type":"practice"}`)
+	startDate := time.Now().Unix() + 3600
+	endDate := startDate + 3600
+	until := startDate + 3600*24
+
+	payload := []byte(fmt.Sprintf(`{"name":"diada","startDate":%d, "endDate":%d, "recurring": {"interval": "1d", "until": %d}, "type":"practice"}`, startDate, endDate, until))
 
 	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
@@ -175,7 +196,7 @@ func TestCreateDailyEvent(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events?count=10&start=1", nil)
+	req, _ = http.NewRequest("GET", "/api/events?limit=10&page=0", nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -188,15 +209,24 @@ func TestCreateDailyEvent(t *testing.T) {
 	if len(events) != 2 {
 		t.Errorf("Expected to have %v events. Got '%v'", 2, len(events))
 	}
+	var location, err = time.LoadLocation("America/Montreal")
+	if err != nil {
+		t.Error(err)
+	}
+	adjustedTimeStamp := uint(startDate)
+	intervalSeconds := uint(60 * 60 * 24)
 
 	for i, event := range events {
-		correctTimestamp := uint(1529157600 + i*(60*60*24))
 		if event.Name != "diada" {
 			t.Errorf("Expected event name to be '%v'. Got '%v'", "diada", event.Name)
 		}
-		if event.StartDate != correctTimestamp {
-			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, correctTimestamp, event.StartDate)
+		if event.StartDate != adjustedTimeStamp {
+			t.Errorf("Expected event %v start date to be '%v'. Got '%v'", i, adjustedTimeStamp, event.StartDate)
 		}
+		_, thisEventZoneOffset := time.Unix(int64(adjustedTimeStamp), 0).In(location).Zone()
+		_, nextEventZoneOffset := time.Unix(int64(adjustedTimeStamp+intervalSeconds), 0).In(location).Zone()
+		offset := thisEventZoneOffset - nextEventZoneOffset
+		adjustedTimeStamp = uint(int(adjustedTimeStamp+intervalSeconds) + offset)
 	}
 }
 
@@ -231,9 +261,15 @@ func TestGetEvent(t *testing.T) {
 }
 
 func TestGetEvents(t *testing.T) {
+
+	startDate1 := int(time.Now().Unix() + 3600)
+	endDate1 := int(startDate1 + 3600)
+	startDate2 := startDate1 + (3660 * 24 * 7)
+	endDate2 := endDate1 + (3660 * 24 * 7)
+
 	h.clearTables()
-	h.addEvent("deadbeef", "An event", 1527894960, 1528046040)
-	h.addEvent("deadfeed", "Another event", 1527994960, 1527996960)
+	h.addEvent("deadbeef", "An event", startDate1, endDate1)
+	h.addEvent("deadfeed", "Another event", startDate2, endDate2)
 
 	req, _ := http.NewRequest("GET", "/api/events?count=2&start=1", nil)
 	response := h.executeRequest(req)
@@ -249,12 +285,12 @@ func TestGetEvents(t *testing.T) {
 		t.Errorf("Expected event name to be 'An event'. Got '%v'", m[0].Name)
 	}
 
-	if m[0].StartDate != 1527894960 {
-		t.Errorf("Expected event start date to be '1527894960'. Got '%v'", m[0].StartDate)
+	if m[0].StartDate != uint(startDate1) {
+		t.Errorf("Expected event start date to be '%d'. Got '%v'", startDate1, m[0].StartDate)
 	}
 
-	if m[0].EndDate != 1528046040 {
-		t.Errorf("Expected event end date to be '1528046040'. Got '%v'", m[0].EndDate)
+	if m[0].EndDate != uint(endDate1) {
+		t.Errorf("Expected event end date to be '%d'. Got '%v'", endDate1, m[0].EndDate)
 	}
 
 	if m[0].Type != "presentation" {
@@ -265,12 +301,12 @@ func TestGetEvents(t *testing.T) {
 		t.Errorf("Expected event name to be 'Another event'. Got '%v'", m[1].Name)
 	}
 
-	if m[1].StartDate != 1527994960 {
-		t.Errorf("Expected event start date to be '1527994960'. Got '%v'", m[1].StartDate)
+	if m[1].StartDate != uint(startDate2) {
+		t.Errorf("Expected event start date to be '%d'. Got '%v'", startDate2, m[1].StartDate)
 	}
 
-	if m[1].EndDate != 1527996960 {
-		t.Errorf("Expected event end date to be '1527996960'. Got '%v'", m[1].EndDate)
+	if m[1].EndDate != uint(endDate2) {
+		t.Errorf("Expected event end date to be '%d'. Got '%v'", endDate2, m[1].EndDate)
 	}
 
 	if m[1].Type != "presentation" {
