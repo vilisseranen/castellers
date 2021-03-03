@@ -51,6 +51,7 @@ func ReadConfig() {
 	// read environment variables
 	viper.SetEnvPrefix("app")
 	viper.BindEnv("log_file")
+	viper.BindEnv("log.level", "APP_LOG_LEVEL")
 	viper.BindEnv("db_name")
 	viper.BindEnv("domain")
 	viper.BindEnv("cdn")
