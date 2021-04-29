@@ -243,15 +243,19 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Encode payload
-	payload := mail.EmailModifiedPayload{EventBeforeUpdate: eventBeforeUpdate, EventAfterUpdate: e}
-	payloadBytes := new(bytes.Buffer)
-	json.NewEncoder(payloadBytes).Encode(payload)
+	// Send notification
+	if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
 
-	n := model.Notification{NotificationType: model.TypeEventModified, AuthorUUID: adminUUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
-		return
+		// Encode payload
+		payload := mail.EmailModifiedPayload{EventBeforeUpdate: eventBeforeUpdate, EventAfterUpdate: e}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+
+		n := model.Notification{NotificationType: model.TypeEventModified, AuthorUUID: adminUUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusOK, e)
 }
