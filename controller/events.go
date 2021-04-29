@@ -48,13 +48,19 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 	if memberUUID != "" {
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: memberUUID}
 		if err := p.GetParticipation(); err != nil {
-
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
+			if err != sql.ErrNoRows {
+				common.Debug("Error checking participation of member %s to event %s", memberUUID, e.UUID)
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 		e.Participation = p.Answer
 		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
 			if err := e.GetAttendance(); err != nil {
+				common.Debug("Error counting the number of people registered or the event.")
 				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				return
 			}
 		}
 	}
