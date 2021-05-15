@@ -365,7 +365,6 @@ func generateEventsNotificationsReminder() {
 	n := model.Notification{NotificationType: model.TypeUpcomingEvent}
 	for _, event := range events {
 		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("reminder_time_before_event")) {
-			n.AuthorUUID = "0"
 			n.ObjectUUID = event.UUID
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()
@@ -388,7 +387,6 @@ func generateEventsNotificationsSummary() {
 	n := model.Notification{NotificationType: model.TypeSummaryEvent}
 	for _, event := range events {
 		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("summary_time_before_event")) {
-			n.AuthorUUID = "0"
 			n.ObjectUUID = event.UUID
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()

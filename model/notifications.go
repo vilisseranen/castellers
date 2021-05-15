@@ -27,7 +27,6 @@ const NotificationDeliveryInProgress = 99
 type Notification struct {
 	ID               int
 	NotificationType string
-	AuthorUUID       string
 	ObjectUUID       string
 	SendDate         int
 	Delivered        int
@@ -42,7 +41,7 @@ func (n *Notification) CreateNotification() error {
 	}
 
 	stmt, err := tx.Prepare(fmt.Sprintf(
-		"INSERT INTO %s (notificationType, authorUUID, objectUUID, sendDate, payload) VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO %s (notificationType, objectUUID, sendDate, payload) VALUES (?, ?, ?, ?)",
 		notificationsTable))
 	if err != nil {
 		common.Error("%v\n", n)
@@ -51,7 +50,6 @@ func (n *Notification) CreateNotification() error {
 	defer stmt.Close()
 	_, err = stmt.Exec(
 		stringOrNull(n.NotificationType),
-		stringOrNull(n.AuthorUUID),
 		stringOrNull(n.ObjectUUID),
 		n.SendDate,
 		n.Payload)
@@ -66,7 +64,7 @@ func (n *Notification) CreateNotification() error {
 func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	now := time.Now().Unix()
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT id, notificationType, authorUUID, objectUUID, sendDate, payload FROM %s WHERE sendDate <= ? AND delivered=0",
+		"SELECT id, notificationType, objectUUID, sendDate, payload FROM %s WHERE sendDate <= ? AND delivered=0",
 		notificationsTable), now)
 	if err != nil {
 		common.Fatal(err.Error())
@@ -75,7 +73,7 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	notifications := []Notification{}
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, &n.NotificationType, &n.AuthorUUID, &n.ObjectUUID, &n.SendDate, &n.Payload); err != nil {
+		if err = rows.Scan(&n.ID, &n.NotificationType, &n.ObjectUUID, &n.SendDate, &n.Payload); err != nil {
 			return nil, err
 		}
 		notifications = append(notifications, n)

@@ -220,7 +220,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
 
-		n := model.Notification{NotificationType: model.TypeEventCreated, AuthorUUID: "0", SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		n := model.Notification{NotificationType: model.TypeEventCreated, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -232,7 +232,6 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
-	adminUUID := vars["admin_uuid"]
 	var e model.Event
 	eventBeforeUpdate := model.Event{UUID: UUID}
 	if err := eventBeforeUpdate.Get(); err != nil {
@@ -266,7 +265,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
 
-		n := model.Notification{NotificationType: model.TypeEventModified, AuthorUUID: adminUUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		n := model.Notification{NotificationType: model.TypeEventModified, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
