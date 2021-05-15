@@ -125,7 +125,6 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
-
 	// Decode the event
 	var event model.Event
 	decoder := json.NewDecoder(r.Body)
@@ -207,6 +206,22 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Create the events
 	for _, event := range events {
 		if err := event.CreateEvent(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	// Send notification
+	if event.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
+
+		// Encode payload
+		event.UUID = events[0].UUID
+		payload := mail.EmailCreateEventPayload{Event: event}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+
+		n := model.Notification{NotificationType: model.TypeEventCreated, AuthorUUID: "0", SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

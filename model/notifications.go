@@ -15,6 +15,7 @@ const TypeSummaryEvent = "summaryEvent"
 const TypeForgotPassword = "forgotPassword"
 const TypeEventDeleted = "eventDeleted"
 const TypeEventModified = "eventModified"
+const TypeEventCreated = "eventCreated"
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1

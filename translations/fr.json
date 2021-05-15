@@ -1,6 +1,8 @@
 {
     "greetings": "Bonjour",
     "on_the": "le",
+    "from_time": "de",
+    "to_time": "à",
     "email_my_profile": "Mon profil",
     "email_suggestions": "Bogue ? Suggestion ? Écris moi: ",
     "registration_title": "Inscription",
@@ -53,5 +55,13 @@
     "modified_event_location": "Localisation",
     "modified_event_action_title": "Lien vers l'évènement",
     "modified_event_action_text": "Tu peux voir l'évènement en ligne avec ce lien.",
-    "modified_event_action_button": "Évènement"
+    "modified_event_action_button": "Évènement",
+    "create_event_subject": "Un nouvel évènement a été créé",
+    "create_event_intro": "Ceci est un message pour te prévenir qu'un évènement a été ajouté.",
+    "create_event_text": "Voici le nouvel évènement:",
+    "create_event_action_title": "Tu peux voir l'évènement en ligne avec ce lien.",
+    "create_event_action_text": "Tu peux voir l'évènement en ligne avec ce lien.",
+    "create_event_action_button": "Évènement",
+    "create_event_main_recurring": "Il s'agit d'un évènement récurrent.",
+    "create_event_main_location": "Lieu:"
 }
