@@ -125,7 +125,6 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
-
 	// Decode the event
 	var event model.Event
 	decoder := json.NewDecoder(r.Body)
@@ -211,13 +210,28 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	// Send notification
+	if event.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
+
+		// Encode payload
+		event.UUID = events[0].UUID
+		payload := mail.EmailCreateEventPayload{Event: event}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+
+		n := model.Notification{NotificationType: model.TypeEventCreated, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 	RespondWithJSON(w, http.StatusCreated, event)
 }
 
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
-	adminUUID := vars["admin_uuid"]
 	var e model.Event
 	eventBeforeUpdate := model.Event{UUID: UUID}
 	if err := eventBeforeUpdate.Get(); err != nil {
@@ -251,7 +265,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
 
-		n := model.Notification{NotificationType: model.TypeEventModified, AuthorUUID: adminUUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		n := model.Notification{NotificationType: model.TypeEventModified, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return

@@ -62,9 +62,9 @@ func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
 	offset := page * limit
 	queryString := ""
 	if pastEvents {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE startDate < ? AND deleted=0 ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE endDate < ? AND deleted=0 ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE)
 	} else {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE startDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
 	}
 	rows, err := db.Query(queryString, now, limit, offset)
 	if err != nil {

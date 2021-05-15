@@ -351,7 +351,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	err := member.GetByEmail()
 	if err == nil {
-		n := model.Notification{NotificationType: model.TypeForgotPassword, AuthorUUID: member.UUID, ObjectUUID: member.UUID, SendDate: int(time.Now().Unix())}
+		n := model.Notification{NotificationType: model.TypeForgotPassword, ObjectUUID: member.UUID, SendDate: int(time.Now().Unix())}
 		if err := n.CreateNotification(); err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return

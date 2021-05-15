@@ -109,7 +109,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	payload := mail.EmailRegisterPayload{Member: m, Author: a}
 	payloadBytes := new(bytes.Buffer)
 	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: m.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -259,7 +259,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	payload := mail.EmailRegisterPayload{Member: m, Author: a}
 	payloadBytes := new(bytes.Buffer)
 	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, AuthorUUID: a.UUID, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return

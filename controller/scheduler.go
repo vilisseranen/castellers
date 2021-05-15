@@ -313,6 +313,44 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus()
+		case model.TypeEventCreated:
+			// Get All members
+			m := model.Member{}
+			members, err := m.GetAll()
+			if err != nil {
+				// Cannot get the members, complete failure
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus()
+				continue
+			}
+			failures := 0
+			for _, member := range members {
+				// Send the email
+				if member.Subscribed == 1 {
+					var payload mail.EmailCreateEventPayload
+					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					payload.Member = member
+					if err := mail.SendCreateEventEmail(payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if failures == len(members) {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus()
+
 		}
 	}
 }
@@ -327,7 +365,6 @@ func generateEventsNotificationsReminder() {
 	n := model.Notification{NotificationType: model.TypeUpcomingEvent}
 	for _, event := range events {
 		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("reminder_time_before_event")) {
-			n.AuthorUUID = "0"
 			n.ObjectUUID = event.UUID
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()
@@ -350,7 +387,6 @@ func generateEventsNotificationsSummary() {
 	n := model.Notification{NotificationType: model.TypeSummaryEvent}
 	for _, event := range events {
 		if (event.StartDate - uint(time.Now().Unix())) < uint(common.GetConfigInt("summary_time_before_event")) {
-			n.AuthorUUID = "0"
 			n.ObjectUUID = event.UUID
 			n.SendDate = int(time.Now().Unix())
 			err = n.CreateNotification()
