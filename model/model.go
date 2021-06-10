@@ -80,6 +80,7 @@ func InitializeDB(dbname string) {
 			} else {
 				common.Fatal(err.Error())
 			}
+			common.Info("Update schema to %s completed\n", version)
 		} else {
 			common.Info("Schema %s already installed.\n", version)
 		}
