@@ -21,7 +21,7 @@ var db *sql.DB
 
 func InitializeDB(dbname string) {
 	var err error
-	db, err = sql.Open("sqlite3", dbname)
+	db, err = sql.Open("sqlite3", dbname+"?_foreign_keys=on")
 	if err != nil {
 		common.Fatal(err.Error())
 	}
