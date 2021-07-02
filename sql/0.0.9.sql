@@ -45,8 +45,8 @@ INSERT INTO castell_types(name) VALUES('4d6');
 
 
 /* Build castells with positions */
-INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="1d4"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 3 AND column <= 1) OR (part = "pom" AND cordon = 3 AND column <= 1);
-INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="1d5"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 4 AND column <= 1) OR (part = "pom" AND cordon = 3 AND column <= 1);
+INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="1d4"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 4 AND column <= 1);
+INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="1d5"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 3 AND column <= 1);
 INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="2d5"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 2 AND column <= 2) OR (part = "pom");
 INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="2d6"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 3 AND column <= 2) OR (part = "pom");
 INSERT INTO castell_positions_in_castells(castell_type_name, castell_positions_id) SELECT (SELECT name FROM castell_types WHERE name="3d5"),id FROM castell_positions WHERE (part = "tronc" AND cordon <= 2 AND column <= 3) OR (part = "pom");
