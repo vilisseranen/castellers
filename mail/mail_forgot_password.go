@@ -60,7 +60,7 @@ func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
 	}
 	email.MainSections = []emailMain{
 		{
-			Title: common.Translate("forgot_reset_not_requested_text", payload.Member.Language),
+			Title: common.Translate("forgot_reset_not_requested_title", payload.Member.Language),
 			Text:  common.Translate("forgot_reset_not_requested_text", payload.Member.Language),
 		},
 		{
