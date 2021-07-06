@@ -39,6 +39,8 @@ func (a *App) Initialize() {
 
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
+	routes.AttachLegacyAPI(a.Router)
+	routes.AttachV1API(a.Router)
 
 	f, err := os.OpenFile(common.GetConfigString("log_file"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
