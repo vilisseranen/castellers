@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS events
 	lat REAL,
 	lng REAL,
 	CONSTRAINT uuid_unique UNIQUE (uuid),
-	FOREIGN KEY(recurringEvent) REFERENCES recurring_events(id)
+	FOREIGN KEY(recurringEvent) REFERENCES recurring_events(uuid)
 );
 CREATE TABLE IF NOT EXISTS members
 (
