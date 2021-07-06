@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -38,20 +39,23 @@ type Event struct {
 
 func (e *Event) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
-	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.Description, &e.LocationName, &e.Location.Lat, &e.Location.Lng)
+	var description, locationName sql.NullString // to manage possible NULL fields
+	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng)
+	e.Description = nullToEmptyString(description)
+	e.LocationName = nullToEmptyString(locationName)
 	return err
 }
 
 func (e *Event) GetAttendance() error {
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	err = stmt.QueryRow(e.UUID).Scan(&e.Attendance)
 	return err
 
@@ -67,10 +71,10 @@ func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
 		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
 	}
 	rows, err := db.Query(queryString, now, limit, offset)
+	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer rows.Close()
 
 	Events := []Event{}
 
@@ -89,10 +93,10 @@ func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
 
 func (e *Event) UpdateEvent() error {
 	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(
 		e.Name,
 		e.StartDate,
@@ -108,39 +112,39 @@ func (e *Event) UpdateEvent() error {
 
 func (e *Event) DeleteEvent() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid= ?", EVENTS_TABLE))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(e.UUID)
 	return err
 }
 
 func (e *Event) CreateEvent() error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
-	if err != nil {
-		return err
-	}
+	stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
 	defer stmt.Close()
+	if err != nil {
+		common.Error(err.Error())
+		common.Error("%v\n", e)
+		return err
+	}
 	_, err = stmt.Exec(
 		e.UUID,
 		e.Name,
 		e.StartDate,
 		e.EndDate,
-		e.RecurringEvent,
+		stringOrNull(e.RecurringEvent),
 		stringOrNull(e.Description),
 		e.Type,
 		stringOrNull(e.LocationName),
 		e.Location.Lat,
 		e.Location.Lng)
 	if err != nil {
+		stmt.Close()
+		common.Error(err.Error())
+		common.Error("%v\n", e)
 		return err
 	}
-	err = tx.Commit()
 	return err
 }
 
@@ -148,10 +152,10 @@ func (e *Event) GetUpcomingEventsWithoutNotification(eventType string) ([]Event,
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') AND deleted=0 ORDER BY startDate",
 		EVENTS_TABLE, eventType), time.Now().Unix())
+	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer rows.Close()
 
 	Events := []Event{}
 

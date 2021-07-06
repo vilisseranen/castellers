@@ -17,27 +17,37 @@ import (
 func GetMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
-	m := model.Member{UUID: UUID}
-	if err := m.Get(); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Member not found")
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-		return
-	}
-	au, err := ExtractToken(r)
+
+	// if member, request can only be about themselves
+	// if admin can be for anyone
+
+	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
-		m.Roles = []string{}
-		m.Extra = ""
+	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+		m := model.Member{UUID: UUID}
+		if err := m.Get(); err != nil {
+			switch err {
+			case sql.ErrNoRows:
+				RespondWithError(w, http.StatusNotFound, "Member not found")
+			default:
+				RespondWithError(w, http.StatusInternalServerError, err.Error())
+			}
+			return
+		}
+		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+			m.Roles = []string{}
+			m.Extra = ""
+		}
+		RespondWithJSON(w, http.StatusOK, m)
+		return
 
 	}
-	RespondWithJSON(w, http.StatusOK, m)
+	common.Error("Permissions: %s", tokenAuth.Permissions)
+	RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+	return
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {
@@ -93,9 +103,12 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
-	vars := mux.Vars(r)
-	UUID := vars["admin_uuid"]
-	a := model.Member{UUID: UUID}
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	a := model.Member{UUID: tokenAuth.UserId}
 	if err := a.Get(); err != nil {
 		common.Error("Failed to get admin for CreateMember.")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -118,96 +131,104 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditMember(w http.ResponseWriter, r *http.Request) {
-	var m model.Member
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&m); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-	defer r.Body.Close()
-	// If email is changing, we need to check if it is used
-	currentMember := model.Member{UUID: m.UUID}
-	err := currentMember.Get()
-	if err != nil {
-		common.Info("Member cannt be found")
-		RespondWithError(w, http.StatusBadRequest, ErrorGetMemberMessage)
-		return
-	}
-	if currentMember.Email != m.Email && !emailAvailable(m) {
-		common.Debug(currentMember.Email)
-		common.Debug(m.Email)
-		common.Debug("%s", emailAvailable(m))
-		common.Info("Email %s is not available", m.Email)
-		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
-		return
-	}
-	if missingRequiredFields(m) {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
-		return
-	}
-	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-		common.Error("Error validating Height: " + m.Height)
-		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
-		return
-	}
-	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-		common.Error("Error validating Weight: " + m.Weight)
-		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
-		return
-	}
-	if err := model.ValidateRoles(m.Roles); err != nil {
-		common.Error("Error validating roles: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err := model.ValidateLanguage(m.Language); err != nil {
-		common.Error("Error validating language: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	// Make sure we are not changing the profile of somebody else
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
-	m.UUID = UUID
 
-	// Check if we can change role
-	// If caller is admin, we can change the role
-	// If caller is member, we cannot change he role
-	au, err := ExtractToken(r)
+	// if member, request can only be about themselves
+	// if admin can be for anyone
+
+	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, UnauthorizedMessage)
-	}
-	if !common.StringInSlice(model.MemberTypeAdmin, au.Permissions) {
-		// get current user and use existing values for roles, extra and type
-		existingMember := model.Member{UUID: UUID}
-		if err := existingMember.Get(); err != nil {
-			switch err {
-			case sql.ErrNoRows:
-				RespondWithError(w, http.StatusNotFound, "Member not found")
-			default:
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
-			}
-			return
-		}
-		if existingMember.Type != m.Type {
-			RespondWithError(w, http.StatusForbidden, UnauthorizedMessage)
-			return
-		}
-		m.Roles = existingMember.Roles
-		m.Extra = existingMember.Extra
-
-	}
-	if err := m.EditMember(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	RespondWithJSON(w, http.StatusAccepted, m)
+	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+		var m model.Member
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&m); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			return
+		}
+		defer r.Body.Close()
+		// Make sure we are not changing the profile of somebody else
+		m.UUID = UUID
+		// If email is changing, we need to check if it is used
+		currentMember := model.Member{UUID: m.UUID}
+		err = currentMember.Get()
+		if err != nil {
+			common.Info("Member cannt be found")
+			RespondWithError(w, http.StatusBadRequest, ErrorGetMemberMessage)
+			return
+		}
+		if currentMember.Email != m.Email && !emailAvailable(m) {
+			common.Debug(currentMember.Email)
+			common.Debug(m.Email)
+			common.Debug("%s", emailAvailable(m))
+			common.Info("Email %s is not available", m.Email)
+			RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+			return
+		}
+		if missingRequiredFields(m) {
+			RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
+			return
+		}
+		if err := model.ValidNumberOrEmpty(m.Height); err != nil {
+			common.Error("Error validating Height: " + m.Height)
+			RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
+			return
+		}
+		if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
+			common.Error("Error validating Weight: " + m.Weight)
+			RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
+			return
+		}
+		if err := model.ValidateRoles(m.Roles); err != nil {
+			common.Error("Error validating roles: " + err.Error())
+			RespondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := model.ValidateLanguage(m.Language); err != nil {
+			common.Error("Error validating language: " + err.Error())
+			RespondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// Check if we can change role
+		// If caller is admin, we can change the role
+		// If caller is member, we cannot change he role
+		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+			// get current user and use existing values for roles, extra and type
+			existingMember := model.Member{UUID: UUID}
+			if err := existingMember.Get(); err != nil {
+				switch err {
+				case sql.ErrNoRows:
+					RespondWithError(w, http.StatusNotFound, "Member not found")
+				default:
+					RespondWithError(w, http.StatusInternalServerError, err.Error())
+				}
+				return
+			}
+			if existingMember.Type != m.Type {
+				RespondWithError(w, http.StatusForbidden, UnauthorizedMessage)
+				return
+			}
+			m.Roles = existingMember.Roles
+			m.Extra = existingMember.Extra
+
+		}
+		if err := m.EditMember(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		RespondWithJSON(w, http.StatusAccepted, m)
+		return
+	}
+	RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
 }
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
-	adminUUID := vars["admin_uuid"]
 	m := model.Member{UUID: UUID}
 	// Cannot delete self if admin
 	if err := m.Get(); err != nil {
@@ -219,7 +240,12 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if adminUUID == UUID && m.Type == "admin" {
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if tokenAuth.UserId == UUID && m.Type == "admin" {
 		RespondWithError(w, http.StatusLocked, "Cannot remove yourself if admin")
 		return
 	}
@@ -287,6 +313,8 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// This function always use the UUID from the token
+	// so we cannot change the password for somebody else
 	c := model.Credentials{UUID: tokenAuth.UserId}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {

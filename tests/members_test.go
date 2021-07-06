@@ -27,7 +27,7 @@ func TestCreateMember(t *testing.T) {
 		"language": "fr",
 		"subscribed": 0}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -61,7 +61,7 @@ func TestCreateMemberInvalidRole(t *testing.T) {
 		"type": "member",
 		"email": "vilisseranen@gmail.com"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -81,7 +81,7 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		"email": "vilisseranen@gmail.com",
 		"language": "cat"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -107,7 +107,7 @@ func TestCreateMemberNoExtra(t *testing.T) {
 	var memberUUID string
 	memberUUID = m["uuid"].(string)
 
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/"+memberUUID, nil)
+	req, _ = http.NewRequest("GET", "/api/v1/members/"+memberUUID, nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -120,7 +120,7 @@ func TestUpdateMember(t *testing.T) {
 	access_token := h.addAnAdmin()
 	h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -138,7 +138,7 @@ func TestUpdateMember(t *testing.T) {
 		t.Errorf(error.Error())
 	}
 
-	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -146,7 +146,7 @@ func TestUpdateMember(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("GET", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -167,7 +167,7 @@ func TestPromoteSelf(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -183,7 +183,7 @@ func TestPromoteSelf(t *testing.T) {
 		t.Errorf(error.Error())
 	}
 
-	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -197,7 +197,7 @@ func TestPromoteByAdmin(t *testing.T) {
 	access_token := h.addAnAdmin()
 	h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -213,7 +213,7 @@ func TestPromoteByAdmin(t *testing.T) {
 		t.Errorf(error.Error())
 	}
 
-	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -227,19 +227,19 @@ func TestDeleteMember(t *testing.T) {
 	access_token := h.addAnAdmin()
 	h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
-	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadbeef", nil)
+	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/members/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
@@ -251,7 +251,7 @@ func TestDeleteSelfAdmin(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAnAdmin()
 
-	req, _ := http.NewRequest("DELETE", "/api/admins/deadfeed/members/deadfeed", nil)
+	req, _ := http.NewRequest("DELETE", "/api/v1/members/deadfeed", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusLocked, response.Code); err != nil {
@@ -263,7 +263,7 @@ func TestGetMember(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -283,7 +283,7 @@ func TestGetMemberType(t *testing.T) {
 	access_token_member := h.addAMember()
 	access_token_admin := h.addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/api/members/deadfeed", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadfeed", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response := h.executeRequest(req)
 
@@ -298,7 +298,7 @@ func TestGetMemberType(t *testing.T) {
 		t.Errorf("Expected presence to be 'admin'. Got '%v'", m["type"])
 	}
 
-	req, _ = http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token_member)
 	response = h.executeRequest(req)
 
@@ -340,7 +340,7 @@ func TestGetMemberByEmailFail(t *testing.T) {
 func TestGetRoles(t *testing.T) {
 	h.clearTables()
 
-	req, _ := http.NewRequest("GET", "/api/roles", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/roles", nil)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -377,7 +377,7 @@ func TestCreateMemberWrongHeight(t *testing.T) {
 		"email": "vilisseranen@gmail.com",
 		"language": "fr"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -399,7 +399,7 @@ func TestCreateMemberWrongWeight(t *testing.T) {
 		"email": "vilisseranen@gmail.com",
 		"language": "fr"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/members", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -412,7 +412,7 @@ func TestUpdateSelf(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAMember()
 
-	req, _ := http.NewRequest("GET", "/api/members/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/members/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 	h.checkResponseCode(http.StatusOK, response.Code)
@@ -426,7 +426,7 @@ func TestUpdateSelf(t *testing.T) {
 		t.Errorf(error.Error())
 	}
 
-	req, _ = http.NewRequest("PUT", "/api/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 

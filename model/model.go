@@ -88,21 +88,30 @@ func InitializeDB(dbname string) {
 
 }
 
-func stringOrNull(s string) string {
+func stringOrNull(s string) sql.NullString {
 	if len(s) == 0 {
-		return ""
-	} else {
-		return s
+		return sql.NullString{}
 	}
+	return sql.NullString{
+		String: s,
+		Valid:  true,
+	}
+}
+
+func nullToEmptyString(s sql.NullString) string {
+	if !s.Valid {
+		return ""
+	}
+	return s.String
 }
 
 func schemaInstalled(version string) bool {
 	installed := 0
 	stmt, err := db.Prepare("SELECT COUNT(id) FROM schema_version WHERE installed = 1 AND version = ?;")
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	err = stmt.QueryRow(
 		version).Scan(&installed)
 	if err != nil {

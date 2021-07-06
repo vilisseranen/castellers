@@ -31,20 +31,20 @@ func (p *Participation) Participate() error {
 	}
 	if c == 0 {
 		stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (event_uuid, member_uuid, answer, presence) VALUES (?, ?, ?, ?)", PARTICIPATION_TABLE))
+		defer stmt.Close()
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
 		_, err = stmt.Exec(p.EventUUID, p.MemberUUID, stringOrNull(p.Answer), "")
 		if err != nil {
 			return err
 		}
 	} else if c == 1 {
 		stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET answer = ? WHERE event_uuid= ? AND member_uuid= ?", PARTICIPATION_TABLE))
+		defer stmt.Close()
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
 		_, err = stmt.Exec(stringOrNull(p.Answer), p.EventUUID, p.MemberUUID)
 		if err != nil {
 			return err
@@ -56,10 +56,10 @@ func (p *Participation) Participate() error {
 func (p *Participation) GetParticipation() error {
 	// Check if a participation already exists
 	stmt, err := db.Prepare(fmt.Sprintf("SELECT answer, presence FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
 	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&p.Answer, &p.Presence)
 	return err
 }

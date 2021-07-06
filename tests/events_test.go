@@ -16,7 +16,7 @@ func TestCreateEvent(t *testing.T) {
 	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1527894960, "endDate":1528046040, "type":"presentation"}`)
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
@@ -43,13 +43,12 @@ func TestCreateEvent(t *testing.T) {
 		t.Errorf("Expected event type to be 'presentation'. Got '%v'", event.Type)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events/"+event.UUID, nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/"+event.UUID, nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestCreateEventNoDate(t *testing.T) {
@@ -57,7 +56,7 @@ func TestCreateEventNoDate(t *testing.T) {
 	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","type":"presentation"}`)
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
@@ -80,7 +79,7 @@ func TestCreateEventNoDate(t *testing.T) {
 func TestGetNonExistentEvent(t *testing.T) {
 	h.clearTables()
 
-	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
@@ -99,7 +98,7 @@ func TestCreateEventNonAdmin(t *testing.T) {
 
 	payload := []byte(`{"name":"diada","startDate":"2018-06-01 23:16", "endDate":"2018-06-03 17:14"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -132,7 +131,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 	payload := []byte(fmt.Sprintf(`{"name":"diada","startDate":%d, "endDate":%d, "recurring": {"interval": "1w", "until": %d}, "type":"practice"}`, startDate, endDate, until))
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -140,7 +139,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events?limit=10&page=0", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events?limit=10&page=0", nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -188,7 +187,7 @@ func TestCreateDailyEvent(t *testing.T) {
 
 	payload := []byte(fmt.Sprintf(`{"name":"diada","startDate":%d, "endDate":%d, "recurring": {"interval": "1d", "until": %d}, "type":"practice"}`, startDate, endDate, until))
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -196,7 +195,7 @@ func TestCreateDailyEvent(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events?limit=10&page=0", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events?limit=10&page=0", nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -234,7 +233,7 @@ func TestGetEvent(t *testing.T) {
 	h.clearTables()
 	h.addEvent("deadbeef", "An event", 1527894960, 1528046040)
 
-	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -271,7 +270,7 @@ func TestGetEvents(t *testing.T) {
 	h.addEvent("deadbeef", "An event", startDate1, endDate1)
 	h.addEvent("deadfeed", "Another event", startDate2, endDate2)
 
-	req, _ := http.NewRequest("GET", "/api/events?count=2&start=1", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/events?count=2&start=1", nil)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
@@ -319,7 +318,7 @@ func TestUpdateEvent(t *testing.T) {
 	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
 	access_token := h.addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response := h.executeRequest(req)
 
 	var originalEvent model.Event
@@ -327,7 +326,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	payload := []byte(`{"name": "test event - updated name", "startDate":1579218314,"endDate":1579228214,"recurring":{"interval":"1w","until":0},"type":"practice","location":{"lat":45.50073714334654,"lng":-73.6241186484186},"locationName":"Brébeuf","description":"new description"}`)
 
-	req, _ = http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/api/v1/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -337,7 +336,7 @@ func TestUpdateEvent(t *testing.T) {
 	}
 
 	// Make sure the event is returned properly
-	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response = h.executeRequest(req)
 
 	var m model.Event
@@ -365,20 +364,20 @@ func TestDeleteEvent(t *testing.T) {
 	h.addEvent("deadbeef", "An event", 1528048800, 1528059600)
 	access_token := h.addAnAdmin()
 
-	req, _ := http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response := h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("DELETE", "/api/admins/deadfeed/events/deadbeef", nil)
+	req, _ = http.NewRequest("DELETE", "/api/v1/events/deadbeef", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events/deadbeef", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/deadbeef", nil)
 	response = h.executeRequest(req)
 	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
 		t.Error(err)
@@ -390,7 +389,7 @@ func TestCreateEventEndBeforeBeginning(t *testing.T) {
 	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada","startDate":1528046040, "endDate":1527894960}`)
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
@@ -405,7 +404,7 @@ func TestCreateEventEmptyName(t *testing.T) {
 	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"","startDate":1527894960, "endDate":1528046040}`)
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
@@ -422,7 +421,7 @@ func TestUpdateEventEndBeforeBeginning(t *testing.T) {
 
 	payload := []byte(`{"name":"An event","startDate":1528052400, "endDate":1518063200}`)
 
-	req, _ := http.NewRequest("PUT", "/api/admins/deadfeed/events/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("PUT", "/api/v1/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -436,7 +435,7 @@ func TestCreateEventWithLocationAndDescription(t *testing.T) {
 	access_token := h.addAnAdmin()
 
 	payload := []byte(`{"name":"diada", "type":"presentation", "locationName": "Brébeuf", "location": {"lat": 45.50073714334654, "lng": -73.6241186484186}, "description": "First event description"}`)
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
 
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
@@ -464,7 +463,7 @@ func TestCreateEventWithLocationAndDescription(t *testing.T) {
 		t.Errorf("Expected description to be 'First event description'. Got '%v'", event.Description)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/events/"+event.UUID, nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/"+event.UUID, nil)
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {

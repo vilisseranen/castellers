@@ -17,10 +17,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	var m model.Member
 	members, err := m.GetAll()
 	if err != nil {
-		switch err {
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if len(members) > 0 {
@@ -37,7 +34,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	m.Type = model.MemberTypeAdmin // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
-	m.Code = common.GenerateCode()
+	m.Code = common.GenerateCode() // TODO remove Code
 
 	// Create the Member now
 	if err := m.CreateMember(); err != nil {
@@ -49,6 +46,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(payloadBytes).Encode(payload)
 	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
+		common.Error("cannot create notification")
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

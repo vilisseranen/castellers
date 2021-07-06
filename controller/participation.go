@@ -24,19 +24,14 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	if err := event.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusUnauthorized, "You are not authorized to register for this event.")
+			RespondWithError(w, http.StatusNotFound, "Event not found.")
 		default:
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
 	if err := member.Get(); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusBadRequest, "This member does not exist.")
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	var p model.Participation

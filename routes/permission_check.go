@@ -3,17 +3,15 @@ package routes
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
-
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/controller"
-	"github.com/vilisseranen/castellers/model"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request)
 
 func checkTokenType(h handler, requestedType ...string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
+		common.Debug("Validating token in Authorization Header: %s", r.Header.Get("Authorization"))
 		tokenAuth, err := controller.ExtractToken(r)
 		if err != nil {
 			// TODO: find a better way to determine if the token has expired.
@@ -26,17 +24,21 @@ func checkTokenType(h handler, requestedType ...string) handler {
 			return
 		}
 		if !common.StringInBothSlices(requestedType, tokenAuth.Permissions) {
+			common.Error("Token not allowed to access this resource")
 			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
 			return
 		}
-		if common.StringInSlice(model.MemberTypeMember, requestedType) {
-			vars := mux.Vars(r)
-			uuid := vars["member_uuid"]
-			if uuid != tokenAuth.UserId {
-				controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
-				return
-			}
-		}
+		// Move this validation in the controller for resources accessing to members only converning themselves
+		// if common.StringInSlice(model.MemberTypeMember, requestedType) {
+		// 	vars := mux.Vars(r)
+		// 	uuid := vars["member_uuid"]
+		// 	if uuid != "" && uuid != tokenAuth.UserId {
+		// 		common.Error("Token not allowed to access this resource 2")
+		// 		controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+		// 		return
+		// 	}
+		// }
+		common.Debug("Token is valid and allowed")
 		h(w, r)
 	}
 }
