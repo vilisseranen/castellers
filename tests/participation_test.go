@@ -16,7 +16,7 @@ func TestParticipateEvent(t *testing.T) {
 
 	payload := []byte(`{"answer":"maybe"}`)
 
-	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -40,7 +40,7 @@ func TestPresenceEvent(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -64,7 +64,7 @@ func TestGetParticipants(t *testing.T) {
 
 	payload := []byte(`{"answer":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/members/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token_member)
 	response := h.executeRequest(req)
 
@@ -74,7 +74,7 @@ func TestGetParticipants(t *testing.T) {
 
 	payload = []byte(`{"answer":"no"}`)
 
-	req, _ = http.NewRequest("POST", "/api/events/deadbeef/members/deadfeed", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("POST", "/api/v1/members/events/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response = h.executeRequest(req)
 
@@ -82,7 +82,7 @@ func TestGetParticipants(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/deadbeef/members", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token_admin)
 	response = h.executeRequest(req)
 
@@ -115,7 +115,7 @@ func TestGetPresence(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events/deadbeef/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -123,7 +123,7 @@ func TestGetPresence(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("GET", "/api/admins/deadfeed/events/deadbeef/members", nil)
+	req, _ = http.NewRequest("GET", "/api/v1/events/deadbeef/members", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -149,7 +149,7 @@ func TestPresenceWrongEvent(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/123/members/deadbeef", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events/123/members/deadbeef", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -167,7 +167,7 @@ func TestPresenceWrongMember(t *testing.T) {
 
 	payload := []byte(`{"presence":"yes"}`)
 
-	req, _ := http.NewRequest("POST", "/api/admins/deadfeed/events/deadbeef/members/123", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/events/deadbeef/members/123", bytes.NewBuffer(payload))
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 

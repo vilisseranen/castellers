@@ -26,13 +26,6 @@ const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 100
 
 func GetEvent(w http.ResponseWriter, r *http.Request) {
-	tokenAuth, err := ExtractToken(r)
-	memberUUID := ""
-	if err != nil {
-		common.Debug("Cannot extract token. Treating request as unauthenticated")
-	} else {
-		memberUUID = tokenAuth.UserId
-	}
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 	e := model.Event{UUID: UUID}
@@ -45,12 +38,17 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if memberUUID != "" {
-		p := model.Participation{EventUUID: e.UUID, MemberUUID: memberUUID}
+	if requestHasAuthorizationToken(r) {
+		tokenAuth, err := ExtractToken(r)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
 		if err := p.GetParticipation(); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
-				common.Debug("Error checking participation of member %s to event %s", memberUUID, e.UUID)
+				common.Debug("Error checking participation of member %s to event %s", tokenAuth.UserId, e.UUID)
 				RespondWithError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
@@ -68,6 +66,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetEvents(w http.ResponseWriter, r *http.Request) {
+
 	limit, _ := strconv.Atoi(r.FormValue("limit"))
 	page, _ := strconv.Atoi(r.FormValue("page"))
 	pastEvents := false
@@ -89,16 +88,15 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	vars := mux.Vars(r)
-	var memberUUID string
-	if vars["member_uuid"] != "" {
-		memberUUID = vars["member_uuid"]
-	} else if vars["admin_uuid"] != "" {
-		memberUUID = vars["admin_uuid"]
-	}
-	if memberUUID != "" {
+	// if request is authenticated
+	if requestHasAuthorizationToken(r) {
+		tokenAuth, err := ExtractToken(r)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		for index, event := range events {
-			p := model.Participation{EventUUID: event.UUID, MemberUUID: memberUUID}
+			p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
 			if err := p.GetParticipation(); err != nil {
 				switch err {
 				case sql.ErrNoRows:
@@ -109,16 +107,17 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			}
 			events[index].Participation = p.Answer
 		}
-	}
-	if adminUUID := vars["admin_uuid"]; adminUUID != "" {
-		for index, event := range events {
-			if err := event.GetAttendance(); err != nil {
-				switch err {
-				default:
-					RespondWithError(w, http.StatusInternalServerError, err.Error())
+		// if token contain permission admin
+		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+			for index, event := range events {
+				if err := event.GetAttendance(); err != nil {
+					switch err {
+					default:
+						RespondWithError(w, http.StatusInternalServerError, err.Error())
+					}
 				}
+				events[index].Attendance = event.Attendance
 			}
-			events[index].Attendance = event.Attendance
 		}
 	}
 	RespondWithJSON(w, http.StatusOK, events)
@@ -133,6 +132,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	common.Debug("Creating event: %s", event)
 
 	// Validation on events data
 	if validEventData(event) == false {

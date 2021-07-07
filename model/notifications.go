@@ -27,37 +27,32 @@ const NotificationDeliveryInProgress = 99
 type Notification struct {
 	ID               int
 	NotificationType string
-	ObjectUUID       string
+	ObjectUUID       string // TODO: remove this field
 	SendDate         int
 	Delivered        int
 	Payload          []byte
 }
 
 func (n *Notification) CreateNotification() error {
-	tx, err := db.Begin()
-	if err != nil {
-		common.Error("%v\n", n)
-		return err
-	}
-
-	stmt, err := tx.Prepare(fmt.Sprintf(
+	stmt, err := db.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (notificationType, objectUUID, sendDate, payload) VALUES (?, ?, ?, ?)",
 		notificationsTable))
+	defer stmt.Close()
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", n)
 		return err
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(
 		stringOrNull(n.NotificationType),
 		stringOrNull(n.ObjectUUID),
 		n.SendDate,
 		n.Payload)
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", n)
 		return err
 	}
-	tx.Commit()
 	return err
 }
 
@@ -66,10 +61,10 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT id, notificationType, objectUUID, sendDate, payload FROM %s WHERE sendDate <= ? AND delivered=0",
 		notificationsTable), now)
+	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer rows.Close()
 	notifications := []Notification{}
 	for rows.Next() {
 		var n Notification
@@ -85,26 +80,22 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 }
 
 func (n *Notification) UpdateNotificationStatus() error {
-	tx, err := db.Begin()
-	if err != nil {
-		common.Error("%v\n", n)
-		return err
-	}
-	stmt, err := tx.Prepare(fmt.Sprintf(
+	stmt, err := db.Prepare(fmt.Sprintf(
 		"UPDATE %s SET delivered = ? WHERE id = ?",
 		notificationsTable))
+	defer stmt.Close()
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", n)
 		return err
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(
 		n.Delivered,
 		n.ID)
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", n)
 		return err
 	}
-	tx.Commit()
 	return err
 }

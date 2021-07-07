@@ -97,7 +97,7 @@ func (test *TestHelper) addAMember() string {
 		"username":"member",
 		"password":"member"}`)
 
-	req, _ := http.NewRequest("POST", "/api/login", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/login", bytes.NewBuffer(payload))
 	response := h.executeRequest(req)
 	var t map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &t)
@@ -111,7 +111,7 @@ func (test *TestHelper) addAnAdmin() string {
 		"username":"admin",
 		"password":"admin"}`)
 
-	req, _ := http.NewRequest("POST", "/api/login", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/login", bytes.NewBuffer(payload))
 	response := h.executeRequest(req)
 	var t map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &t)
@@ -192,6 +192,13 @@ func (test *TestHelper) removeExistingTables() {
 	db.Exec("DROP TABLE IF EXISTS recurring_events")
 	db.Exec("DROP TABLE IF EXISTS notifications")
 	db.Exec("DROP TABLE IF EXISTS members_credentials")
+	db.Exec("DROP TABLE IF EXISTS castell_types")
+	db.Exec("DROP TABLE IF EXISTS castell_positions")
+	db.Exec("DROP TABLE IF EXISTS castell_positions_in_castells")
+	db.Exec("DROP TABLE IF EXISTS castell_models")
+	db.Exec("DROP TABLE IF EXISTS castell_members_positions")
+	db.Exec("DROP VIEW IF EXISTS castell_types_view")
+	db.Exec("DROP VIEW IF EXISTS castell_models_view")
 }
 
 func (test *TestHelper) clearTables() {

@@ -14,10 +14,11 @@ func TestInitialize(t *testing.T) {
 		"firstName":"Chimo",
 		"lastName":"Anaïs",
 		"extra":"Cap de colla",
-		"roles": ["second"],
-		"email": "vilisseranen@gmail.com"}`)
+		"roles":[],
+		"email":"vilisseranen@gmail.com",
+		"language":"fr"}`)
 
-	req, _ := http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/api/v1/initialize", bytes.NewBuffer(payload))
 	response := h.executeRequest(req)
 
 	// First admin should succeed
@@ -45,8 +46,8 @@ func TestInitialize(t *testing.T) {
 	}
 
 	// Second admin should fail
-	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles"}`)
-	req, _ = http.NewRequest("POST", "/api/initialize", bytes.NewBuffer(payload))
+	payload = []byte(`{"name":"Clément", "extra":"Cap de rengles", "language":"fr"}`)
+	req, _ = http.NewRequest("POST", "/api/v1/initialize", bytes.NewBuffer(payload))
 	response = h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusUnauthorized, response.Code); err != nil {
@@ -57,7 +58,7 @@ func TestInitialize(t *testing.T) {
 func TestNotInitialized(t *testing.T) {
 	h.clearTables()
 
-	req, _ := http.NewRequest("GET", "/api/initialize", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/initialize", nil)
 	response := h.executeRequest(req)
 
 	if err := h.checkResponseCode(http.StatusNoContent, response.Code); err != nil {
@@ -77,7 +78,7 @@ func TestVersion(t *testing.T) {
 		Version string `json:"version"`
 	}
 
-	req, _ := http.NewRequest("GET", "/api/version", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/version", nil)
 	response := h.executeRequest(req)
 
 	var v version

@@ -44,19 +44,15 @@ type Credentials struct {
 }
 
 func (m *Member) CreateMember() error {
-	tx, err := db.Begin()
-	if err != nil {
-		common.Error("%v\n", m)
-		return err
-	}
-	stmt, err := tx.Prepare(fmt.Sprintf(
+	stmt, err := db.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MembersTable))
+	defer stmt.Close()
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", m)
 		return err
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(
 		stringOrNull(m.UUID),
 		common.Encrypt(m.FirstName),
@@ -71,10 +67,10 @@ func (m *Member) CreateMember() error {
 		stringOrNull(m.Code),
 		stringOrNull(m.Language))
 	if err != nil {
+		common.Error(err.Error())
 		common.Error("%v\n", m)
 		return err
 	}
-	err = tx.Commit()
 	return err
 }
 
@@ -86,10 +82,10 @@ func (m *Member) EditMember() error {
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
 		MembersTable))
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(
 		common.Encrypt(m.FirstName),
 		common.Encrypt(m.LastName),
@@ -115,10 +111,10 @@ func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
 		MembersTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	var rolesAsString string
 	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
 	if err == nil {
@@ -140,10 +136,11 @@ func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
 		MembersTable))
+	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
+		return nil, err
 	}
-	defer rows.Close()
 
 	members := []Member{}
 
@@ -174,10 +171,12 @@ func (m *Member) GetAll() ([]Member, error) {
 func (m *Member) DeleteMember() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		MembersTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
+		return err
 	}
-	defer stmt.Close()
+
 	_, err = stmt.Exec(m.UUID)
 	return err
 }
@@ -191,10 +190,11 @@ func (m *Member) sanitizeEmptyRoles() {
 
 func (m *Member) Activate() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MembersTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
+		return err
 	}
-	defer stmt.Close()
 	_, err = stmt.Exec(m.UUID)
 	return err
 }
@@ -206,19 +206,23 @@ func (c *Credentials) ResetCredentials(username string, password []byte) error {
 		common.Fatal(err.Error())
 	}
 	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MembersCredentialsTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
+		return err
 	}
 	_, err = stmt.Exec(c.UUID)
 	if err != nil {
 		common.Fatal(err.Error())
+		return err
 	}
-	stmt.Close()
 	stmt, err = db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MembersCredentialsTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
+		return err
 	}
-	defer stmt.Close()
+
 	_, err = stmt.Exec(c.UUID, username, password)
 	return err
 }
@@ -227,10 +231,10 @@ func (c *Credentials) GetCredentials() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT uuid, password FROM %s WHERE username= ?",
 		MembersCredentialsTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	err = stmt.QueryRow(c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
 }
@@ -239,10 +243,10 @@ func (c *Credentials) GetCredentialsByUUID() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT username FROM %s WHERE uuid= ?",
 		MembersCredentialsTable))
+	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	defer stmt.Close()
 	err = stmt.QueryRow(c.UUID).Scan(&c.Username)
 	return err
 }

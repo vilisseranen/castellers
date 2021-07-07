@@ -147,6 +147,10 @@ func extractTokenString(r *http.Request) string {
 	return ""
 }
 
+func requestHasAuthorizationToken(r *http.Request) bool {
+	return extractTokenString(r) != ""
+}
+
 func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
