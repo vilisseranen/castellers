@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -68,9 +69,11 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	notifications := []Notification{}
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, &n.NotificationType, &n.ObjectUUID, &n.SendDate, &n.Payload); err != nil {
+		var objectUUID sql.NullString // to manage possible NULL fields
+		if err = rows.Scan(&n.ID, &n.NotificationType, &objectUUID, &n.SendDate, &n.Payload); err != nil {
 			return nil, err
 		}
+		n.ObjectUUID = nullToEmptyString(objectUUID)
 		notifications = append(notifications, n)
 	}
 	if err = rows.Err(); err != nil {
