@@ -270,6 +270,8 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+	} else {
+		common.Debug("Event %s is in the past, not sending the notification", e.UUID)
 	}
 	RespondWithJSON(w, http.StatusOK, e)
 }
@@ -286,13 +288,17 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	payload := mail.EmailDeletedEventPayload{EventDeleted: e}
-	payloadBytes := new(bytes.Buffer)
-	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeEventDeleted, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
-		return
+	if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
+		payload := mail.EmailDeletedEventPayload{EventDeleted: e}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+		n := model.Notification{NotificationType: model.TypeEventDeleted, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	} else {
+		common.Debug("Event %s is in the past, not sending the notification", e.UUID)
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
 }
