@@ -80,14 +80,19 @@ func (test *TestHelper) addEvent(uuid, name string, startDate, endDate int) {
 	}
 	stmt, err := tx.Prepare("INSERT INTO events(uuid, name, startDate, endDate, type, description, locationName, lat, lng) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);")
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(uuid, name, startDate, endDate, "presentation", "", "", 0.0, 0.0)
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+	}
 }
 
 func (test *TestHelper) addAMember() string {
@@ -126,10 +131,12 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 	tx, err := db.Begin()
 
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
 	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
@@ -146,9 +153,13 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		common.Encrypt(contact),
 		code)
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+	}
 }
 
 func (test *TestHelper) addCredentials(uuid, username, password string) {
@@ -159,10 +170,12 @@ func (test *TestHelper) addCredentials(uuid, username, password string) {
 	tx, err := db.Begin()
 
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
 	stmt, err := tx.Prepare("INSERT INTO members_credentials(uuid, username, password) VALUES(?, ?, ?)")
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
@@ -175,9 +188,13 @@ func (test *TestHelper) addCredentials(uuid, username, password string) {
 		username,
 		encryptedPassword)
 	if err != nil {
+		tx.Rollback()
 		common.Fatal(err.Error())
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+	}
 }
 
 func (test *TestHelper) removeExistingTables() {

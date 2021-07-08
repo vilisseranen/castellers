@@ -62,19 +62,23 @@ func InitializeDB(dbname string) {
 				}
 				_, err = tx.Exec(string(content))
 				if err != nil {
+					tx.Rollback()
 					common.Fatal(err.Error())
 				}
 				stmt, err := tx.Prepare("INSERT INTO schema_version (version, installed) VALUES(?, 1);")
 				defer stmt.Close()
 				if err != nil {
+					tx.Rollback()
 					common.Fatal(err.Error())
 				}
 				_, err = stmt.Exec(version)
 				if err != nil {
+					tx.Rollback()
 					common.Fatal(err.Error())
 				}
 				err = tx.Commit()
 				if err != nil {
+					tx.Rollback()
 					common.Fatal(err.Error())
 				}
 			} else {

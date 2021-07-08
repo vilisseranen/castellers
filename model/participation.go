@@ -87,24 +87,35 @@ func (p *Participation) Present() error {
 		stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (event_uuid, member_uuid, presence, answer) VALUES (?, ?, ?, ?)", PARTICIPATION_TABLE))
 		defer stmt.Close()
 		if err != nil {
+			tx.Rollback()
 			common.Error("%v", err)
 			return err
 		}
 		_, err = stmt.Exec(p.EventUUID, p.MemberUUID, stringOrNull(p.Presence), "")
 		if err != nil {
+			tx.Rollback()
+			common.Error("%v\n", err)
 			return err
 		}
 	} else if c == 1 {
 		stmt, err := tx.Prepare(fmt.Sprintf("UPDATE %s SET presence= ? WHERE event_uuid= ? AND member_uuid= ?", PARTICIPATION_TABLE))
 		defer stmt.Close()
 		if err != nil {
+			tx.Rollback()
+			common.Error("%v\n", err)
 			return err
 		}
 		_, err = stmt.Exec(stringOrNull(p.Presence), p.EventUUID, p.MemberUUID)
 		if err != nil {
+			tx.Rollback()
+			common.Error("%v\n", err)
 			return err
 		}
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		common.Error("%v\n", err)
+		tx.Rollback()
+	}
 	return err
 }

@@ -93,6 +93,7 @@ func (c *CastellModel) Create() error {
 		CASTELLMODELSTABLE))
 	defer stmt.Close()
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
@@ -102,6 +103,7 @@ func (c *CastellModel) Create() error {
 		c.Type,
 	)
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
@@ -116,6 +118,7 @@ func (c *CastellModel) Create() error {
 			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MembersTable))
 		defer stmt.Close()
 		if err != nil {
+			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
@@ -128,11 +131,16 @@ func (c *CastellModel) Create() error {
 			member.MemberUUID,
 		)
 		if err != nil {
+			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
 	}
 	err = tx.Commit()
+	if err != nil {
+		err = tx.Rollback()
+		common.Error("%v\n", err)
+	}
 	return err
 }
 
@@ -148,6 +156,7 @@ func (c *CastellModel) Edit() error {
 		CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE))
 	defer stmt.Close()
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
@@ -155,6 +164,7 @@ func (c *CastellModel) Edit() error {
 		c.UUID,
 	)
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
@@ -169,6 +179,7 @@ func (c *CastellModel) Edit() error {
 			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MembersTable))
 		defer stmt.Close()
 		if err != nil {
+			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
@@ -181,6 +192,7 @@ func (c *CastellModel) Edit() error {
 			member.MemberUUID,
 		)
 		if err != nil {
+			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
@@ -191,6 +203,7 @@ func (c *CastellModel) Edit() error {
 		CASTELLMODELSTABLE))
 	defer stmt.Close()
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
@@ -200,10 +213,15 @@ func (c *CastellModel) Edit() error {
 		c.UUID,
 	)
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
 	err = tx.Commit()
+	if err != nil {
+		common.Error("%v\n", err)
+		tx.Rollback()
+	}
 	return err
 }
 

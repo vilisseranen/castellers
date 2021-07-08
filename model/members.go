@@ -84,6 +84,8 @@ func (m *Member) EditMember() error {
 		MembersTable))
 	defer stmt.Close()
 	if err != nil {
+		tx.Rollback()
+		common.Error("%v\n")
 		return err
 	}
 	_, err = stmt.Exec(
@@ -100,10 +102,15 @@ func (m *Member) EditMember() error {
 		m.Subscribed,
 		stringOrNull(m.UUID))
 	if err != nil {
+		tx.Rollback()
 		common.Error("%v\n", m)
 		return err
 	}
 	err = tx.Commit()
+	if err != nil {
+		common.Error("%v\n", err)
+		tx.Rollback()
+	}
 	return err
 }
 
