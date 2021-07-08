@@ -17,16 +17,13 @@ func AttachV1API(r *mux.Router) {
 	)
 	// castells API
 
-	// public
 	r.HandleFunc(fmt.Sprintf("%s/castells/types", BASE_PATH), controller.GetCastellTypeList).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/type/{type:[0-9]+d[0-9]+}", BASE_PATH), controller.GetCastellType).Methods("GET")
-	// member
-	r.HandleFunc(fmt.Sprintf("%s/castells/model/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetCastellModel, model.MemberTypeMember)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/castells/types/{type:[0-9]+d[0-9]+}", BASE_PATH), controller.GetCastellType).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.GetCastellModels, model.MemberTypeMember)).Methods("GET")
-	// admin
-	r.HandleFunc(fmt.Sprintf("%s/castells/model", BASE_PATH), checkTokenType(controller.CreateCastellModel, model.MemberTypeAdmin)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/castells/model/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteCastellModel, model.MemberTypeAdmin)).Methods("DELETE")
-	r.HandleFunc(fmt.Sprintf("%s/castells/model/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.EditCastellModel, model.MemberTypeAdmin)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.CreateCastellModel, model.MemberTypeAdmin)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetCastellModel, model.MemberTypeMember)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteCastellModel, model.MemberTypeAdmin)).Methods("DELETE")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.EditCastellModel, model.MemberTypeAdmin)).Methods("PUT")
 
 	// Initialize, login, tokens, version
 	r.HandleFunc(fmt.Sprintf("%s/initialize", BASE_PATH), controller.Initialize).Methods("POST")
