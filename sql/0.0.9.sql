@@ -32,14 +32,14 @@ CREATE VIEW IF NOT EXISTS castell_types_view AS SELECT castell_types.name AS cas
 
 /* Add positions in castells */
 /*
-| Castell | Column description               | Column number |
-| ------- | -------------------------------- | ------------- |
-| 2       | Column where acotxador climbs    | 1             |
-| 2       | Column where the enxaneta climbs | 2             |
-|         |                                  |               |
-| 3       | Rengla                           | 1             |
-| 3       | Plena                            | 2             |
-| 3       | Buida                            | 3             |
+| Castell | Column description                  | Column number |
+| ------- | ----------------------------------- | ------------- |
+| 2       | Column where the enxaneta climbs    | 1             |
+| 2       | Column where the acotxador climbs   | 2             |
+|         |                                     |               |
+| 3       | Rengla                           	| 1             |
+| 3       | Plena                               | 2             |
+| 3       | Buida                               | 3             |
 */
 
 INSERT INTO castell_positions(name, cordon, column, part) VALUES("enxaneta", 3, 1, "pom");
