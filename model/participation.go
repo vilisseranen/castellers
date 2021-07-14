@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/vilisseranen/castellers/common"
@@ -60,7 +61,10 @@ func (p *Participation) GetParticipation() error {
 	if err != nil {
 		return err
 	}
-	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&p.Answer, &p.Presence)
+	var answer, presence sql.NullString // to manage possible NULL fields
+	err = stmt.QueryRow(p.MemberUUID, p.EventUUID).Scan(&answer, &presence)
+	p.Answer = nullToEmptyString(answer)
+	p.Presence = nullToEmptyString(presence)
 	return err
 }
 
