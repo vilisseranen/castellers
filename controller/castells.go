@@ -49,6 +49,12 @@ func CreateCastellModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	c.UUID = common.GenerateUUID()
+	// Validate input
+	if c.Name == "" || c.Type == "" || len(c.PositionMembers) == 0 {
+		common.Debug("Castell has empty name or type: %s", c)
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	// Create the model now
 	if err := c.Create(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -66,6 +72,12 @@ func EditCastellModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	// Validate input
+	if c.Name == "" || c.Type == "" || len(c.PositionMembers) == 0 {
+		common.Debug("Castell has empty name or type: %s", c)
+		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	// Update the model now
 	if err := c.Edit(); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
