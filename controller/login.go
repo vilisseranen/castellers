@@ -14,6 +14,13 @@ import (
 	"github.com/vilisseranen/castellers/model"
 )
 
+const (
+	ERRORCREATETOKEN  = "Error creating the token"
+	ERRORREFRESHTOKEN = "Error refreshing token"
+	ERRORTOKENEXPIRED = "Token has expired"
+	ERRORTOKENINVALID = "Token is invalid"
+)
+
 type TokenDetails struct {
 	AccessToken  string
 	RefreshToken string
@@ -37,28 +44,33 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var credentialsInRequest model.Credentials
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&credentialsInRequest); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Error decoding login request: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	credentialsInDB := model.Credentials{Username: credentialsInRequest.Username}
 	if err := credentialsInDB.GetCredentials(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+			common.Info("User has no credentials: %s", err.Error())
+			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 			return
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting credentials: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 			return
 		}
 	}
 	err := common.CompareHashAndPassword(credentialsInDB.PasswordHashed, credentialsInRequest.Password)
 	if err != nil {
-		RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+		common.Debug("Wrong password: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 		return
 	}
 	tokens, err := createMemberToken(credentialsInDB.UUID)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error creating the token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORCREATETOKEN)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, tokens)
@@ -83,17 +95,20 @@ func createMemberToken(uuid string) (map[string]string, error) {
 func Logout(w http.ResponseWriter, r *http.Request) {
 	au, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusBadRequest, UnauthorizedMessage)
+		common.Warn("Invalid token: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
 		return
 	}
 	deleted, delErr := deleteTokenInCache(au.RefreshUuid)
 	if delErr != nil || deleted == 0 {
-		RespondWithError(w, http.StatusBadRequest, UnauthorizedMessage)
+		common.Warn("Cannot delete refresh token in cache: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
 		return
 	}
 	deleted, delErr = deleteTokenInCache(au.TokenUuid)
 	if delErr != nil || deleted == 0 {
-		RespondWithError(w, http.StatusBadRequest, UnauthorizedMessage)
+		common.Warn("Cannot delete access token in cache: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
 		return
 	}
 	RespondWithJSON(w, http.StatusAccepted, "Successfully logged out")
@@ -266,7 +281,8 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	mapToken := map[string]string{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&mapToken); err != nil {
-		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+		common.Warn("Error decoding token: %s", err.Error())
+		RespondWithError(w, http.StatusUnprocessableEntity, ERRORREFRESHTOKEN)
 		return
 	}
 	refreshToken := mapToken["refresh_token"]
@@ -274,40 +290,47 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	token, err := verifyToken(refreshToken, "refresh")
 	//if there is an error, the token must have expired
 	if err != nil {
-		RespondWithError(w, http.StatusUnauthorized, "Refresh token expired")
+		common.Debug("Token verification failed: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 		return
 	}
 	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
-		RespondWithError(w, http.StatusUnauthorized, err.Error())
+		common.Debug("Token invalid: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
 		return
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		refreshUuid, ok := claims["token_uuid"].(string)
 		if !ok {
-			RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+			common.Info("Token claim 'token_uuid' is invalid")
+			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
 			return
 		}
 		userUuid, ok := claims["user_uuid"].(string)
 		if !ok {
-			RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+			common.Info("Token claim 'user_uuid' is invalid")
+			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
 			return
 		}
 		//Delete the previous Refresh Token
 		deleted, delErr := deleteTokenInCache(refreshUuid)
 		if delErr != nil || deleted == 0 { //if any goes wrong
-			RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+			common.Warn("Error deleting token in cache: %s", delErr.Error())
+			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 			return
 		}
 		permissions, err := getMemberPermissions(userUuid)
 		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting permissions: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 			return
 		}
 		//Create new pairs of refresh and access tokens
 		ts, createErr := createToken(userUuid, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 		if createErr != nil {
-			RespondWithError(w, http.StatusForbidden, createErr.Error())
+			common.Warn("Error creating a new token pair: %s", createErr.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 			return
 		}
 		tokens := map[string]string{
@@ -316,7 +339,8 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		}
 		RespondWithJSON(w, http.StatusCreated, tokens)
 	} else {
-		RespondWithError(w, http.StatusUnauthorized, "refresh expired")
+		common.Debug("Refresh token has expired")
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 	}
 }
 
@@ -350,14 +374,21 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var member model.Member
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&member); err != nil {
-		RespondWithError(w, http.StatusUnprocessableEntity, err.Error())
+		common.Debug("Cannot decode forget password request: %s", err.Error())
+		RespondWithError(w, http.StatusUnprocessableEntity, ERRORINVALIDPAYLOAD)
 		return
 	}
 	err := member.GetByEmail()
+	if err != nil {
+		common.Warn("Cannot get user by email: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
+		return
+	}
 	if err == nil {
 		n := model.Notification{NotificationType: model.TypeForgotPassword, ObjectUUID: member.UUID, SendDate: int(time.Now().Unix())}
 		if err := n.CreateNotification(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
 		}
 	}

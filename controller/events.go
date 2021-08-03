@@ -17,6 +17,18 @@ import (
 	"github.com/vilisseranen/castellers/model"
 )
 
+const (
+	ERROREVENTNOTFOUND        = "Event not found"
+	ERRORGETEVENT             = "Error getting event"
+	ERRORGETEVENTS            = "Error getting events"
+	ERRORGETPRESENCE          = "Error getting presence"
+	ERRORGETATTENDANCE        = "Error getting attendance"
+	ERRORCREATERECURRINGEVENT = "Error creating recurring event"
+	ERRORGETTINGTIMEZONE      = "Error getting timezone"
+	ERRORUPDATEEVENT          = "Error updating event"
+	ERRORDELETEEVENT          = "Error deleting event"
+)
+
 // Regex to match any positive number followed by w (week) or d (days)
 var intervalRegex = regexp.MustCompile(`^([1-9]\d*)(w|d)$`)
 
@@ -32,32 +44,35 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 	if err := e.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Event not found")
+			common.Debug("Event not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERROREVENTNOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting event: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENT)
 		}
 		return
 	}
 	if requestHasAuthorizationToken(r) {
 		tokenAuth, err := ExtractToken(r)
 		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error reading token: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
 		if err := p.GetParticipation(); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
-				common.Debug("Error checking participation of member %s to event %s", tokenAuth.UserId, e.UUID)
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				common.Warn("Error checking participation of member %s to event %s", tokenAuth.UserId, e.UUID)
+				RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
 				return
 			}
 		}
 		e.Participation = p.Answer
 		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
 			if err := e.GetAttendance(); err != nil {
-				common.Debug("Error counting the number of people registered or the event.")
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				common.Warn("Error counting the number of people registered or the event: %s", err.Error())
+				RespondWithError(w, http.StatusInternalServerError, ERRORGETPRESENCE)
 				return
 			}
 		}
@@ -82,17 +97,16 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	e := model.Event{}
 	events, err := e.GetAll(page, limit, pastEvents)
 	if err != nil {
-		switch err {
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		common.Warn("Error getting events: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENTS)
 		return
 	}
 	// if request is authenticated
 	if requestHasAuthorizationToken(r) {
 		tokenAuth, err := ExtractToken(r)
 		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error reading token: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 			return
 		}
 		for index, event := range events {
@@ -100,9 +114,11 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			if err := p.GetParticipation(); err != nil {
 				switch err {
 				case sql.ErrNoRows:
+					common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
 					continue
 				default:
-					RespondWithError(w, http.StatusInternalServerError, err.Error())
+					common.Warn("Error getting participation: %s", err.Error())
+					RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
 				}
 			}
 			events[index].Participation = p.Answer
@@ -111,10 +127,9 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
 			for index, event := range events {
 				if err := event.GetAttendance(); err != nil {
-					switch err {
-					default:
-						RespondWithError(w, http.StatusInternalServerError, err.Error())
-					}
+					common.Warn("Error getting attendance: %s", err.Error())
+					RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
+					return
 				}
 				events[index].Attendance = event.Attendance
 			}
@@ -128,7 +143,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	var event model.Event
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&event); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	defer r.Body.Close()
@@ -136,7 +152,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Validation on events data
 	if validEventData(event) == false {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", event)
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 
@@ -151,7 +168,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			inter, err := strconv.ParseUint(interval[1], 10, 32)
 			intervalSeconds := uint(inter)
 			if err != nil {
-				RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+				common.Debug("Invalid request payload: %s", err.Error())
+				RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 			}
 			switch interval[2] {
 			case "d":
@@ -166,7 +184,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			recurringEvent.Description = event.Description
 			recurringEvent.Interval = event.Recurring.Interval
 			if err := recurringEvent.CreateRecurringEvent(); err != nil {
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				common.Warn("Error creating recurring event: %s", err.Error())
+				RespondWithError(w, http.StatusInternalServerError, ERRORCREATERECURRINGEVENT)
 				return
 			}
 			// Compute the list of events
@@ -185,7 +204,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				// Adjust for Daylight Saving Time
 				var location, err = time.LoadLocation("America/Montreal")
 				if err != nil {
-					RespondWithError(w, http.StatusInternalServerError, err.Error())
+					common.Warn("Error getting timezone data: %s", err.Error())
+					RespondWithError(w, http.StatusInternalServerError, ERRORGETTINGTIMEZONE)
 					return
 				}
 				// This gives the offset of the current Zone in Montreal
@@ -198,7 +218,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				date = uint(int(date) + offset)
 			}
 		} else {
-			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			common.Debug("Invalid request payload")
+			RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 			return
 		}
 	}
@@ -206,7 +227,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Create the events
 	for _, event := range events {
 		if err := event.CreateEvent(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error creating recurring event: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORCREATERECURRINGEVENT)
 			return
 		}
 	}
@@ -222,7 +244,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 		n := model.Notification{NotificationType: model.TypeEventCreated, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
 		}
 	}
@@ -235,25 +258,29 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	var e model.Event
 	eventBeforeUpdate := model.Event{UUID: UUID}
 	if err := eventBeforeUpdate.Get(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error getting event before update: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEEVENT)
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&e); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	defer r.Body.Close()
 
 	// Validation on events data
 	if validEventData(e) == false {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", e)
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	e.UUID = UUID
 
 	if err := e.UpdateEvent(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error updating event: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEEVENT)
 		return
 	}
 
@@ -267,7 +294,8 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 		n := model.Notification{NotificationType: model.TypeEventModified, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
 		}
 	} else {
@@ -281,11 +309,13 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	UUID := vars["uuid"]
 	e := model.Event{UUID: UUID}
 	if err := e.Get(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error getting event to delete: %s")
+		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEEVENT)
 		return
 	}
 	if err := e.DeleteEvent(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error deleting event to delete: %s")
+		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEEVENT)
 		return
 	}
 	if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
@@ -294,7 +324,8 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(payloadBytes).Encode(payload)
 		n := model.Notification{NotificationType: model.TypeEventDeleted, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 		if err := n.CreateNotification(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
 		}
 	} else {
