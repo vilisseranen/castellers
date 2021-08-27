@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.14
 
 VOLUME ["/data", "/var/log", "/etc/castellers"]
 
@@ -20,7 +20,7 @@ COPY VERSION /VERSION
 
 WORKDIR /gopath/src/castellers
 
-RUN apk add -U git go=~1.13 && \
+RUN apk add -U git go=~1.16 && \
     apk add --update gcc musl-dev && \
     apk add --no-cache ca-certificates && \
     apk add --no-cache tzdata && \

@@ -3,7 +3,7 @@ os: linux
 language: go
 
 go:
-- '1.13'
+- '1.16'
 - master
 
 services:
@@ -31,12 +31,12 @@ deploy:
     edge: true
     script: bash deploy.sh dev
     on:
-      go: '1.13'
+      go: '1.16'
       all_branches: true
       condition: $TRAVIS_BRANCH != master
   - provider: script
     edge: true
     script: bash deploy.sh latest
     on:
-      go: '1.13'
+      go: '1.16'
       branch: master
