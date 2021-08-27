@@ -6,8 +6,8 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/coreos/go-semver v0.2.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/gomodule/redigo v1.8.2 // indirect
 	github.com/gorilla/handlers v1.4.0
