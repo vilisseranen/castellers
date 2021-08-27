@@ -9,9 +9,14 @@ import (
 	"github.com/vilisseranen/castellers/common"
 )
 
-const UnauthorizedMessage = "You are not authorized to perform this action."
-const EmailUnavailableMessage = "This email is already used by another member."
-const ErrorGetMemberMessage = "Error while getting member."
+const (
+	ERRORINVALIDPAYLOAD = "Invalid request payload"
+	ERRORINTERNAL       = "Internal error"
+	ERRORNOTIFICATION   = "Error creating notification"
+	ERRORAUTHENTICATION = "Error with the provided token"
+	ERRORMISSINGFIELDS  = "Missing fields in request payload"
+	ERRORUNAUTHORIZED   = "You are not authorized to perform this action."
+)
 
 var RedisClient *redis.Client
 var version string

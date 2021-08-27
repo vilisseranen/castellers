@@ -10,6 +10,17 @@ import (
 	"github.com/vilisseranen/castellers/model"
 )
 
+const (
+	ERRORGETCASTELLTYPE       = "Error getting castell type"
+	ERRORGETCASTELLLIST       = "Error getting castell list"
+	ERRORGETCASTELLMODEL      = "Error getting castell model"
+	ERRORCASTELLMODELNOTFOUND = "Castell model not found"
+	ERRORCASTELLTYPENOTFOUND  = "Castell type not found"
+	ERRORDELETECASTELLMODEL   = "Error deleting castell model"
+	ERRORCREATECASTELLMODEL   = "Error creating castell model"
+	ERRORUPDATECASTELLMODEL   = "Error editing castell model"
+)
+
 func GetCastellType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	castell_name := vars["type"]
@@ -17,9 +28,11 @@ func GetCastellType(w http.ResponseWriter, r *http.Request) {
 	if err := castell_type.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Castell not found")
+			common.Debug("Castell type not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORCASTELLTYPENOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Castell type get error: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLTYPE)
 		}
 		return
 	}
@@ -30,10 +43,8 @@ func GetCastellTypeList(w http.ResponseWriter, r *http.Request) {
 	castell_type := model.CastellType{}
 	castell_type_list, err := castell_type.GetTypeList()
 	if err != nil {
-		switch err {
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		common.Warn("Error getting castell list: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLLIST)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, castell_type_list)
@@ -44,14 +55,21 @@ func CreateCastellModel(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		common.Debug("Error decoding castell: %s", err.Error())
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	defer r.Body.Close()
 	c.UUID = common.GenerateUUID()
+	// Validate input
+	if c.Name == "" || c.Type == "" || len(c.PositionMembers) == 0 {
+		common.Debug("Castell has empty name or type: %s", c)
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
+		return
+	}
 	// Create the model now
 	if err := c.Create(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Cannot create castell model: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORCREATECASTELLMODEL)
 		return
 	}
 	RespondWithJSON(w, http.StatusCreated, c)
@@ -62,13 +80,20 @@ func EditCastellModel(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
 		common.Debug("Error decoding castell: %s", err.Error())
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	defer r.Body.Close()
+	// Validate input
+	if c.Name == "" || c.Type == "" || len(c.PositionMembers) == 0 {
+		common.Debug("Castell has empty name or type: %s", c)
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
+		return
+	}
 	// Update the model now
 	if err := c.Edit(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Cannot update castell model: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATECASTELLMODEL)
 		return
 	}
 	RespondWithJSON(w, http.StatusAccepted, c)
@@ -78,10 +103,8 @@ func GetCastellModels(w http.ResponseWriter, r *http.Request) {
 	m := model.CastellModel{}
 	models, err := m.GetAll()
 	if err != nil {
-		switch err {
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		common.Warn("Cannot get castell models: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, models)
@@ -93,8 +116,12 @@ func GetCastellModel(w http.ResponseWriter, r *http.Request) {
 	m := model.CastellModel{UUID: castell_uuid}
 	if err := m.Get(); err != nil {
 		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No castell model found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORCASTELLMODELNOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Cannot get castell model: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
 		}
 		return
 	}
@@ -108,14 +135,17 @@ func DeleteCastellModel(w http.ResponseWriter, r *http.Request) {
 	if err := m.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Castell not found")
+			common.Debug("No castell model found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORCASTELLMODELNOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting castell model: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
 		}
 		return
 	}
 	if err := m.Delete(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Castell deleting castell: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORDELETECASTELLMODEL)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)

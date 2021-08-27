@@ -16,16 +16,16 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		if err != nil {
 			// TODO: find a better way to determine if the token has expired.
 			if err.Error() == "Token is expired" {
-				controller.RespondWithError(w, http.StatusForbidden, controller.UnauthorizedMessage)
+				controller.RespondWithError(w, http.StatusForbidden, controller.ERRORUNAUTHORIZED)
 			} else {
-				controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+				controller.RespondWithError(w, http.StatusUnauthorized, controller.ERRORUNAUTHORIZED)
 			}
 			common.Debug("Token invalid: %s", err.Error())
 			return
 		}
 		if !common.StringInBothSlices(requestedType, tokenAuth.Permissions) {
-			common.Error("Token not allowed to access this resource")
-			controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+			common.Warn("Token not allowed to access this resource")
+			controller.RespondWithError(w, http.StatusUnauthorized, controller.ERRORUNAUTHORIZED)
 			return
 		}
 		// Move this validation in the controller for resources accessing to members only converning themselves
@@ -34,7 +34,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		// 	uuid := vars["member_uuid"]
 		// 	if uuid != "" && uuid != tokenAuth.UserId {
 		// 		common.Error("Token not allowed to access this resource 2")
-		// 		controller.RespondWithError(w, http.StatusUnauthorized, controller.UnauthorizedMessage)
+		// 		controller.RespondWithError(w, http.StatusUnauthorized, controller.ERRORUNAUTHORIZED)
 		// 		return
 		// 	}
 		// }

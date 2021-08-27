@@ -14,6 +14,22 @@ import (
 	"github.com/vilisseranen/castellers/model"
 )
 
+const (
+	ERRORGETMEMBER         = "Error getting member"
+	ERRORGETMEMBERS        = "Error getting members"
+	ERRORCREATEMEMBER      = "Error creating member"
+	ERRORMEMBERNOTFOUND    = "Member not found"
+	ERRORMEMBERHEIGHT      = "Error with provided height"
+	ERRORMEMBERWEIGHT      = "Error with the provided weight"
+	ERRORMEMBERROLES       = "Error with the provided roles"
+	ERRORMEMBERLANGUAGE    = "Error with the provided language"
+	ERRORUPDATEMEMBER      = "Error updating member"
+	ERRORDELETEMEMBER      = "Error deleting member"
+	ERRORREGISTRATIONEMAIL = "Error sending the registration email"
+	ERRORRESETCREDENTIALS  = "Error resetting credentials"
+	ERROREMAILUNAVAILABLE  = "This email is already used by another member."
+)
+
 func GetMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
@@ -23,7 +39,8 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
@@ -31,9 +48,11 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		if err := m.Get(); err != nil {
 			switch err {
 			case sql.ErrNoRows:
-				RespondWithError(w, http.StatusNotFound, "Member not found")
+				common.Debug("Member not found: %s", err.Error())
+				RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
 			default:
-				RespondWithError(w, http.StatusInternalServerError, err.Error())
+				common.Warn("Error getting member: %s", err.Error())
+				RespondWithError(w, http.StatusInternalServerError, ERRORMEMBERNOTFOUND)
 			}
 			return
 		}
@@ -45,8 +64,8 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	common.Error("Permissions: %s", tokenAuth.Permissions)
-	RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+	common.Info("Permissions: %s", tokenAuth.Permissions)
+	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 	return
 }
 
@@ -54,10 +73,8 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	m := model.Member{}
 	members, err := m.GetAll()
 	if err != nil {
-		switch err {
-		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
-		}
+		common.Warn("Error getting members: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBERS)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, members)
@@ -68,36 +85,39 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	var m model.Member
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&m); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	defer r.Body.Close()
 	if !emailAvailable(m) {
-		RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+		common.Info("Email not available: %s", m.Email)
+		RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 		return
 	}
 	if missingRequiredFields(m) {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
+		common.Info("Missing fields in request payload")
+		RespondWithError(w, http.StatusBadRequest, ERRORMISSINGFIELDS)
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
 		common.Info("Error validating Height: " + m.Height)
-		RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERHEIGHT)
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
 		common.Info("Error validating Weight: " + m.Weight)
-		RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERWEIGHT)
 		return
 	}
 	if err := model.ValidateRoles(m.Roles); err != nil {
-		common.Error("Error validating roles: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, err.Error())
+		common.Info("Error validating roles: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERROLES)
 		return
 	}
 	if err := model.ValidateLanguage(m.Language); err != nil {
-		common.Error("Error validating language: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, err.Error())
+		common.Info("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
 		return
 	}
 	m.UUID = common.GenerateUUID()
@@ -105,18 +125,20 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	a := model.Member{UUID: tokenAuth.UserId}
 	if err := a.Get(); err != nil {
-		common.Error("Failed to get admin for CreateMember.")
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Failed to get admin for CreateMember: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
 	// Create the Member now
 	if err := m.CreateMember(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error creating member: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
 	payload := mail.EmailRegisterPayload{Member: m, Author: a}
@@ -124,7 +146,8 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(payloadBytes).Encode(payload)
 	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error creating notification: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 		return
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
@@ -139,14 +162,16 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		var m model.Member
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&m); err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			common.Debug("Invalid request payload: %s", err.Error())
+			RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 			return
 		}
 		defer r.Body.Close()
@@ -156,39 +181,37 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		currentMember := model.Member{UUID: m.UUID}
 		err = currentMember.Get()
 		if err != nil {
-			common.Info("Member cannt be found")
-			RespondWithError(w, http.StatusBadRequest, ErrorGetMemberMessage)
+			common.Info("Member cannot be found: %s", err.Error())
+			RespondWithError(w, http.StatusBadRequest, ERRORGETMEMBER)
 			return
 		}
 		if currentMember.Email != m.Email && !emailAvailable(m) {
-			common.Debug(currentMember.Email)
-			common.Debug(m.Email)
-			common.Debug("%s", emailAvailable(m))
-			common.Info("Email %s is not available", m.Email)
-			RespondWithError(w, http.StatusBadRequest, EmailUnavailableMessage)
+			common.Info("Email not available. Current: %s, requested: %s, emailAvailable: %s", currentMember.Email, m.Email, emailAvailable(m))
+			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
 		if missingRequiredFields(m) {
-			RespondWithError(w, http.StatusBadRequest, "Invalid request payload: missing required fields")
+			common.Info("Missing fields in request payload")
+			RespondWithError(w, http.StatusBadRequest, ERRORMISSINGFIELDS)
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-			common.Error("Error validating Height: " + m.Height)
-			RespondWithError(w, http.StatusBadRequest, "Error validating Height: "+err.Error())
+			common.Info("Error validating Height: " + m.Height)
+			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERHEIGHT)
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-			common.Error("Error validating Weight: " + m.Weight)
-			RespondWithError(w, http.StatusBadRequest, "Error validating Weight: "+err.Error())
+			common.Info("Error validating Weight: " + m.Weight)
+			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERWEIGHT)
 			return
 		}
 		if err := model.ValidateRoles(m.Roles); err != nil {
-			common.Error("Error validating roles: " + err.Error())
+			common.Info("Error validating roles: " + err.Error())
 			RespondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		if err := model.ValidateLanguage(m.Language); err != nil {
-			common.Error("Error validating language: " + err.Error())
+			common.Info("Error validating language: " + err.Error())
 			RespondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -202,14 +225,17 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			if err := existingMember.Get(); err != nil {
 				switch err {
 				case sql.ErrNoRows:
-					RespondWithError(w, http.StatusNotFound, "Member not found")
+					common.Debug("Member not found: %s", err.Error())
+					RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
 				default:
-					RespondWithError(w, http.StatusInternalServerError, err.Error())
+					common.Warn("Error getting member: %s", err.Error())
+					RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEMEMBER)
 				}
 				return
 			}
 			if existingMember.Type != m.Type {
-				RespondWithError(w, http.StatusForbidden, UnauthorizedMessage)
+				common.Info("Member tries to change their type from %s to %s", existingMember.Type, m.Type)
+				RespondWithError(w, http.StatusForbidden, ERRORUNAUTHORIZED)
 				return
 			}
 			m.Roles = existingMember.Roles
@@ -217,13 +243,14 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 		}
 		if err := m.EditMember(); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error updating member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEMEMBER)
 			return
 		}
 		RespondWithJSON(w, http.StatusAccepted, m)
 		return
 	}
-	RespondWithError(w, http.StatusUnauthorized, UnauthorizedMessage)
+	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 }
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
@@ -234,23 +261,29 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	if err := m.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Member not found")
+			common.Debug("Member not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORDELETEMEMBER)
 		}
 		return
 	}
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
+	// TODO: admin should be allowed to delete their profile
 	if tokenAuth.UserId == UUID && m.Type == "admin" {
-		RespondWithError(w, http.StatusLocked, "Cannot remove yourself if admin")
+		common.Info("Cannot remove yourself if admin")
+		RespondWithError(w, http.StatusLocked, ERRORUNAUTHORIZED)
 		return
 	}
 	if err := m.DeleteMember(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error deleting member: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEMEMBER)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
@@ -268,9 +301,11 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	if err := m.Get(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			RespondWithError(w, http.StatusNotFound, "Member not found")
+			common.Debug("Member not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
 		default:
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error getting member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
 		}
 		return
 	}
@@ -278,8 +313,8 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	UUID = vars["admin_uuid"]
 	a := model.Member{UUID: UUID}
 	if err := a.Get(); err != nil {
-		common.Error("Failed to get admin.")
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Failed to get admin: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
 		return
 	}
 	payload := mail.EmailRegisterPayload{Member: m, Author: a}
@@ -287,7 +322,8 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(payloadBytes).Encode(payload)
 	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
 	if err := n.CreateNotification(); err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error creating notification: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
@@ -310,7 +346,8 @@ func emailAvailable(m model.Member) bool {
 func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	tokenAuth, err := ExtractToken(r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	// This function always use the UUID from the token
@@ -318,32 +355,37 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	c := model.Credentials{UUID: tokenAuth.UserId}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&c); err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	password, err := common.GenerateFromPassword(c.Password)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		common.Error("Error generating hashed password: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORRESETCREDENTIALS)
 		return
 	}
 	// if username is not provided, fetch it in DB
 	if c.Username == "" {
 		err := c.GetCredentialsByUUID()
 		if err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			common.Debug("Invalid request payload: %s", err.Error())
+			RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 			return
 		}
 	}
 	err = c.ResetCredentials(c.Username, password)
 	if err != nil {
-		RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	// resetCredentialsToken should only be used once
 	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
 		_, err = deleteTokenInCache(tokenAuth.TokenUuid)
 		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, err.Error())
+			common.Warn("Error deleting token in cache: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 			return
 		}
 	}
