@@ -55,7 +55,7 @@ func checkAndSendNotification() {
 					continue
 				}
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, 1440)
+				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, common.GetConfigInt("jwt.registration_ttl_minutes"))
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
@@ -116,7 +116,7 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					token, err := ParticipateEventToken(member.UUID, 2880)
+					token, err := ParticipateEventToken(member.UUID, common.GetConfigInt("jwt.participation_ttl_minutes"))
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1
@@ -217,7 +217,7 @@ func checkAndSendNotification() {
 			}
 			if common.GetConfigBool("smtp_enabled") {
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 60)
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, common.GetConfigInt("jwt.reset_ttl_minutes"))
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
