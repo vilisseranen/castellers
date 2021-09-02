@@ -46,8 +46,12 @@ func (e emailForgotInfo) GetBody() (string, error) {
 
 func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
 	resetLink := common.GetConfigString("domain") + "/reset?" +
-		"t=" + payload.Token +
-		"&a=reset&u=" + payload.Credentials.Username
+		"t=" + payload.Token
+	if payload.Credentials.Username != "" {
+		resetLink += "&u=" + payload.Credentials.Username + "&a=reset"
+	} else {
+		resetLink += "&a=activation"
+	}
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	email := emailInfo{}
 	email.Header = emailHeader{
