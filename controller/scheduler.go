@@ -55,7 +55,7 @@ func checkAndSendNotification() {
 					continue
 				}
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, 1440)
+				resetCredentialsToken, err := ResetCredentialsToken(payload.Member.UUID, payload.Member.Email, common.GetConfigInt("jwt.registration_ttl_minutes"))
 				if err != nil {
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
@@ -116,7 +116,7 @@ func checkAndSendNotification() {
 				}
 				// Send the email
 				if member.Subscribed == 1 {
-					token, err := ParticipateEventToken(member.UUID, 2880)
+					token, err := ParticipateEventToken(member.UUID, common.GetConfigInt("jwt.participation_ttl_minutes"))
 					if err != nil {
 						common.Error("%v\n", err)
 						failures += 1
@@ -211,32 +211,38 @@ func checkAndSendNotification() {
 			m := model.Member{UUID: notification.ObjectUUID}
 			err := m.Get()
 			if err != nil {
+				common.Debug("Error getting member for reset password: %s", err.Error())
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus()
 				continue
 			}
 			if common.GetConfigBool("smtp_enabled") {
 				// Get a token to create credentials
-				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, 60)
+				resetCredentialsToken, err := ResetCredentialsToken(m.UUID, m.Email, common.GetConfigInt("jwt.reset_ttl_minutes"))
 				if err != nil {
+					common.Debug("Error creating token for reset password: %s", err.Error())
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
 				credentials := model.Credentials{UUID: m.UUID}
 				err = credentials.GetCredentialsByUUID()
-				if err != nil {
+				if err != nil && err != sql.ErrNoRows {
+					common.Debug("Error getting current credentials for reset password: %s", err.Error())
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
 				payload := mail.EmailForgotPasswordPayload{Member: m, Token: resetCredentialsToken, Credentials: credentials}
 				if err := mail.SendForgotPasswordEmail(payload); err != nil {
+					common.Debug("Error sending email for reset password: %s", err.Error())
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus()
 					continue
 				}
 			}
+			notification.Delivered = model.NotificationDeliverySuccess
+			notification.UpdateNotificationStatus()
 		case model.TypeEventDeleted:
 			// Get All members
 			m := model.Member{}

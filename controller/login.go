@@ -81,7 +81,7 @@ func createMemberToken(uuid string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := createToken(uuid, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	token, err := createToken(uuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusAccepted, "Successfully logged out")
 }
 
-func createToken(uuid string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
+func createToken(uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * time.Duration(access_ttl_minutes)).Unix()
 	td.AccessUuid = common.GenerateUUID()
@@ -130,6 +130,9 @@ func createToken(uuid string, permissions []string, access_ttl_minutes, refresh_
 	atClaims["user_uuid"] = uuid
 	atClaims["permissions"] = permissions
 	atClaims["exp"] = td.AtExpires
+	if email != "" {
+		atClaims["email"] = email
+	}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(common.GetConfigString("jwt.access_secret")))
 	if err != nil {
@@ -327,7 +330,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//Create new pairs of refresh and access tokens
-		ts, createErr := createToken(userUuid, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+		ts, createErr := createToken(userUuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 		if createErr != nil {
 			common.Warn("Error creating a new token pair: %s", createErr.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
@@ -344,13 +347,13 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ResetCredentialsToken(uuid string, ttl int) (string, error) {
-	token, err := createToken(uuid, []string{ResetCredentialsPermission}, ttl, 0)
+func ResetCredentialsToken(uuid string, email string, ttl int) (string, error) {
+	token, err := createToken(uuid, email, []string{ResetCredentialsPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 
 func ParticipateEventToken(uuid string, ttl int) (string, error) {
-	token, err := createToken(uuid, []string{ParticipateEventPermission}, ttl, 0)
+	token, err := createToken(uuid, "", []string{ParticipateEventPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 

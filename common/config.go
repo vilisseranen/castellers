@@ -41,6 +41,9 @@ func ReadConfig() {
 	viper.SetDefault("redis_dsn", "localhost:6379")          // Redis connection
 	viper.SetDefault("jwt.access_ttl_minutes", 15)
 	viper.SetDefault("jwt.refresh_ttl_days", 15)
+	viper.SetDefault("jwt.reset_ttl_minutes", 60)
+	viper.SetDefault("jwt.participation_ttl_minutes", 2880)
+	viper.SetDefault("jwt.registration_ttl_minutes", 10080)
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -68,6 +71,9 @@ func ReadConfig() {
 	viper.BindEnv("jwt.refresh_secret", "APP_REFRESH_SECRET")
 	viper.BindEnv("jwt.access_ttl_minutes", "APP_ACCESS_TTL_MINUTES")
 	viper.BindEnv("jwt.refresh_ttl_days", "APP_REFRESH_TTL_DAYS")
+	viper.BindEnv("jwt.reset_ttl_minutes", "APP_RESET_TTL_MINUTES")
+	viper.BindEnv("jwt.participation_ttl_minutes", "APP_PARTICIPATION_TTL_MINUTES")
+	viper.BindEnv("jwt.registration_ttl_minutes", "APP_REGISTRATION_TTL_MINUTES")
 
 	var c config
 	err = viper.Unmarshal(&c)
