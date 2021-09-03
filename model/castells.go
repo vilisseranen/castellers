@@ -272,7 +272,6 @@ func (c *CastellModel) Get() error {
 		return err
 	}
 	return nil
-
 }
 
 func (c *CastellModel) Delete() error {
