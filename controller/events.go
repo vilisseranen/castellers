@@ -69,7 +69,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		e.Participation = p.Answer
-		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			if err := e.GetAttendance(); err != nil {
 				common.Warn("Error counting the number of people registered or the event: %s", err.Error())
 				RespondWithError(w, http.StatusInternalServerError, ERRORGETPRESENCE)
@@ -124,7 +124,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			events[index].Participation = p.Answer
 		}
 		// if token contain permission admin
-		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			for index, event := range events {
 				if err := event.GetAttendance(); err != nil {
 					common.Warn("Error getting attendance: %s", err.Error())

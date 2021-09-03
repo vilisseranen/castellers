@@ -43,7 +43,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
-	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		m := model.Member{UUID: UUID}
 		if err := m.Get(); err != nil {
 			switch err {
@@ -56,7 +56,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			m.Roles = []string{}
 			m.Extra = ""
 		}
@@ -166,7 +166,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
-	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		var m model.Member
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&m); err != nil {
@@ -219,7 +219,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		// Check if we can change role
 		// If caller is admin, we can change the role
 		// If caller is member, we cannot change he role
-		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			// get current user and use existing values for roles, extra and type
 			existingMember := model.Member{UUID: UUID}
 			if err := existingMember.Get(); err != nil {
@@ -335,7 +335,7 @@ func missingRequiredFields(m model.Member) bool {
 
 func emailAvailable(m model.Member) bool {
 	err := m.GetByEmail()
-	if err != nil && err.Error() == model.MemberEmailNotFoundMessage {
+	if err != nil && err.Error() == model.MEMBERSEMAILNOTFOUNDMESSAGE {
 		common.Debug("Error getting by email: %s", err.Error())
 		return true
 	}
@@ -401,7 +401,7 @@ func validateChangeType(m model.Member, code string, adminUuid string) bool {
 		return false
 	}
 
-	if currentUser.Type == model.MemberTypeMember && m.Type == model.MemberTypeAdmin && adminUuid == "" {
+	if currentUser.Type == model.MEMBERSTYPEREGULAR && m.Type == model.MEMBERSTYPEADMIN && adminUuid == "" {
 		return false
 	}
 	return true

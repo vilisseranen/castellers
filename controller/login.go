@@ -363,12 +363,12 @@ func getMemberPermissions(uuid string) ([]string, error) {
 		return []string{}, err
 	}
 	var permissions []string
-	if member.Type == model.MemberTypeMember {
-		permissions = append(permissions, model.MemberTypeMember)
+	if member.Type == model.MEMBERSTYPEREGULAR {
+		permissions = append(permissions, model.MEMBERSTYPEREGULAR)
 	}
-	if member.Type == model.MemberTypeAdmin {
-		permissions = append(permissions, model.MemberTypeMember)
-		permissions = append(permissions, model.MemberTypeAdmin)
+	if member.Type == model.MEMBERSTYPEADMIN {
+		permissions = append(permissions, model.MEMBERSTYPEREGULAR)
+		permissions = append(permissions, model.MEMBERSTYPEADMIN)
 	}
 	return permissions, nil
 }

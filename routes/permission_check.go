@@ -29,7 +29,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 			return
 		}
 		// Move this validation in the controller for resources accessing to members only converning themselves
-		// if common.StringInSlice(model.MemberTypeMember, requestedType) {
+		// if common.StringInSlice(model.MEMBERSTYPEREGULAR, requestedType) {
 		// 	vars := mux.Vars(r)
 		// 	uuid := vars["member_uuid"]
 		// 	if uuid != "" && uuid != tokenAuth.UserId {

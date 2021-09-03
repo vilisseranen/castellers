@@ -38,7 +38,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
-	m.Type = model.MemberTypeAdmin // Make sure it's an admin
+	m.Type = model.MEMBERSTYPEADMIN // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode() // TODO remove Code

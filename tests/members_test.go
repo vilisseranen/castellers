@@ -332,8 +332,8 @@ func TestGetMemberByEmailFail(t *testing.T) {
 	memberWithExistingEmail := model.Member{Email: "toto@tutu.ca"}
 	err := memberWithExistingEmail.GetByEmail()
 
-	if err.Error() != model.MemberEmailNotFoundMessage {
-		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MemberEmailNotFoundMessage, err.Error())
+	if err.Error() != model.MEMBERSEMAILNOTFOUNDMESSAGE {
+		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MEMBERSEMAILNOTFOUNDMESSAGE, err.Error())
 	}
 }
 

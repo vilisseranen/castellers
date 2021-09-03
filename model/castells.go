@@ -115,7 +115,7 @@ func (c *CastellModel) Create() error {
 				"(SELECT id FROM %s WHERE uuid = ?), "+
 				"(SELECT id FROM %s WHERE name = ? AND column = ? AND cordon = ? AND part = ?), "+
 				"(SELECT id FROM %s WHERE uuid = ?))",
-			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MembersTable))
+			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MEMBERSTABLE))
 		defer stmt.Close()
 		if err != nil {
 			tx.Rollback()
@@ -176,7 +176,7 @@ func (c *CastellModel) Edit() error {
 				"(SELECT id FROM %s WHERE uuid = ?), "+
 				"(SELECT id FROM %s WHERE name = ? AND column = ? AND cordon = ? AND part = ?), "+
 				"(SELECT id FROM %s WHERE uuid = ?))",
-			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MembersTable))
+			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MEMBERSTABLE))
 		defer stmt.Close()
 		if err != nil {
 			tx.Rollback()
