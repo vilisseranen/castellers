@@ -15,19 +15,21 @@ import (
 )
 
 const (
-	ERRORGETMEMBER         = "Error getting member"
-	ERRORGETMEMBERS        = "Error getting members"
-	ERRORCREATEMEMBER      = "Error creating member"
-	ERRORMEMBERNOTFOUND    = "Member not found"
-	ERRORMEMBERHEIGHT      = "Error with provided height"
-	ERRORMEMBERWEIGHT      = "Error with the provided weight"
-	ERRORMEMBERROLES       = "Error with the provided roles"
-	ERRORMEMBERLANGUAGE    = "Error with the provided language"
-	ERRORUPDATEMEMBER      = "Error updating member"
-	ERRORDELETEMEMBER      = "Error deleting member"
-	ERRORREGISTRATIONEMAIL = "Error sending the registration email"
-	ERRORRESETCREDENTIALS  = "Error resetting credentials"
-	ERROREMAILUNAVAILABLE  = "This email is already used by another member."
+	ERRORGETMEMBER              = "Error getting member"
+	ERRORGETMEMBERS             = "Error getting members"
+	ERRORCREATEMEMBER           = "Error creating member"
+	ERRORMEMBERNOTFOUND         = "Member not found"
+	ERRORMEMBERHEIGHT           = "Error with provided height"
+	ERRORMEMBERWEIGHT           = "Error with the provided weight"
+	ERRORMEMBERROLES            = "Error with the provided roles"
+	ERRORMEMBERLANGUAGE         = "Error with the provided language"
+	ERRORMEMBERTYPE             = "Error with the provided type"
+	ERRORUPDATEMEMBER           = "Error updating member"
+	ERRORDELETEMEMBER           = "Error deleting member"
+	ERRORREGISTRATIONEMAIL      = "Error sending the registration email"
+	ERRORRESETCREDENTIALS       = "Error resetting credentials"
+	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
+	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -120,6 +122,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
 		return
 	}
+	if err := model.ValidateType(m.Type); err != nil {
+		common.Info("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
+		return
+	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
@@ -141,14 +148,16 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
-	payload := mail.EmailRegisterPayload{Member: m, Author: a}
-	payloadBytes := new(bytes.Buffer)
-	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
-		common.Warn("Error creating notification: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
-		return
+	if m.Type != model.MEMBERSTYPEGUEST {
+		payload := mail.EmailRegisterPayload{Member: m, Author: a}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+		n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
@@ -307,6 +316,11 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 			common.Warn("Error getting member: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
 		}
+		return
+	}
+	if m.Type == model.MEMBERSTYPEGUEST {
+		common.Warn("Cannot send a registration email to a guest: %s")
+		RespondWithError(w, http.StatusForbidden, ERRORGUESTREGISTRATIONEMAIL)
 		return
 	}
 	vars = mux.Vars(r)
