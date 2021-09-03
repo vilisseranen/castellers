@@ -19,7 +19,7 @@ var ValidRoleList = []string{
 	"segon",
 	"terç",
 	"quart",
-	"dosos",
+	"dos",
 	"acotxador",
 	"enxaneta",
 	"pinya",
