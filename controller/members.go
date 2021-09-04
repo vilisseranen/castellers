@@ -323,9 +323,14 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusForbidden, ERRORGUESTREGISTRATIONEMAIL)
 		return
 	}
-	vars = mux.Vars(r)
-	UUID = vars["admin_uuid"]
-	a := model.Member{UUID: UUID}
+	// We will need admin info later for the email
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		return
+	}
+	a := model.Member{UUID: tokenAuth.UserId}
 	if err := a.Get(); err != nil {
 		common.Warn("Failed to get admin: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
