@@ -104,34 +104,37 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	// if request is authenticated
 	if requestHasAuthorizationToken(r) {
 		tokenAuth, err := ExtractToken(r)
-		if err != nil {
+		if err != nil && err.Error() == "Token is expired" {
+			common.Debug("Token expired, cannot get participation: %s", err.Error())
+		} else if err != nil {
 			common.Warn("Error reading token: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 			return
-		}
-		for index, event := range events {
-			p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
-			if err := p.GetParticipation(); err != nil {
-				switch err {
-				case sql.ErrNoRows:
-					common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
-					continue
-				default:
-					common.Warn("Error getting participation: %s", err.Error())
-					RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
-				}
-			}
-			events[index].Participation = p.Answer
-		}
-		// if token contain permission admin
-		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
+		} else {
 			for index, event := range events {
-				if err := event.GetAttendance(); err != nil {
-					common.Warn("Error getting attendance: %s", err.Error())
-					RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
-					return
+				p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
+				if err := p.GetParticipation(); err != nil {
+					switch err {
+					case sql.ErrNoRows:
+						common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
+						continue
+					default:
+						common.Warn("Error getting participation: %s", err.Error())
+						RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
+					}
 				}
-				events[index].Attendance = event.Attendance
+				events[index].Participation = p.Answer
+			}
+			// if token contain permission admin
+			if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
+				for index, event := range events {
+					if err := event.GetAttendance(); err != nil {
+						common.Warn("Error getting attendance: %s", err.Error())
+						RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
+						return
+					}
+					events[index].Attendance = event.Attendance
+				}
 			}
 		}
 	}
