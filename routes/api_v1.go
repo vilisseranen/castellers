@@ -24,6 +24,8 @@ func AttachV1API(r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetCastellModel, model.MEMBERSTYPEREGULAR)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteCastellModel, model.MEMBERSTYPEADMIN)).Methods("DELETE")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.EditCastellModel, model.MEMBERSTYPEADMIN)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.AttachCastellModelToEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DettachCastellModelFromEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
 
 	// Initialize, login, tokens, version
 	r.HandleFunc(fmt.Sprintf("%s/initialize", BASE_PATH), controller.Initialize).Methods("POST")

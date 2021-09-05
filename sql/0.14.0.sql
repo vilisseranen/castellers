@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS castell_models_in_events(castell_model_id INTEGER NOT NULL, event_id INTEGER NOT NULL, FOREIGN KEY(castell_model_id) REFERENCES castell_models(id), FOREIGN KEY(event_id) REFERENCES events(id), PRIMARY KEY(castell_model_id, event_id));
+
+CREATE VIEW IF NOT EXISTS castell_models_with_events_view AS SELECT model.uuid AS model_uuid, model.name AS model_name, model.castell_type_name AS model_type, model.deleted AS model_deleted, events.uuid AS event_uuid, events.name as event_name, events.startDate as event_start FROM castell_models AS model LEFT JOIN castell_models_in_events ON model.id = castell_models_in_events.castell_model_id LEFT JOIN events ON castell_models_in_events.event_id = events.id;

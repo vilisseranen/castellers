@@ -19,6 +19,8 @@ const (
 	ERRORDELETECASTELLMODEL   = "Error deleting castell model"
 	ERRORCREATECASTELLMODEL   = "Error creating castell model"
 	ERRORUPDATECASTELLMODEL   = "Error editing castell model"
+	ERRORADDCASTELLTOEVENT    = "Error adding castell model to event"
+	ERRORREMOVECASTELLTOEVENT = "Error removing castell model from event"
 )
 
 func GetCastellType(w http.ResponseWriter, r *http.Request) {
@@ -146,6 +148,78 @@ func DeleteCastellModel(w http.ResponseWriter, r *http.Request) {
 	if err := m.Delete(); err != nil {
 		common.Warn("Castell deleting castell: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETECASTELLMODEL)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, nil)
+}
+
+func AttachCastellModelToEvent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	model_uuid := vars["model_uuid"]
+	m := model.CastellModel{UUID: model_uuid}
+	if err := m.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No castell model found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORCASTELLMODELNOTFOUND)
+		default:
+			common.Warn("Error getting castell model: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
+		}
+		return
+	}
+	event_uuid := vars["event_uuid"]
+	e := model.Event{UUID: event_uuid}
+	if err := e.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No event found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERROREVENTNOTFOUND)
+		default:
+			common.Warn("Error getting event: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENT)
+		}
+		return
+	}
+	if err := m.AttachToEvent(&e); err != nil {
+		common.Warn("Error adding castell to event: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDCASTELLTOEVENT)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, nil)
+}
+
+func DettachCastellModelFromEvent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	model_uuid := vars["model_uuid"]
+	m := model.CastellModel{UUID: model_uuid}
+	if err := m.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No castell model found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORCASTELLMODELNOTFOUND)
+		default:
+			common.Warn("Error getting castell model: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
+		}
+		return
+	}
+	event_uuid := vars["event_uuid"]
+	e := model.Event{UUID: event_uuid}
+	if err := e.Get(); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No event found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERROREVENTNOTFOUND)
+		default:
+			common.Warn("Error getting event: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENT)
+		}
+		return
+	}
+	if err := m.DettachFromEvent(&e); err != nil {
+		common.Warn("Error dettaching castell from event: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORREMOVECASTELLTOEVENT)
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, nil)

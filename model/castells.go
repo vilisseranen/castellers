@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/vilisseranen/castellers/common"
@@ -13,6 +14,8 @@ const (
 	CASTELLMODELSTABLE          = "castell_models"
 	CASTELLMODELSVIEW           = "castell_models_view"
 	CASTELLMEMBERPOSITIONSTABLE = "castell_members_positions"
+	CASTELLMODELSINEVENTSTABLE  = "castell_models_in_events"
+	CASTELLMODELSINEVENTSVIEW   = "castell_models_with_events_view"
 )
 
 type CastellType struct {
@@ -32,6 +35,13 @@ type CastellModel struct {
 	Name            string                   `json:"name"`
 	Type            string                   `json:"type"` // Will be the name of the castell type, ie: 3d6
 	PositionMembers []CastellPositionMembers `json:"position_members,omitempty"`
+	Event           CastellModelEvent        `json:"event,omitempty"`
+}
+
+type CastellModelEvent struct {
+	Name      string `json:"name"`
+	UUID      string `json:"uuid"`
+	StartDate uint   `json:"start"`
 }
 
 type CastellPositionMembers struct {
@@ -227,8 +237,8 @@ func (c *CastellModel) Edit() error {
 
 func (c *CastellModel) GetAll() ([]CastellModel, error) {
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT uuid, name, castell_type_name FROM %s WHERE deleted=0",
-		CASTELLMODELSTABLE))
+		"SELECT model_uuid, model_name, model_type, event_uuid, event_name, event_start FROM %s WHERE model_deleted=0",
+		CASTELLMODELSINEVENTSVIEW))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -238,9 +248,14 @@ func (c *CastellModel) GetAll() ([]CastellModel, error) {
 
 	for rows.Next() {
 		var c CastellModel
-		if err = rows.Scan(&c.UUID, &c.Name, &c.Type); err != nil {
+		var event_uuid, event_name sql.NullString
+		var event_start sql.NullInt32
+		if err = rows.Scan(&c.UUID, &c.Name, &c.Type, &event_uuid, &event_name, &event_start); err != nil {
 			return nil, err
 		}
+		c.Event.UUID = nullToEmptyString(event_uuid)
+		c.Event.Name = nullToEmptyString(event_name)
+		c.Event.StartDate = uint(nullToZeroInt(event_start))
 		models = append(models, c)
 	}
 	if err = rows.Err(); err != nil {
@@ -271,7 +286,20 @@ func (c *CastellModel) Get() error {
 	if err = rows.Err(); err != nil {
 		return err
 	}
-	return nil
+	// Get event
+	stmt, err = db.Prepare(fmt.Sprintf(
+		"SELECT event_uuid, event_name, event_start FROM %s WHERE model_uuid= ?",
+		CASTELLMODELSINEVENTSVIEW))
+	defer stmt.Close()
+	var event_uuid, event_name sql.NullString
+	var event_start sql.NullInt32
+	err = stmt.QueryRow(c.UUID).Scan(&event_uuid, &event_name, &event_start)
+	if err == nil {
+		c.Event.UUID = nullToEmptyString(event_uuid)
+		c.Event.Name = nullToEmptyString(event_name)
+		c.Event.StartDate = uint(nullToZeroInt(event_start))
+	}
+	return err
 }
 
 func (c *CastellModel) Delete() error {
@@ -282,5 +310,27 @@ func (c *CastellModel) Delete() error {
 		common.Fatal(err.Error())
 	}
 	_, err = stmt.Exec(c.UUID)
+	return err
+}
+
+func (c *CastellModel) AttachToEvent(e *Event) error {
+	stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (castell_model_id, event_id) VALUES ((SELECT id FROM %s WHERE uuid = ?), (SELECT id FROM %s WHERE uuid = ?))",
+		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))
+	defer stmt.Close()
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	_, err = stmt.Exec(c.UUID, e.UUID)
+	return err
+}
+
+func (c *CastellModel) DettachFromEvent(e *Event) error {
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE castell_model_id = (SELECT id FROM %s WHERE uuid= ?) AND event_id = (SELECT id FROM %s WHERE uuid= ?)",
+		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))
+	defer stmt.Close()
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	_, err = stmt.Exec(c.UUID, e.UUID)
 	return err
 }
