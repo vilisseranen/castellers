@@ -54,12 +54,14 @@ func SendReminderEmail(payload EmailReminderPayload) error {
 		Text:  common.Translate("reminder_confirm", payload.Member.Language),
 		Buttons: []Button{
 			{
-				Text: common.Translate("reminder_answer_yes", payload.Member.Language),
-				Link: participationLink + "yes",
+				Text:  common.Translate("reminder_answer_yes", payload.Member.Language),
+				Link:  participationLink + "yes",
+				Color: "#20470b",
 			},
 			{
-				Text: common.Translate("reminder_answer_no", payload.Member.Language),
-				Link: participationLink + "no",
+				Text:  common.Translate("reminder_answer_no", payload.Member.Language),
+				Link:  participationLink + "no",
+				Color: "#aa0000",
 			},
 		},
 	}
