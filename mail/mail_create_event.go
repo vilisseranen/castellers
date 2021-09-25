@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tommysolsen/capitalise"
+
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
@@ -70,13 +72,13 @@ func SendCreateEventEmail(payload EmailCreateEventPayload) error {
 }
 
 func eventDetailsString(event model.Event, member model.Member, location *time.Location) (string, error) {
-	eventDetails := eventDetails{Name: event.Name, Type: event.Type, Description: event.Description}
+	eventDetails := eventDetails{Name: event.Name, Type: common.Translate(event.Type, member.Language), Description: event.Description}
 	eventDate := time.Unix(int64(event.StartDate), 0).In(location).Format("02-01-2006")
 	eventStartTime := time.Unix(int64(event.StartDate), 0).In(location).Format("15:04")
 	eventEndTime := time.Unix(int64(event.EndDate), 0).In(location).Format("15:04")
 	eventDetails.Date = strings.Join(
 		[]string{
-			strings.Title(common.Translate("on_the", member.Language)),
+			capitalise.First(common.Translate("on_the", member.Language)),
 			eventDate,
 			common.Translate("from_time", member.Language),
 			eventStartTime,

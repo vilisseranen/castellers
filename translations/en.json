@@ -17,7 +17,7 @@
     "registration_thanks": "Thanks for your participation, we can't wait to build castells with you!",
     "forgot_title": "Password reset",
     "forgot_subject_info": "we received a request to reset your password.",
-    "forgot_reset_requested_title": "If you lost yoyr password",
+    "forgot_reset_requested_title": "If you lost your password",
     "forgot_reset_requested_text": "You made the request to reset your password. You can use the link below to choose a new password.",
     "forgot_reset_not_requested_title": "You did not ask for the reset",
     "forgot_reset_not_requested_text": "You don't need to do anything. You can still warn an administrator of the situation.",
@@ -63,5 +63,6 @@
     "create_event_action_text": "You can check the details of the event online via this link.",
     "create_event_action_button": "Event",
     "create_event_main_recurring": "This is a recurring event.",
-    "create_event_main_location": "Location:"
+    "create_event_main_location": "Location:",
+    "practice": "Practice"
 }

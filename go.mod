@@ -20,6 +20,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/viper v1.8.1
+	github.com/tommysolsen/capitalise v0.0.0-20171110170156-1df6e863d8ab // indirect
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
