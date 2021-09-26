@@ -53,13 +53,15 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if requestHasAuthorizationToken(r) {
+		common.Debug("Request has authorization token")
 		tokenAuth, err := ExtractToken(r)
 		if err != nil {
 			common.Warn("Error reading token: %s", err.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
+		common.Debug("Getting participation for %s", p)
 		if err := p.GetParticipation(); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
