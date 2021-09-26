@@ -64,5 +64,6 @@
     "create_event_action_button": "Évènement",
     "create_event_main_recurring": "Il s'agit d'un évènement récurrent.",
     "create_event_main_location": "Lieu:",
-    "practice": "Entraînement"
+    "practice": "Entraînement",
+    "registeredForEvent": "Nous attendons %d castellers pour cet évènement."
 }

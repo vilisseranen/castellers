@@ -64,5 +64,6 @@
     "create_event_action_button": "Event",
     "create_event_main_recurring": "This is a recurring event.",
     "create_event_main_location": "Location:",
-    "practice": "Practice"
+    "practice": "Practice",
+    "registeredForEvent": "We expect %d castellers for this event."
 }
