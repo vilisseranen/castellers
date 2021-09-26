@@ -16,10 +16,8 @@ type EmailReminderPayload struct {
 
 func SendReminderEmail(payload EmailReminderPayload) error {
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
-	participationLink := common.GetConfigString("domain") + "/events?" +
+	participationLink := common.GetConfigString("domain") + "/eventShow/" + payload.Event.UUID + "?" +
 		"a=participate" +
-		"&e=" + payload.Event.UUID +
-		"&u=" + payload.Member.UUID +
 		"&t=" + payload.Token +
 		"&p="
 	answer := "false"
