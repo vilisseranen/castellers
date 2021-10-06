@@ -421,7 +421,7 @@
                           <a href="{{ .Link }}"
                             style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
                             class="button-a">
-                            <span style="color:#20470b;" class="button-link">
+                            <span {{if .Color}} style="color: {{ .Color }};" {{end}}class="button-link">
                               {{ .Text }}
                             </span>
                           </a>

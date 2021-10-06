@@ -16,10 +16,8 @@ type EmailReminderPayload struct {
 
 func SendReminderEmail(payload EmailReminderPayload) error {
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
-	participationLink := common.GetConfigString("domain") + "/events?" +
+	participationLink := common.GetConfigString("domain") + "/eventShow/" + payload.Event.UUID + "?" +
 		"a=participate" +
-		"&e=" + payload.Event.UUID +
-		"&u=" + payload.Member.UUID +
 		"&t=" + payload.Token +
 		"&p="
 	answer := "false"
@@ -54,12 +52,14 @@ func SendReminderEmail(payload EmailReminderPayload) error {
 		Text:  common.Translate("reminder_confirm", payload.Member.Language),
 		Buttons: []Button{
 			{
-				Text: common.Translate("reminder_answer_yes", payload.Member.Language),
-				Link: participationLink + "yes",
+				Text:  common.Translate("reminder_answer_yes", payload.Member.Language),
+				Link:  participationLink + "yes",
+				Color: "#20470b",
 			},
 			{
-				Text: common.Translate("reminder_answer_no", payload.Member.Language),
-				Link: participationLink + "no",
+				Text:  common.Translate("reminder_answer_no", payload.Member.Language),
+				Link:  participationLink + "no",
+				Color: "#aa0000",
 			},
 		},
 	}

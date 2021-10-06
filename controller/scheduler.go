@@ -186,7 +186,7 @@ func checkAndSendNotification() {
 			sort.Slice(members, func(i, j int) bool { return members[i].Participation > members[j].Participation })
 			// Send email to all admins
 			for _, member := range members {
-				if member.Type == model.MemberTypeAdmin {
+				if member.Type == model.MEMBERSTYPEADMIN {
 					// Send the email
 					if member.Subscribed == 1 {
 						// get eventDate as a string

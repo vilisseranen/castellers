@@ -8,13 +8,23 @@ import (
 	"github.com/vilisseranen/castellers/common"
 )
 
-const MembersTable = "members"
-const MembersCredentialsTable = "members_credentials"
+const (
+	MEMBERSTABLE            = "members"
+	MEMBERSCREDENTIALSTABLE = "members_credentials"
 
-const MemberTypeAdmin = "admin"
-const MemberTypeMember = "member"
+	MEMBERSTYPEADMIN   = "admin"
+	MEMBERSTYPEREGULAR = "member"
+	MEMBERSTYPEGUEST   = "guest"
 
-const MemberEmailNotFoundMessage = "No member found with this email"
+	// TODO: replace activated and deleted fields with status
+	MEMBERSSTATUSCREATED   = 0
+	MEMBERSSTATUSACTIVATED = 1
+	MEMBERSSTATUSPAUSED    = 2
+	MEMBERSSTATUSDELETED   = 3
+	MEMBERSSTATUSPURGED    = 4
+
+	MEMBERSEMAILNOTFOUNDMESSAGE = "No member found with this email"
+)
 
 type Member struct {
 	UUID          string   `json:"uuid"`
@@ -46,7 +56,7 @@ type Credentials struct {
 func (m *Member) CreateMember() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		MembersTable))
+		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Error(err.Error())
@@ -81,7 +91,7 @@ func (m *Member) EditMember() error {
 	}
 	stmt, err := tx.Prepare(fmt.Sprintf(
 		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
-		MembersTable))
+		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
@@ -117,7 +127,7 @@ func (m *Member) EditMember() error {
 func (m *Member) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
-		MembersTable))
+		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -142,7 +152,7 @@ func (m *Member) Get() error {
 func (m *Member) GetAll() ([]Member, error) {
 	rows, err := db.Query(fmt.Sprintf(
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
-		MembersTable))
+		MEMBERSTABLE))
 	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -177,7 +187,7 @@ func (m *Member) GetAll() ([]Member, error) {
 
 func (m *Member) DeleteMember() error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
-		MembersTable))
+		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -196,7 +206,7 @@ func (m *Member) sanitizeEmptyRoles() {
 }
 
 func (m *Member) Activate() error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MembersTable))
+	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -212,7 +222,7 @@ func (c *Credentials) ResetCredentials(username string, password []byte) error {
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MembersCredentialsTable))
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -223,7 +233,7 @@ func (c *Credentials) ResetCredentials(username string, password []byte) error {
 		common.Fatal(err.Error())
 		return err
 	}
-	stmt, err = db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MembersCredentialsTable))
+	stmt, err = db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -237,7 +247,7 @@ func (c *Credentials) ResetCredentials(username string, password []byte) error {
 func (c *Credentials) GetCredentials() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT uuid, password FROM %s WHERE username= ?",
-		MembersCredentialsTable))
+		MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -249,7 +259,7 @@ func (c *Credentials) GetCredentials() error {
 func (c *Credentials) GetCredentialsByUUID() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT username FROM %s WHERE uuid= ?",
-		MembersCredentialsTable))
+		MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -273,7 +283,7 @@ func (m *Member) GetByEmail() error {
 	}
 	if found == false {
 		common.Debug("Email %s not found.", m.Email)
-		return errors.New(MemberEmailNotFoundMessage)
+		return errors.New(MEMBERSEMAILNOTFOUNDMESSAGE)
 	}
 	return nil
 }

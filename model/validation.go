@@ -19,7 +19,7 @@ var ValidRoleList = []string{
 	"segon",
 	"terç",
 	"quart",
-	"dosos",
+	"dos",
 	"acotxador",
 	"enxaneta",
 	"pinya",
@@ -35,6 +35,12 @@ var ValidEventTypes = []string{
 	"presentation",
 	"practice",
 	"social",
+}
+
+var ValidMemberTypes = []string{
+	MEMBERSTYPEADMIN,
+	MEMBERSTYPEREGULAR,
+	MEMBERSTYPEGUEST,
 }
 
 func ValidateRoles(roles []string) error {
@@ -69,6 +75,15 @@ func ValidateLanguage(language string) error {
 	index := sort.SearchStrings(ValidLanguageList, language)
 	if index == len(ValidLanguageList) || language != ValidLanguageList[index] {
 		return errors.New("Invalid language")
+	}
+	return nil
+}
+
+func ValidateType(memberType string) error {
+	sort.Strings(ValidMemberTypes)
+	index := sort.SearchStrings(ValidMemberTypes, memberType)
+	if index == len(ValidMemberTypes) || memberType != ValidMemberTypes[index] {
+		return errors.New("Invalid type")
 	}
 	return nil
 }

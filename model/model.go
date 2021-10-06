@@ -109,6 +109,13 @@ func nullToEmptyString(s sql.NullString) string {
 	return s.String
 }
 
+func nullToZeroInt(s sql.NullInt32) int {
+	if !s.Valid {
+		return 0
+	}
+	return int(s.Int32)
+}
+
 func schemaInstalled(version string) bool {
 	installed := 0
 	stmt, err := db.Prepare("SELECT COUNT(id) FROM schema_version WHERE installed = 1 AND version = ?;")

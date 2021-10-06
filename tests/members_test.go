@@ -59,6 +59,28 @@ func TestCreateMemberInvalidRole(t *testing.T) {
 		"extra":"Santi",
 		"roles": "segond,toto,baix,terç",
 		"type": "member",
+		"language": "fr",
+		"email": "vilisseranen@gmail.com"}`)
+
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCreateMemberInvalidType(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"extra":"Santi",
+		"type": "toto",
+		"language": "fr",
 		"email": "vilisseranen@gmail.com"}`)
 
 	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
@@ -332,8 +354,8 @@ func TestGetMemberByEmailFail(t *testing.T) {
 	memberWithExistingEmail := model.Member{Email: "toto@tutu.ca"}
 	err := memberWithExistingEmail.GetByEmail()
 
-	if err.Error() != model.MemberEmailNotFoundMessage {
-		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MemberEmailNotFoundMessage, err.Error())
+	if err.Error() != model.MEMBERSEMAILNOTFOUNDMESSAGE {
+		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MEMBERSEMAILNOTFOUNDMESSAGE, err.Error())
 	}
 }
 

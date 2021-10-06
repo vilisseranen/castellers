@@ -53,13 +53,15 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if requestHasAuthorizationToken(r) {
+		common.Debug("Request has authorization token")
 		tokenAuth, err := ExtractToken(r)
 		if err != nil {
 			common.Warn("Error reading token: %s", err.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
+		common.Debug("Getting participation for %s", p)
 		if err := p.GetParticipation(); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
@@ -69,7 +71,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		e.Participation = p.Answer
-		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			if err := e.GetAttendance(); err != nil {
 				common.Warn("Error counting the number of people registered or the event: %s", err.Error())
 				RespondWithError(w, http.StatusInternalServerError, ERRORGETPRESENCE)
@@ -104,34 +106,37 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	// if request is authenticated
 	if requestHasAuthorizationToken(r) {
 		tokenAuth, err := ExtractToken(r)
-		if err != nil {
+		if err != nil && err.Error() == "Token is expired" {
+			common.Debug("Token expired, cannot get participation: %s", err.Error())
+		} else if err != nil {
 			common.Warn("Error reading token: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 			return
-		}
-		for index, event := range events {
-			p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
-			if err := p.GetParticipation(); err != nil {
-				switch err {
-				case sql.ErrNoRows:
-					common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
-					continue
-				default:
-					common.Warn("Error getting participation: %s", err.Error())
-					RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
-				}
-			}
-			events[index].Participation = p.Answer
-		}
-		// if token contain permission admin
-		if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		} else {
 			for index, event := range events {
-				if err := event.GetAttendance(); err != nil {
-					common.Warn("Error getting attendance: %s", err.Error())
-					RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
-					return
+				p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
+				if err := p.GetParticipation(); err != nil {
+					switch err {
+					case sql.ErrNoRows:
+						common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
+						continue
+					default:
+						common.Warn("Error getting participation: %s", err.Error())
+						RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
+					}
 				}
-				events[index].Attendance = event.Attendance
+				events[index].Participation = p.Answer
+			}
+			// if token contain permission admin
+			if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
+				for index, event := range events {
+					if err := event.GetAttendance(); err != nil {
+						common.Warn("Error getting attendance: %s", err.Error())
+						RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
+						return
+					}
+					events[index].Attendance = event.Attendance
+				}
 			}
 		}
 	}

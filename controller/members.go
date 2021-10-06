@@ -15,19 +15,21 @@ import (
 )
 
 const (
-	ERRORGETMEMBER         = "Error getting member"
-	ERRORGETMEMBERS        = "Error getting members"
-	ERRORCREATEMEMBER      = "Error creating member"
-	ERRORMEMBERNOTFOUND    = "Member not found"
-	ERRORMEMBERHEIGHT      = "Error with provided height"
-	ERRORMEMBERWEIGHT      = "Error with the provided weight"
-	ERRORMEMBERROLES       = "Error with the provided roles"
-	ERRORMEMBERLANGUAGE    = "Error with the provided language"
-	ERRORUPDATEMEMBER      = "Error updating member"
-	ERRORDELETEMEMBER      = "Error deleting member"
-	ERRORREGISTRATIONEMAIL = "Error sending the registration email"
-	ERRORRESETCREDENTIALS  = "Error resetting credentials"
-	ERROREMAILUNAVAILABLE  = "This email is already used by another member."
+	ERRORGETMEMBER              = "Error getting member"
+	ERRORGETMEMBERS             = "Error getting members"
+	ERRORCREATEMEMBER           = "Error creating member"
+	ERRORMEMBERNOTFOUND         = "Member not found"
+	ERRORMEMBERHEIGHT           = "Error with provided height"
+	ERRORMEMBERWEIGHT           = "Error with the provided weight"
+	ERRORMEMBERROLES            = "Error with the provided roles"
+	ERRORMEMBERLANGUAGE         = "Error with the provided language"
+	ERRORMEMBERTYPE             = "Error with the provided type"
+	ERRORUPDATEMEMBER           = "Error updating member"
+	ERRORDELETEMEMBER           = "Error deleting member"
+	ERRORREGISTRATIONEMAIL      = "Error sending the registration email"
+	ERRORRESETCREDENTIALS       = "Error resetting credentials"
+	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
+	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +45,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
-	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		m := model.Member{UUID: UUID}
 		if err := m.Get(); err != nil {
 			switch err {
@@ -56,7 +58,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			m.Roles = []string{}
 			m.Extra = ""
 		}
@@ -120,6 +122,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
 		return
 	}
+	if err := model.ValidateType(m.Type); err != nil {
+		common.Info("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
+		return
+	}
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
@@ -141,14 +148,16 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
-	payload := mail.EmailRegisterPayload{Member: m, Author: a}
-	payloadBytes := new(bytes.Buffer)
-	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
-		common.Warn("Error creating notification: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
-		return
+	if m.Type != model.MEMBERSTYPEGUEST {
+		payload := mail.EmailRegisterPayload{Member: m, Author: a}
+		payloadBytes := new(bytes.Buffer)
+		json.NewEncoder(payloadBytes).Encode(payload)
+		n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
+		if err := n.CreateNotification(); err != nil {
+			common.Warn("Error creating notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusCreated, m)
 }
@@ -166,7 +175,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
-	if common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
+	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		var m model.Member
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&m); err != nil {
@@ -219,7 +228,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		// Check if we can change role
 		// If caller is admin, we can change the role
 		// If caller is member, we cannot change he role
-		if !common.StringInSlice(model.MemberTypeAdmin, tokenAuth.Permissions) {
+		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			// get current user and use existing values for roles, extra and type
 			existingMember := model.Member{UUID: UUID}
 			if err := existingMember.Get(); err != nil {
@@ -309,9 +318,19 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	vars = mux.Vars(r)
-	UUID = vars["admin_uuid"]
-	a := model.Member{UUID: UUID}
+	if m.Type == model.MEMBERSTYPEGUEST {
+		common.Warn("Cannot send a registration email to a guest: %s")
+		RespondWithError(w, http.StatusForbidden, ERRORGUESTREGISTRATIONEMAIL)
+		return
+	}
+	// We will need admin info later for the email
+	tokenAuth, err := ExtractToken(r)
+	if err != nil {
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		return
+	}
+	a := model.Member{UUID: tokenAuth.UserId}
 	if err := a.Get(); err != nil {
 		common.Warn("Failed to get admin: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
@@ -335,7 +354,7 @@ func missingRequiredFields(m model.Member) bool {
 
 func emailAvailable(m model.Member) bool {
 	err := m.GetByEmail()
-	if err != nil && err.Error() == model.MemberEmailNotFoundMessage {
+	if err != nil && err.Error() == model.MEMBERSEMAILNOTFOUNDMESSAGE {
 		common.Debug("Error getting by email: %s", err.Error())
 		return true
 	}
@@ -401,7 +420,7 @@ func validateChangeType(m model.Member, code string, adminUuid string) bool {
 		return false
 	}
 
-	if currentUser.Type == model.MemberTypeMember && m.Type == model.MemberTypeAdmin && adminUuid == "" {
+	if currentUser.Type == model.MEMBERSTYPEREGULAR && m.Type == model.MEMBERSTYPEADMIN && adminUuid == "" {
 		return false
 	}
 	return true

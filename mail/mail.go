@@ -41,8 +41,9 @@ type emailAction struct {
 }
 
 type Button struct {
-	Text string
-	Link string
+	Text  string
+	Link  string
+	Color string
 }
 
 type emailBottom struct {

@@ -2,6 +2,7 @@ package mail
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"time"
 
@@ -34,7 +35,6 @@ func SendSummaryEmail(payload EmailSummaryPayload) error {
 		NoAnswer:       common.Translate("summary_no_answer", payload.Member.Language),
 		Members:        payload.Participants,
 	}
-
 	email := emailInfo{}
 	email.Header = emailHeader{common.Translate("summary_subject", payload.Member.Language)}
 	email.Top = emailTop{
@@ -46,9 +46,17 @@ func SendSummaryEmail(payload EmailSummaryPayload) error {
 	if err != nil {
 		return err
 	}
+	// count number of castellers registered for the event
+	registeredForEvent := 0
+	for _, m := range summary.Members {
+		if m.Participation == "yes" {
+			registeredForEvent += 1
+		}
+	}
 	email.MainSections = []emailMain{{
-		Title: payload.Event.Name + " " + common.Translate("on_the", payload.Member.Language) + " " + eventDate + ".",
-		Text:  summaryTable,
+		Title:    payload.Event.Name + " " + common.Translate("on_the", payload.Member.Language) + " " + eventDate + ".",
+		Subtitle: fmt.Sprintf(common.Translate("registeredForEvent", payload.Member.Language), registeredForEvent),
+		Text:     summaryTable,
 	}}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
