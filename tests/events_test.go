@@ -127,7 +127,7 @@ func TestCreateWeeklyEvent(t *testing.T) {
 
 	startDate := time.Now().Unix() + 3600
 	endDate := startDate + 3600
-	until := startDate + 3600*24*7*6
+	until := startDate + 3600*24*7*6 + 3600 // the last 3600 is for the case when the first event is before winter time and the last event after
 
 	payload := []byte(fmt.Sprintf(`{"name":"diada","startDate":%d, "endDate":%d, "recurring": {"interval": "1w", "until": %d}, "type":"practice"}`, startDate, endDate, until))
 
