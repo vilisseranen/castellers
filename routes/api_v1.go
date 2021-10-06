@@ -49,7 +49,7 @@ func AttachV1API(r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("%s/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.PresenceEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
 
 	// Members
-	r.HandleFunc(fmt.Sprintf("%s/members", BASE_PATH), checkTokenType(controller.GetMembers, model.MEMBERSTYPEADMIN)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/members", BASE_PATH), checkTokenType(controller.GetMembers, model.MEMBERSTYPEREGULAR)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/members", BASE_PATH), checkTokenType(controller.CreateMember, model.MEMBERSTYPEADMIN)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("%s/members/roles", BASE_PATH), controller.GetRoles).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetMember, model.MEMBERSTYPEREGULAR)).Methods("GET")
