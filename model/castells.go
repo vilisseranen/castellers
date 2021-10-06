@@ -264,6 +264,38 @@ func (c *CastellModel) GetAll() ([]CastellModel, error) {
 	return models, nil
 }
 
+func (c *CastellModel) GetAllFromEvent(event Event) ([]CastellModel, error) {
+	stmt, err := db.Prepare(fmt.Sprintf(
+		"SELECT model_uuid, model_name, model_type, event_uuid, event_name, event_start FROM %s WHERE model_deleted=0 and event_uuid = ?",
+		CASTELLMODELSINEVENTSVIEW))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	rows, err := stmt.Query(event.UUID)
+	defer rows.Close()
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	models := []CastellModel{}
+
+	for rows.Next() {
+		var c CastellModel
+		var event_uuid, event_name sql.NullString
+		var event_start sql.NullInt32
+		if err = rows.Scan(&c.UUID, &c.Name, &c.Type, &event_uuid, &event_name, &event_start); err != nil {
+			return nil, err
+		}
+		c.Event.UUID = nullToEmptyString(event_uuid)
+		c.Event.Name = nullToEmptyString(event_name)
+		c.Event.StartDate = uint(nullToZeroInt(event_start))
+		models = append(models, c)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return models, nil
+}
+
 func (c *CastellModel) Get() error {
 	stmt, err := db.Prepare(fmt.Sprintf(
 		"SELECT model_name, model_type, position_in_castell_name, position_in_castell_column, position_in_castell_cordon, position_in_castell_part, member_uuid FROM %s WHERE model_uuid = ? AND model_deleted=0",

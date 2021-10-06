@@ -20,6 +20,7 @@ func AttachV1API(r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("%s/castells/types", BASE_PATH), controller.GetCastellTypeList).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/types/{type:[0-9]+d[0-9]+}", BASE_PATH), controller.GetCastellType).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.GetCastellModels, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.GetCastellModels, model.MEMBERSTYPEREGULAR)).Queries("event", "{event_uuid:[0-9a-f]+}").Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.CreateCastellModel, model.MEMBERSTYPEADMIN)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetCastellModel, model.MEMBERSTYPEREGULAR)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteCastellModel, model.MEMBERSTYPEADMIN)).Methods("DELETE")

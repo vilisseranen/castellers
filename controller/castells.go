@@ -102,14 +102,34 @@ func EditCastellModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCastellModels(w http.ResponseWriter, r *http.Request) {
+	event := r.FormValue("event")
 	m := model.CastellModel{}
-	models, err := m.GetAll()
-	if err != nil {
-		common.Warn("Cannot get castell models: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
-		return
+	models := []model.CastellModel{}
+	if event != "" {
+		common.Debug("Getting models for event %s", event)
+		e := model.Event{UUID: event}
+		err := e.Get()
+		if err != nil {
+			common.Info("Error retrieving event: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERROREVENTNOTFOUND)
+			return
+		}
+		models, err = m.GetAllFromEvent(e)
+		if err != nil {
+			common.Warn("Cannot get castell models: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, models)
+	} else {
+		models, err := m.GetAll()
+		if err != nil {
+			common.Warn("Cannot get castell models: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETCASTELLMODEL)
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, models)
 	}
-	RespondWithJSON(w, http.StatusOK, models)
 }
 
 func GetCastellModel(w http.ResponseWriter, r *http.Request) {
