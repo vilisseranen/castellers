@@ -50,7 +50,8 @@ func (a *App) Initialize() {
 	common.InitializeTranslations()
 
 	// Define logger
-	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
+	a.handler = handlers.ProxyHeaders(a.Router)
+	a.handler = handlers.CombinedLoggingHandler(f, a.handler)
 
 	// Define CORS handlers
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})

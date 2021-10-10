@@ -1,0 +1,44 @@
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'
+
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+
+setup.kibana.host: 'http://kibana:5601'
+setup.dashboards.enabled: true
+
+metricbeat.modules:
+- module: docker
+  metricsets:
+    - "container"
+    - "cpu"
+    - "diskio"
+    - "event"
+    - "healthcheck"
+    - "info"
+    - "memory"
+    - "network"
+  hosts: ["unix:///var/run/docker.sock"]
+  period: 10s
+  enabled: true
+- module: system
+  metricsets:
+    - cpu             # CPU usage
+    - load            # CPU load averages
+    - memory          # Memory usage
+    - network         # Network IO
+    - process         # Per process metrics
+    - process_summary # Process summary
+    - uptime          # System Uptime
+    - socket_summary  # Socket summary
+  enabled: true
+  period: 10s
+  processes: ['.*']
+
+  # Configure the mount point of the host’s filesystem for use in monitoring a host from within a container
+  system.hostfs: "/hostfs"
+
+  # Configure the metric types that are included by these metricsets.
+  cpu.metrics:  ["percentages","normalized_percentages"]  # The other available option is ticks.
+  core.metrics: ["percentages"]  # The other available option is ticks.

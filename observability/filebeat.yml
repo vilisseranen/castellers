@@ -1,0 +1,62 @@
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'
+
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+
+setup.kibana.host: 'kibana:5601'
+setup.dashboards.enabled: true
+
+filebeat.modules:
+- module: apache
+  access:
+    enabled: true
+    var.paths: ['/var/log/castellers_access.log']
+
+filebeat.inputs:
+- type: filestream
+  paths: /var/log/castellers_main.log
+  fields:
+    event.category: main
+  fields_under_root: true
+
+processors:
+  - rename:
+      when:
+        has_fields: ['log.path']
+      fields:
+        - from: "log.path"
+          to: "log.file.path"
+  - dissect:
+      when:
+        equals:
+          event.category: main
+      tokenizer: "%{timestamp}\t%{log.level}\t%{log.origin.file.name}:%{log.origin.file.line|integer}\t%{message_body}"
+      overwrite_keys: true
+      target_prefix: ""
+  - timestamp:
+      when:
+        equals:
+          event.category: main
+      field: timestamp
+      layouts:
+        - '2006-01-02T15:04:05.999-0700'
+      test: [ '2021-10-09T17:27:44.247-0400' ]
+  - drop_fields:
+      when:
+        equals:
+          event.category: main
+      fields: ["timestamp"]
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            contains:
+              docker.container.image: castellers
+          config:
+            - type: container
+              containers.ids:
+                - ${data.docker.container.id}

@@ -1,0 +1,94 @@
+version: '3.7'
+
+services:
+
+  apm-server:
+    container_name: apm-server
+    image: docker.elastic.co/apm/apm-server:${ELASTIC_VERSION}
+    restart: always
+    user: root
+    networks:
+      - elastic
+    expose:
+      - "8200"
+    volumes:
+      - ./apm-server.yml:/usr/share/apm-serer/apm-server.yml:ro
+    command: ["--strict.perms=false", "-system.hostfs=/hostfs"]
+    depends_on:
+      - kibana
+      - elasticsearch
+
+  metricbeat:
+    container_name: metricbeat
+    image: docker.elastic.co/beats/metricbeat:${ELASTIC_VERSION}
+    restart: always
+    hostname: "${HOST_HOSTNAME}"
+    user: root
+    networks:
+      - elastic
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - metricbeat:/usr/share/metricbeat/data
+    command: ["--strict.perms=false", "-system.hostfs=/hostfs"]
+    depends_on:
+      - kibana
+      - elasticsearch
+
+  filebeat:
+    container_name: filebeat
+    image: docker.elastic.co/beats/filebeat:${ELASTIC_VERSION}
+    restart: always
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${ACCESS_LOG_PATH}:/var/log/castellers_access.log
+      - ${MAIN_LOG_PATH}:/var/log/castellers_main.log
+      - filebeat_registry:/var/lib/beat/registry
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - filebeat:/usr/share/filebeat/data
+    networks:
+      - elastic
+    user: root
+    command: ["--strict.perms=false"]
+    depends_on:
+      - kibana
+      - elasticsearch
+
+  kibana:
+    container_name: kibana
+    image: kibana:${ELASTIC_VERSION}
+    restart: always
+    networks:
+      - elastic
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:${ELASTIC_VERSION}
+    restart: always
+    networks:
+      - elastic
+    environment:
+      - discovery.type=single-node
+    expose:
+      - "9200"
+      - "9300"
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+
+
+networks:
+  elastic:
+
+volumes:
+  filebeat_registry:
+  elasticsearch:
+  metricbeat:
+  filebeat:
