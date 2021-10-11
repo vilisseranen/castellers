@@ -2,11 +2,13 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"strings"
 	"time"
 
 	"github.com/tommysolsen/capitalise"
+	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
@@ -27,7 +29,9 @@ type eventDetails struct {
 	Recurring   string
 }
 
-func SendCreateEventEmail(payload EmailCreateEventPayload) error {
+func SendCreateEventEmail(ctx context.Context, payload EmailCreateEventPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendCreateEventEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	location, err := time.LoadLocation("America/Montreal")
@@ -64,7 +68,7 @@ func SendCreateEventEmail(payload EmailCreateEventPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err = sendMail(email); err != nil {
+	if err = sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

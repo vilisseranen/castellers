@@ -2,12 +2,14 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 type EmailSummaryPayload struct {
@@ -16,7 +18,10 @@ type EmailSummaryPayload struct {
 	Participants []model.Member `json:"participants"`
 }
 
-func SendSummaryEmail(payload EmailSummaryPayload) error {
+func SendSummaryEmail(ctx context.Context, payload EmailSummaryPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendSummaryEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
+
 	common.Debug("Send summary Event Email")
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	var location, err = time.LoadLocation("America/Montreal")
@@ -61,7 +66,7 @@ func SendSummaryEmail(payload EmailSummaryPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err = sendMail(email); err != nil {
+	if err = sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

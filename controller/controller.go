@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-redis/redis"
+
 	"github.com/vilisseranen/castellers/common"
 )
 
@@ -16,6 +17,9 @@ const (
 	ERRORAUTHENTICATION = "Error with the provided token"
 	ERRORMISSINGFIELDS  = "Missing fields in request payload"
 	ERRORUNAUTHORIZED   = "You are not authorized to perform this action."
+
+	APM_SPAN_TYPE_REQUEST = "request"
+	APM_SPAN_TYPE_CRON    = "cron"
 )
 
 var RedisClient *redis.Client

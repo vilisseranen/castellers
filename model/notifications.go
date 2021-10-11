@@ -1,11 +1,13 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
+	"go.elastic.co/apm"
 )
 
 const notificationsTable = "notifications"
@@ -34,8 +36,11 @@ type Notification struct {
 	Payload          []byte
 }
 
-func (n *Notification) CreateNotification() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (n *Notification) CreateNotification(ctx context.Context) error {
+	span, ctx := apm.StartSpan(ctx, "Notification.CreateNotification", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (notificationType, objectUUID, sendDate, payload) VALUES (?, ?, ?, ?)",
 		notificationsTable))
 	defer stmt.Close()
@@ -44,7 +49,7 @@ func (n *Notification) CreateNotification() error {
 		common.Error("%v\n", n)
 		return err
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(ctx,
 		stringOrNull(n.NotificationType),
 		stringOrNull(n.ObjectUUID),
 		n.SendDate,
@@ -57,9 +62,12 @@ func (n *Notification) CreateNotification() error {
 	return err
 }
 
-func (n *Notification) GetNotificationsReady() ([]Notification, error) {
+func (n *Notification) GetNotificationsReady(ctx context.Context) ([]Notification, error) {
+	span, ctx := apm.StartSpan(ctx, "Notification.GetNotificationsReady", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	now := time.Now().Unix()
-	rows, err := db.Query(fmt.Sprintf(
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT id, notificationType, objectUUID, sendDate, payload FROM %s WHERE sendDate <= ? AND delivered=0",
 		notificationsTable), now)
 	defer rows.Close()
@@ -82,8 +90,11 @@ func (n *Notification) GetNotificationsReady() ([]Notification, error) {
 	return notifications, nil
 }
 
-func (n *Notification) UpdateNotificationStatus() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (n *Notification) UpdateNotificationStatus(ctx context.Context) error {
+	span, ctx := apm.StartSpan(ctx, "Notification.UpdateNotificationStatus", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"UPDATE %s SET delivered = ? WHERE id = ?",
 		notificationsTable))
 	defer stmt.Close()
@@ -92,7 +103,7 @@ func (n *Notification) UpdateNotificationStatus() error {
 		common.Error("%v\n", n)
 		return err
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(ctx,
 		n.Delivered,
 		n.ID)
 	if err != nil {

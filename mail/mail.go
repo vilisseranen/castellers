@@ -2,10 +2,16 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"net/smtp"
 
 	"github.com/vilisseranen/castellers/common"
+	"go.elastic.co/apm"
+)
+
+const (
+	APM_SPAN_TYPE_CRON = "cron"
 )
 
 type emailInfo struct {
@@ -82,7 +88,9 @@ func buildHeader(title, to string) string {
 		"\r\n"
 }
 
-func sendMail(email emailInfo) error {
+func sendMail(ctx context.Context, email emailInfo) error {
+	span, ctx := apm.StartSpan(ctx, "mail.sendMail", APM_SPAN_TYPE_CRON)
+	defer span.End()
 
 	body, err := email.buildEmail()
 	if err != nil {

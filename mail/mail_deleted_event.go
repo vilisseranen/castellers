@@ -1,10 +1,12 @@
 package mail
 
 import (
+	"context"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 type EmailDeletedEventPayload struct {
@@ -12,7 +14,9 @@ type EmailDeletedEventPayload struct {
 	EventDeleted model.Event  `json:"eventDeleted"`
 }
 
-func SendDeletedEventEmail(payload EmailDeletedEventPayload) error {
+func SendDeletedEventEmail(ctx context.Context, payload EmailDeletedEventPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendDeletedEventEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	location, err := time.LoadLocation("America/Montreal")
@@ -36,7 +40,7 @@ func SendDeletedEventEmail(payload EmailDeletedEventPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err = sendMail(email); err != nil {
+	if err = sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

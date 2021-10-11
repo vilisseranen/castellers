@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"sort"
@@ -340,7 +341,7 @@ func TestGetMemberByEmailSuccess(t *testing.T) {
 	h.addAMember()
 
 	memberWithExistingEmail := model.Member{Email: "ramon@gerard.ca"}
-	memberWithExistingEmail.GetByEmail()
+	memberWithExistingEmail.GetByEmail(context.Background())
 
 	if memberWithExistingEmail.UUID != "deadbeef" {
 		t.Errorf("Expected member with email %s to retrieved with UUID %s but got UUID %s.", "ramon@gerard.ca", "deadbeef", memberWithExistingEmail.UUID)
@@ -352,7 +353,7 @@ func TestGetMemberByEmailFail(t *testing.T) {
 	h.addAMember()
 
 	memberWithExistingEmail := model.Member{Email: "toto@tutu.ca"}
-	err := memberWithExistingEmail.GetByEmail()
+	err := memberWithExistingEmail.GetByEmail(context.Background())
 
 	if err.Error() != model.MEMBERSEMAILNOTFOUNDMESSAGE {
 		t.Errorf("Expected GetByEmail fail with error '%s' but got '%s'", model.MEMBERSEMAILNOTFOUNDMESSAGE, err.Error())

@@ -2,12 +2,14 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
@@ -33,13 +35,16 @@ const (
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "GetMember", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
 
 	// if member, request can only be about themselves
 	// if admin can be for anyone
 
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -47,7 +52,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 	}
 	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
 		m := model.Member{UUID: UUID}
-		if err := m.Get(); err != nil {
+		if err := m.Get(ctx); err != nil {
 			switch err {
 			case sql.ErrNoRows:
 				common.Debug("Member not found: %s", err.Error())
@@ -72,8 +77,11 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "GetMembers", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	m := model.Member{}
-	members, err := m.GetAll()
+	members, err := m.GetAll(ctx)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBERS)
@@ -83,6 +91,8 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMember(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "CreateMember", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
 	// Decode info to create member
 	var m model.Member
 	decoder := json.NewDecoder(r.Body)
@@ -92,7 +102,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	if !emailAvailable(m) {
+	if !emailAvailable(ctx, m) {
 		common.Info("Email not available: %s", m.Email)
 		RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 		return
@@ -130,20 +140,20 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	m.UUID = common.GenerateUUID()
 	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	a := model.Member{UUID: tokenAuth.UserId}
-	if err := a.Get(); err != nil {
+	if err := a.Get(ctx); err != nil {
 		common.Warn("Failed to get admin for CreateMember: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
 	// Create the Member now
-	if err := m.CreateMember(); err != nil {
+	if err := m.CreateMember(ctx); err != nil {
 		common.Warn("Error creating member: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
@@ -153,7 +163,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
 		n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-		if err := n.CreateNotification(); err != nil {
+		if err := n.CreateNotification(ctx); err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
@@ -163,13 +173,16 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditMember(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "EditMember", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
 
 	// if member, request can only be about themselves
 	// if admin can be for anyone
 
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -188,14 +201,14 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		m.UUID = UUID
 		// If email is changing, we need to check if it is used
 		currentMember := model.Member{UUID: m.UUID}
-		err = currentMember.Get()
+		err = currentMember.Get(ctx)
 		if err != nil {
 			common.Info("Member cannot be found: %s", err.Error())
 			RespondWithError(w, http.StatusBadRequest, ERRORGETMEMBER)
 			return
 		}
-		if currentMember.Email != m.Email && !emailAvailable(m) {
-			common.Info("Email not available. Current: %s, requested: %s, emailAvailable: %s", currentMember.Email, m.Email, emailAvailable(m))
+		if currentMember.Email != m.Email && !emailAvailable(ctx, m) {
+			common.Info("Email not available. Current: %s, requested: %s, emailAvailable: %s", currentMember.Email, m.Email, emailAvailable(ctx, m))
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
@@ -231,7 +244,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			// get current user and use existing values for roles, extra and type
 			existingMember := model.Member{UUID: UUID}
-			if err := existingMember.Get(); err != nil {
+			if err := existingMember.Get(ctx); err != nil {
 				switch err {
 				case sql.ErrNoRows:
 					common.Debug("Member not found: %s", err.Error())
@@ -251,7 +264,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			m.Extra = existingMember.Extra
 
 		}
-		if err := m.EditMember(); err != nil {
+		if err := m.EditMember(ctx); err != nil {
 			common.Warn("Error updating member: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEMEMBER)
 			return
@@ -263,11 +276,14 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "DeleteMember", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
 	m := model.Member{UUID: UUID}
 	// Cannot delete self if admin
-	if err := m.Get(); err != nil {
+	if err := m.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Member not found: %s", err.Error())
@@ -278,7 +294,7 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -290,7 +306,7 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusLocked, ERRORUNAUTHORIZED)
 		return
 	}
-	if err := m.DeleteMember(); err != nil {
+	if err := m.DeleteMember(ctx); err != nil {
 		common.Warn("Error deleting member: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEMEMBER)
 		return
@@ -299,15 +315,19 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRoles(w http.ResponseWriter, r *http.Request) {
+	span, _ := apm.StartSpan(r.Context(), "GetRoles", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
 	roles := model.ValidRoleList
 	RespondWithJSON(w, http.StatusOK, roles)
 }
 
 func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "SendRegistrationEmail", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
 	m := model.Member{UUID: UUID}
-	if err := m.Get(); err != nil {
+	if err := m.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Member not found: %s", err.Error())
@@ -324,14 +344,14 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// We will need admin info later for the email
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
 	a := model.Member{UUID: tokenAuth.UserId}
-	if err := a.Get(); err != nil {
+	if err := a.Get(ctx); err != nil {
 		common.Warn("Failed to get admin: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
 		return
@@ -340,7 +360,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	payloadBytes := new(bytes.Buffer)
 	json.NewEncoder(payloadBytes).Encode(payload)
 	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
+	if err := n.CreateNotification(ctx); err != nil {
 		common.Warn("Error creating notification: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 		return
@@ -352,8 +372,10 @@ func missingRequiredFields(m model.Member) bool {
 	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
 }
 
-func emailAvailable(m model.Member) bool {
-	err := m.GetByEmail()
+func emailAvailable(ctx context.Context, m model.Member) bool {
+	span, ctx := apm.StartSpan(ctx, "emailAvailable", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+	err := m.GetByEmail(ctx)
 	if err != nil && err.Error() == model.MEMBERSEMAILNOTFOUNDMESSAGE {
 		common.Debug("Error getting by email: %s", err.Error())
 		return true
@@ -363,7 +385,9 @@ func emailAvailable(m model.Member) bool {
 }
 
 func ResetCredentials(w http.ResponseWriter, r *http.Request) {
-	tokenAuth, err := ExtractToken(r)
+	span, ctx := apm.StartSpan(r.Context(), "ResetCredentials", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -386,14 +410,14 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 	// if username is not provided, fetch it in DB
 	if c.Username == "" {
-		err := c.GetCredentialsByUUID()
+		err := c.GetCredentialsByUUID(ctx)
 		if err != nil {
 			common.Debug("Invalid request payload: %s", err.Error())
 			RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 			return
 		}
 	}
-	err = c.ResetCredentials(c.Username, password)
+	err = c.ResetCredentials(ctx, c.Username, password)
 	if err != nil {
 		common.Debug("Invalid request payload: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
@@ -401,7 +425,7 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 	// resetCredentialsToken should only be used once
 	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
-		_, err = deleteTokenInCache(tokenAuth.TokenUuid)
+		_, err = deleteTokenInCache(r.Context(), tokenAuth.TokenUuid)
 		if err != nil {
 			common.Warn("Error deleting token in cache: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
@@ -412,11 +436,13 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns true if it's valid, false otherwise
-func validateChangeType(m model.Member, code string, adminUuid string) bool {
+func validateChangeType(ctx context.Context, m model.Member, code string, adminUuid string) bool {
+	span, ctx := apm.StartSpan(ctx, "validateChangeType", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
 	// Make sure a user does not promote him or herself
 	currentUser := model.Member{UUID: m.UUID}
 	// If member does not exist can't do any action.
-	if err := currentUser.Get(); err != nil {
+	if err := currentUser.Get(ctx); err != nil {
 		return false
 	}
 

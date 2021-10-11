@@ -2,11 +2,13 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"text/template"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 type EmailModifiedPayload struct {
@@ -21,7 +23,9 @@ type change struct {
 	After  string
 }
 
-func SendModifiedEventEmail(payload EmailModifiedPayload) error {
+func SendModifiedEventEmail(ctx context.Context, payload EmailModifiedPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendModifiedEventEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	location, err := time.LoadLocation("America/Montreal")
@@ -92,7 +96,7 @@ func SendModifiedEventEmail(payload EmailModifiedPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err = sendMail(email); err != nil {
+	if err = sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

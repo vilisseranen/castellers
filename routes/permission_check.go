@@ -5,14 +5,17 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/controller"
+	"go.elastic.co/apm"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request)
 
 func checkTokenType(h handler, requestedType ...string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
+		span, ctx := apm.StartSpan(r.Context(), "checkTokenType", APM_SPAN_TYPE_REQUEST)
+		defer span.End()
 		common.Debug("Validating token in Authorization Header: %s", r.Header.Get("Authorization"))
-		tokenAuth, err := controller.ExtractToken(r)
+		tokenAuth, err := controller.ExtractToken(ctx, r)
 		if err != nil {
 			// TODO: find a better way to determine if the token has expired.
 			if err.Error() == "Token is expired" {
@@ -39,6 +42,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		// 	}
 		// }
 		common.Debug("Token is valid and allowed")
+		span.End()
 		h(w, r)
 	}
 }

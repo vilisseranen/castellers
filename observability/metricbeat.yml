@@ -5,7 +5,7 @@ setup.template.settings:
   index.number_of_shards: 1
   index.number_of_replicas: 0
 
-setup.kibana.host: 'http://kibana:5601'
+setup.kibana.host: 'kibana:5601'
 setup.dashboards.enabled: true
 
 metricbeat.modules:
@@ -28,7 +28,7 @@ metricbeat.modules:
     - load            # CPU load averages
     - memory          # Memory usage
     - network         # Network IO
-    - process         # Per process metrics
+    # - process         # Per process metrics
     - process_summary # Process summary
     - uptime          # System Uptime
     - socket_summary  # Socket summary

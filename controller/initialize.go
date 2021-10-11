@@ -9,6 +9,7 @@ import (
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 const (
@@ -16,10 +17,12 @@ const (
 )
 
 func Initialize(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "Initialize", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
 
 	// Only execute if it is the first member
 	var m model.Member
-	members, err := m.GetAll()
+	members, err := m.GetAll(ctx)
 	if err != nil {
 		common.Warn("Error getting all members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
@@ -44,7 +47,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	m.Code = common.GenerateCode() // TODO remove Code
 
 	// Create the Member now
-	if err := m.CreateMember(); err != nil {
+	if err := m.CreateMember(ctx); err != nil {
 		common.Warn("Error creating first admin: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
@@ -53,7 +56,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	payloadBytes := new(bytes.Buffer)
 	json.NewEncoder(payloadBytes).Encode(payload)
 	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(); err != nil {
+	if err := n.CreateNotification(ctx); err != nil {
 		common.Warn("Error creating notification: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 		return
@@ -63,8 +66,11 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func IsInitialized(w http.ResponseWriter, r *http.Request) {
+	span, ctx := apm.StartSpan(r.Context(), "IsInitialized", APM_SPAN_TYPE_REQUEST)
+	defer span.End()
+
 	var m model.Member
-	members, err := m.GetAll()
+	members, err := m.GetAll(ctx)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)

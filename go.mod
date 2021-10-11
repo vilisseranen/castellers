@@ -11,13 +11,17 @@ require (
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
-	github.com/mattn/go-sqlite3 v1.14.8
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.1.2
 	github.com/onsi/gomega v1.16.0 // indirect
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/viper v1.9.0
 	github.com/tommysolsen/capitalise v0.0.0-20171110170156-1df6e863d8ab
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
+	go.elastic.co/apm v1.14.0
+	go.elastic.co/apm/module/apmgoredis v1.14.0
+	go.elastic.co/apm/module/apmgorilla v1.14.0
+	go.elastic.co/apm/module/apmsql v1.14.0
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/text v0.3.7

@@ -9,8 +9,8 @@ services:
     user: root
     networks:
       - elastic
-    expose:
-      - "8200"
+    ports:
+      - 8200:8200
     volumes:
       - ./apm-server.yml:/usr/share/apm-serer/apm-server.yml:ro
     command: ["--strict.perms=false", "-system.hostfs=/hostfs"]

@@ -2,10 +2,12 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 type EmailForgotPasswordPayload struct {
@@ -44,7 +46,10 @@ func (e emailForgotInfo) GetBody() (string, error) {
 	return body.String(), nil
 }
 
-func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
+func SendForgotPasswordEmail(ctx context.Context, payload EmailForgotPasswordPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendForgotPasswordEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
+
 	resetLink := common.GetConfigString("domain") + "/reset?" +
 		"t=" + payload.Token
 	if payload.Credentials.Username != "" {
@@ -87,7 +92,7 @@ func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
 	}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err := sendMail(email); err != nil {
+	if err := sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

@@ -1,10 +1,12 @@
 package mail
 
 import (
+	"context"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
+	"go.elastic.co/apm"
 )
 
 type EmailReminderPayload struct {
@@ -14,7 +16,10 @@ type EmailReminderPayload struct {
 	Token         string              `json:"token"`
 }
 
-func SendReminderEmail(payload EmailReminderPayload) error {
+func SendReminderEmail(ctx context.Context, payload EmailReminderPayload) error {
+	span, ctx := apm.StartSpan(ctx, "mail.SendReminderEmail", APM_SPAN_TYPE_CRON)
+	defer span.End()
+
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID
 	participationLink := common.GetConfigString("domain") + "/eventShow/" + payload.Event.UUID + "?" +
 		"a=participate" +
@@ -66,7 +71,7 @@ func SendReminderEmail(payload EmailReminderPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err = sendMail(email); err != nil {
+	if err = sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

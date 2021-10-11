@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"go.elastic.co/apm/module/apmsql"
+	_ "go.elastic.co/apm/module/apmsql/sqlite3"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/vilisseranen/castellers/common"
 )
@@ -17,11 +20,15 @@ const initQuery = `CREATE TABLE IF NOT EXISTS schema_version
     CONSTRAINT version UNIQUE (version)
 );`
 
+const (
+	APM_SPAN_TYPE_REQUEST = "request"
+)
+
 var db *sql.DB
 
 func InitializeDB(dbname string) {
 	var err error
-	db, err = sql.Open("sqlite3", dbname+"?_foreign_keys=on")
+	db, err = apmsql.Open("sqlite3", dbname+"?_foreign_keys=on")
 	if err != nil {
 		common.Fatal(err.Error())
 	}
