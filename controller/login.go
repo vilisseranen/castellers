@@ -13,8 +13,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
-	"go.elastic.co/apm/module/apmgoredis"
 )
 
 const (
@@ -44,7 +42,7 @@ const ResetCredentialsPermission = "reset_credentials"
 const ParticipateEventPermission = "participate_event"
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "Login", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "Login")
 	defer span.End()
 
 	var credentialsInRequest model.Credentials
@@ -83,7 +81,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func createMemberToken(ctx context.Context, uuid string) (map[string]string, error) {
-	span, ctx := apm.StartSpan(ctx, "createMemberToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "createMemberToken")
 	defer span.End()
 
 	permissions, err := getMemberPermissions(ctx, uuid)
@@ -102,7 +100,7 @@ func createMemberToken(ctx context.Context, uuid string) (map[string]string, err
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "Logout", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "Logout")
 	defer span.End()
 
 	au, err := ExtractToken(ctx, r)
@@ -127,7 +125,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func createToken(ctx context.Context, uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
-	span, ctx := apm.StartSpan(ctx, "createToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "createToken")
 	defer span.End()
 
 	td := &TokenDetails{}
@@ -172,8 +170,6 @@ func createToken(ctx context.Context, uuid string, email string, permissions []s
 }
 
 func extractTokenString(ctx context.Context, r *http.Request) string {
-	span, _ := apm.StartSpan(ctx, "extractTokenString", APM_SPAN_TYPE_REQUEST)
-	defer span.End()
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")
 	if len(strArr) == 2 {
@@ -183,14 +179,14 @@ func extractTokenString(ctx context.Context, r *http.Request) string {
 }
 
 func requestHasAuthorizationToken(ctx context.Context, r *http.Request) bool {
-	span, ctx := apm.StartSpan(ctx, "requestHasAuthorizationToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "requestHasAuthorizationToken")
 	defer span.End()
 
 	return extractTokenString(ctx, r) != ""
 }
 
 func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token, error) {
-	span, ctx := apm.StartSpan(ctx, "requestHasAuthorizationToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "requestHasAuthorizationToken")
 	defer span.End()
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -220,7 +216,7 @@ func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token
 }
 
 func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, error) {
-	span, ctx := apm.StartSpan(ctx, "ExtractToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "ExtractToken")
 	defer span.End()
 	tokenString := extractTokenString(ctx, r)
 	token, err := verifyToken(ctx, tokenString, "access")
@@ -263,7 +259,7 @@ func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, er
 }
 
 func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error {
-	span, ctx := apm.StartSpan(ctx, "saveTokenInCache", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "saveTokenInCache")
 	defer span.End()
 
 	// We add 1 second because we check in redis after we check the token
@@ -272,13 +268,11 @@ func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error 
 	rt := time.Unix(td.RtExpires+1, 0)
 	now := time.Now()
 
-	apmRedisClient := apmgoredis.Wrap(RedisClient).WithContext(ctx)
-
-	errAccess := apmRedisClient.Set(td.AccessUuid, uuid, at.Sub(now)).Err()
+	errAccess := RedisClient.Set(ctx, td.AccessUuid, uuid, at.Sub(now)).Err()
 	if errAccess != nil {
 		return errAccess
 	}
-	errRefresh := apmRedisClient.Set(td.RefreshUuid, uuid, rt.Sub(now)).Err()
+	errRefresh := RedisClient.Set(ctx, td.RefreshUuid, uuid, rt.Sub(now)).Err()
 	if errRefresh != nil {
 		return errRefresh
 	}
@@ -286,12 +280,10 @@ func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error 
 }
 
 func deleteTokenInCache(ctx context.Context, uuid string) (int64, error) {
-	span, ctx := apm.StartSpan(ctx, "deleteTokenInCache", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "deleteTokenInCache")
 	defer span.End()
 
-	apmRedisClient := apmgoredis.Wrap(RedisClient).WithContext(ctx)
-
-	deleted, err := apmRedisClient.Del(uuid).Result()
+	deleted, err := RedisClient.Del(ctx, uuid).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -299,7 +291,7 @@ func deleteTokenInCache(ctx context.Context, uuid string) (int64, error) {
 }
 
 func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
-	span, ctx := apm.StartSpan(ctx, "checkTokenInCache", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "checkTokenInCache")
 	defer span.End()
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -309,8 +301,7 @@ func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
 		if !ok {
 			return "", err
 		}
-		apmRedisClient := apmgoredis.Wrap(RedisClient).WithContext(ctx)
-		userUuid, err := apmRedisClient.Get(tokenUuid).Result()
+		userUuid, err := RedisClient.Get(ctx, tokenUuid).Result()
 		if err != nil {
 			return "", err
 		}
@@ -320,7 +311,7 @@ func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
 }
 
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "ExtractToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "ExtractToken")
 	defer span.End()
 	mapToken := map[string]string{}
 	decoder := json.NewDecoder(r.Body)
@@ -389,21 +380,21 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetCredentialsToken(ctx context.Context, uuid string, email string, ttl int) (string, error) {
-	span, ctx := apm.StartSpan(ctx, "ResetCredentialsToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "ResetCredentialsToken")
 	defer span.End()
 	token, err := createToken(ctx, uuid, email, []string{ResetCredentialsPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 
 func ParticipateEventToken(ctx context.Context, uuid string, ttl int) (string, error) {
-	span, ctx := apm.StartSpan(ctx, "ParticipateEventToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "ParticipateEventToken")
 	defer span.End()
 	token, err := createToken(ctx, uuid, "", []string{ParticipateEventPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 
 func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {
-	span, ctx := apm.StartSpan(ctx, "getMemberPermissions", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "getMemberPermissions")
 	defer span.End()
 
 	member := model.Member{UUID: uuid}
@@ -422,7 +413,7 @@ func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "ParticipateEventToken", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "ParticipateEventToken")
 	defer span.End()
 	var member model.Member
 	decoder := json.NewDecoder(r.Body)

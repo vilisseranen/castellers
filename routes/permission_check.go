@@ -5,14 +5,13 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/controller"
-	"go.elastic.co/apm"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request)
 
 func checkTokenType(h handler, requestedType ...string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
-		span, ctx := apm.StartSpan(r.Context(), "checkTokenType", APM_SPAN_TYPE_REQUEST)
+		ctx, span := tracer.Start(r.Context(), "checkTokenType")
 		defer span.End()
 		common.Debug("Validating token in Authorization Header: %s", r.Header.Get("Authorization"))
 		tokenAuth, err := controller.ExtractToken(ctx, r)

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
 )
 
 const (
@@ -52,7 +51,7 @@ type CastellPositionMembers struct {
 }
 
 func (c *CastellType) Get(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "CastellType.Get", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellType.Get")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT position_name, position_column, position_cordon, position_part FROM %s WHERE castell_name= ?",
@@ -76,7 +75,7 @@ func (c *CastellType) Get(ctx context.Context) error {
 }
 
 func (c *CastellType) GetTypeList(ctx context.Context) ([]string, error) {
-	span, ctx := apm.StartSpan(ctx, "CastellType.GetTypeList", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellType.GetTypeList")
 	defer span.End()
 	castell_types := []string{}
 	rows, err := db.QueryContext(ctx, fmt.Sprintf("SELECT name FROM %s", CASTELLTYPESTABLE))
@@ -99,7 +98,7 @@ func (c *CastellType) GetTypeList(ctx context.Context) ([]string, error) {
 }
 
 func (c *CastellModel) Create(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.Create", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.Create")
 	defer span.End()
 	tx, err := db.Begin()
 	if err != nil {
@@ -165,7 +164,7 @@ func (c *CastellModel) Create(ctx context.Context) error {
 }
 
 func (c *CastellModel) Edit(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.Edit", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.Edit")
 	defer span.End()
 	// Delete all positions
 	tx, err := db.Begin()
@@ -251,7 +250,7 @@ func (c *CastellModel) Edit(ctx context.Context) error {
 }
 
 func (c *CastellModel) GetAll(ctx context.Context) ([]CastellModel, error) {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.GetAll", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.GetAll")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT model_uuid, model_name, model_type, event_uuid, event_name, event_start FROM %s WHERE model_deleted=0",
@@ -282,7 +281,7 @@ func (c *CastellModel) GetAll(ctx context.Context) ([]CastellModel, error) {
 }
 
 func (c *CastellModel) GetAllFromEvent(ctx context.Context, event Event) ([]CastellModel, error) {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.GetAllFromEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.GetAllFromEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT model_uuid, model_name, model_type, event_uuid, event_name, event_start FROM %s WHERE model_deleted=0 and event_uuid = ?",
@@ -316,7 +315,7 @@ func (c *CastellModel) GetAllFromEvent(ctx context.Context, event Event) ([]Cast
 }
 
 func (c *CastellModel) Get(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.Get", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT model_name, model_type, position_in_castell_name, position_in_castell_column, position_in_castell_cordon, position_in_castell_part, member_uuid FROM %s WHERE model_uuid = ? AND model_deleted=0",
@@ -356,7 +355,7 @@ func (c *CastellModel) Get(ctx context.Context) error {
 }
 
 func (c *CastellModel) Delete(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.Delete", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.Delete")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		CASTELLMODELSTABLE))
@@ -369,7 +368,7 @@ func (c *CastellModel) Delete(ctx context.Context) error {
 }
 
 func (c *CastellModel) AttachToEvent(ctx context.Context, e *Event) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.AttachToEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.AttachToEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (castell_model_id, event_id) VALUES ((SELECT id FROM %s WHERE uuid = ?), (SELECT id FROM %s WHERE uuid = ?))",
 		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))
@@ -382,7 +381,7 @@ func (c *CastellModel) AttachToEvent(ctx context.Context, e *Event) error {
 }
 
 func (c *CastellModel) DettachFromEvent(ctx context.Context, e *Event) error {
-	span, ctx := apm.StartSpan(ctx, "CastellModel.DettachFromEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "CastellModel.DettachFromEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE castell_model_id = (SELECT id FROM %s WHERE uuid= ?) AND event_id = (SELECT id FROM %s WHERE uuid= ?)",
 		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))

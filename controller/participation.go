@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 const (
@@ -18,7 +17,7 @@ const (
 )
 
 func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "ParticipateEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "ParticipateEvent")
 	defer span.End()
 	vars := mux.Vars(r)
 	tokenAuth, err := ExtractToken(r.Context(), r)
@@ -75,7 +74,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func PresenceEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "PresenceEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "PresenceEvent")
 	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]
@@ -131,7 +130,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetEventParticipation", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetEventParticipation")
 	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]

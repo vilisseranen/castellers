@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
 )
 
 const notificationsTable = "notifications"
@@ -37,7 +36,7 @@ type Notification struct {
 }
 
 func (n *Notification) CreateNotification(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Notification.CreateNotification", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Notification.CreateNotification")
 	defer span.End()
 
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
@@ -63,7 +62,7 @@ func (n *Notification) CreateNotification(ctx context.Context) error {
 }
 
 func (n *Notification) GetNotificationsReady(ctx context.Context) ([]Notification, error) {
-	span, ctx := apm.StartSpan(ctx, "Notification.GetNotificationsReady", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Notification.GetNotificationsReady")
 	defer span.End()
 
 	now := time.Now().Unix()
@@ -91,7 +90,7 @@ func (n *Notification) GetNotificationsReady(ctx context.Context) ([]Notificatio
 }
 
 func (n *Notification) UpdateNotificationStatus(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Notification.UpdateNotificationStatus", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Notification.UpdateNotificationStatus")
 	defer span.End()
 
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(

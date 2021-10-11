@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/tommysolsen/capitalise"
-	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
@@ -30,7 +29,7 @@ type eventDetails struct {
 }
 
 func SendCreateEventEmail(ctx context.Context, payload EmailCreateEventPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendCreateEventEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendCreateEventEmail")
 	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID

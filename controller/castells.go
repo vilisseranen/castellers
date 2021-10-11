@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 const (
@@ -25,7 +24,7 @@ const (
 )
 
 func GetCastellType(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetCastellType", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetCastellType")
 	defer span.End()
 	vars := mux.Vars(r)
 	castell_name := vars["type"]
@@ -45,7 +44,7 @@ func GetCastellType(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCastellTypeList(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetCastellTypeList", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetCastellTypeList")
 	defer span.End()
 	castell_type := model.CastellType{}
 	castell_type_list, err := castell_type.GetTypeList(ctx)
@@ -58,7 +57,7 @@ func GetCastellTypeList(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateCastellModel(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "CreateCastellModel", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "CreateCastellModel")
 	defer span.End()
 	var c model.CastellModel
 	decoder := json.NewDecoder(r.Body)
@@ -85,7 +84,7 @@ func CreateCastellModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditCastellModel(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "EditCastellModel", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "EditCastellModel")
 	defer span.End()
 	var c model.CastellModel
 	decoder := json.NewDecoder(r.Body)
@@ -111,7 +110,7 @@ func EditCastellModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCastellModels(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetCastellModels", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetCastellModels")
 	defer span.End()
 	event := r.FormValue("event")
 	m := model.CastellModel{}
@@ -144,7 +143,7 @@ func GetCastellModels(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCastellModel(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetCastellModel", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetCastellModel")
 	defer span.End()
 	vars := mux.Vars(r)
 	castell_uuid := vars["uuid"]
@@ -164,7 +163,7 @@ func GetCastellModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteCastellModel(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "DeleteCastellModel", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "DeleteCastellModel")
 	defer span.End()
 	vars := mux.Vars(r)
 	castell_uuid := vars["uuid"]
@@ -189,7 +188,7 @@ func DeleteCastellModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func AttachCastellModelToEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "AttachCastellModelToEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "AttachCastellModelToEvent")
 	defer span.End()
 	vars := mux.Vars(r)
 	model_uuid := vars["model_uuid"]
@@ -227,7 +226,7 @@ func AttachCastellModelToEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func DettachCastellModelFromEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "DettachCastellModelFromEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "DettachCastellModelFromEvent")
 	defer span.End()
 	vars := mux.Vars(r)
 	model_uuid := vars["model_uuid"]

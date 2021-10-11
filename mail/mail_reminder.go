@@ -6,7 +6,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailReminderPayload struct {
@@ -17,7 +16,7 @@ type EmailReminderPayload struct {
 }
 
 func SendReminderEmail(ctx context.Context, payload EmailReminderPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendReminderEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendReminderEmail")
 	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID

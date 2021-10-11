@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
-	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
@@ -35,10 +34,8 @@ func (s *Scheduler) Start() {
 }
 
 func checkAndSendNotification() {
-	tx := apm.DefaultTracer.StartTransaction("checkAndSendNotification", APM_SPAN_TYPE_CRON)
-	defer tx.End()
-	ctx := apm.ContextWithTransaction(context.Background(), tx)
-	span, ctx := apm.StartSpan(ctx, "checkAndSendNotification", APM_SPAN_TYPE_CRON)
+
+	ctx, span := tracer.Start(context.Background(), "checkAndSendNotification")
 	defer span.End()
 
 	// Get notifications
@@ -370,10 +367,8 @@ func checkAndSendNotification() {
 }
 
 func generateEventsNotificationsReminder() {
-	tx := apm.DefaultTracer.StartTransaction("generateEventsNotificationsReminder", APM_SPAN_TYPE_CRON)
-	defer tx.End()
-	ctx := apm.ContextWithTransaction(context.Background(), tx)
-	span, ctx := apm.StartSpan(ctx, "generateEventsNotificationsReminder", APM_SPAN_TYPE_CRON)
+
+	ctx, span := tracer.Start(context.Background(), "generateEventsNotificationsReminder")
 	defer span.End()
 
 	e := model.Event{}
@@ -398,10 +393,8 @@ func generateEventsNotificationsReminder() {
 }
 
 func generateEventsNotificationsSummary() {
-	tx := apm.DefaultTracer.StartTransaction("generateEventsNotificationsSummary", APM_SPAN_TYPE_CRON)
-	defer tx.End()
-	ctx := apm.ContextWithTransaction(context.Background(), tx)
-	span, ctx := apm.StartSpan(ctx, "generateEventsNotificationsSummary", APM_SPAN_TYPE_CRON)
+
+	ctx, span := tracer.Start(context.Background(), "generateEventsNotificationsSummary")
 	defer span.End()
 
 	e := model.Event{}

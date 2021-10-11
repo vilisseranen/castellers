@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
@@ -39,7 +38,7 @@ const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 100
 
 func GetEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetEvent")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -87,7 +86,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetEvents(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetEvents", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetEvents")
 	defer span.End()
 
 	limit, _ := strconv.Atoi(r.FormValue("limit"))
@@ -150,7 +149,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "CreateEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "CreateEvent")
 	defer span.End()
 
 	// Decode the event
@@ -267,7 +266,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "UpdateEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "UpdateEvent")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -322,7 +321,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "DeleteEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "DeleteEvent")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -355,7 +354,7 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func validEventData(ctx context.Context, event model.Event) bool {
-	span, ctx := apm.StartSpan(ctx, "validEventData", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "validEventData")
 	defer span.End()
 
 	var valid = true

@@ -7,7 +7,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailForgotPasswordPayload struct {
@@ -47,7 +46,7 @@ func (e emailForgotInfo) GetBody() (string, error) {
 }
 
 func SendForgotPasswordEmail(ctx context.Context, payload EmailForgotPasswordPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendForgotPasswordEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendForgotPasswordEmail")
 	defer span.End()
 
 	resetLink := common.GetConfigString("domain") + "/reset?" +

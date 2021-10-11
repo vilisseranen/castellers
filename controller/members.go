@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"go.elastic.co/apm"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
@@ -35,7 +34,7 @@ const (
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetMember")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -77,7 +76,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "GetMembers", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "GetMembers")
 	defer span.End()
 
 	m := model.Member{}
@@ -91,7 +90,7 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMember(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "CreateMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "CreateMember")
 	defer span.End()
 	// Decode info to create member
 	var m model.Member
@@ -173,7 +172,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditMember(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "EditMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "EditMember")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -276,7 +275,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "DeleteMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "DeleteMember")
 	defer span.End()
 
 	vars := mux.Vars(r)
@@ -315,14 +314,12 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRoles(w http.ResponseWriter, r *http.Request) {
-	span, _ := apm.StartSpan(r.Context(), "GetRoles", APM_SPAN_TYPE_REQUEST)
-	defer span.End()
 	roles := model.ValidRoleList
 	RespondWithJSON(w, http.StatusOK, roles)
 }
 
 func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "SendRegistrationEmail", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "SendRegistrationEmail")
 	defer span.End()
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
@@ -373,7 +370,7 @@ func missingRequiredFields(m model.Member) bool {
 }
 
 func emailAvailable(ctx context.Context, m model.Member) bool {
-	span, ctx := apm.StartSpan(ctx, "emailAvailable", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "emailAvailable")
 	defer span.End()
 	err := m.GetByEmail(ctx)
 	if err != nil && err.Error() == model.MEMBERSEMAILNOTFOUNDMESSAGE {
@@ -385,7 +382,7 @@ func emailAvailable(ctx context.Context, m model.Member) bool {
 }
 
 func ResetCredentials(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "ResetCredentials", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "ResetCredentials")
 	defer span.End()
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
@@ -437,7 +434,7 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 
 // Returns true if it's valid, false otherwise
 func validateChangeType(ctx context.Context, m model.Member, code string, adminUuid string) bool {
-	span, ctx := apm.StartSpan(ctx, "validateChangeType", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "validateChangeType")
 	defer span.End()
 	// Make sure a user does not promote him or herself
 	currentUser := model.Member{UUID: m.UUID}

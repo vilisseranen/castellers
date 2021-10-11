@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
 )
 
 const (
@@ -56,7 +55,7 @@ type Credentials struct {
 }
 
 func (m *Member) CreateMember(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.CreateMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.CreateMember")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -90,7 +89,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 }
 
 func (m *Member) EditMember(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.EditMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.EditMember")
 	defer span.End()
 	tx, err := db.Begin()
 	if err != nil {
@@ -132,7 +131,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 }
 
 func (m *Member) Get(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.Get", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
@@ -159,7 +158,7 @@ func (m *Member) Get(ctx context.Context) error {
 }
 
 func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
-	span, ctx := apm.StartSpan(ctx, "Member.GetAll", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
@@ -197,7 +196,7 @@ func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
 }
 
 func (m *Member) DeleteMember(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.DeleteMember", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		MEMBERSTABLE))
@@ -219,7 +218,7 @@ func (m *Member) sanitizeEmptyRoles() {
 }
 
 func (m *Member) Activate(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.Activate", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.Activate")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERSTABLE))
 	defer stmt.Close()
@@ -232,7 +231,7 @@ func (m *Member) Activate(ctx context.Context) error {
 }
 
 func (c *Credentials) ResetCredentials(ctx context.Context, username string, password []byte) error {
-	span, ctx := apm.StartSpan(ctx, "Credentials.ResetCredentials", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Credentials.ResetCredentials")
 	defer span.End()
 	member := Member{UUID: c.UUID}
 	err := member.Activate(ctx)
@@ -262,7 +261,7 @@ func (c *Credentials) ResetCredentials(ctx context.Context, username string, pas
 }
 
 func (c *Credentials) GetCredentials(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Credentials.GetCredentials", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Credentials.GetCredentials")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT uuid, password FROM %s WHERE username= ?",
@@ -276,7 +275,7 @@ func (c *Credentials) GetCredentials(ctx context.Context) error {
 }
 
 func (c *Credentials) GetCredentialsByUUID(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Credentials.GetCredentialsByUUID", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Credentials.GetCredentialsByUUID")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT username FROM %s WHERE uuid= ?",
@@ -290,7 +289,7 @@ func (c *Credentials) GetCredentialsByUUID(ctx context.Context) error {
 }
 
 func (m *Member) GetByEmail(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Member.GetByEmail", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Member.GetByEmail")
 	defer span.End()
 	found := false
 	members, err := m.GetAll(ctx)

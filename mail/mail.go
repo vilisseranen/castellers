@@ -7,12 +7,10 @@ import (
 	"net/smtp"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
+	"go.opentelemetry.io/otel"
 )
 
-const (
-	APM_SPAN_TYPE_CRON = "cron"
-)
+var tracer = otel.Tracer("castellers")
 
 type emailInfo struct {
 	Header       emailHeader
@@ -89,7 +87,7 @@ func buildHeader(title, to string) string {
 }
 
 func sendMail(ctx context.Context, email emailInfo) error {
-	span, ctx := apm.StartSpan(ctx, "mail.sendMail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.sendMail")
 	defer span.End()
 
 	body, err := email.buildEmail()

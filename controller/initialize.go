@@ -9,7 +9,6 @@ import (
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 const (
@@ -17,7 +16,7 @@ const (
 )
 
 func Initialize(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "Initialize", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "Initialize")
 	defer span.End()
 
 	// Only execute if it is the first member
@@ -66,7 +65,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func IsInitialized(w http.ResponseWriter, r *http.Request) {
-	span, ctx := apm.StartSpan(r.Context(), "IsInitialized", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(r.Context(), "IsInitialized")
 	defer span.End()
 
 	var m model.Member

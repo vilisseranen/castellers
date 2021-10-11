@@ -6,7 +6,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailDeletedEventPayload struct {
@@ -15,7 +14,7 @@ type EmailDeletedEventPayload struct {
 }
 
 func SendDeletedEventEmail(ctx context.Context, payload EmailDeletedEventPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendDeletedEventEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendDeletedEventEmail")
 	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID

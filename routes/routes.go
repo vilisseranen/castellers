@@ -2,16 +2,14 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"go.elastic.co/apm/module/apmgorilla"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/otel"
 )
 
-const (
-	APM_SPAN_TYPE_REQUEST = "request"
-)
+var tracer = otel.Tracer("castellers")
 
 func CreateRouter(staticDir string) *mux.Router {
 	r := mux.NewRouter()
-	// tracer, _ := apm.NewTracerOptions(apm.TracerOptions{ServiceName: controller.APM_SPAN_TYPE})
-	r.Use(apmgorilla.Middleware())
+	r.Use(otelmux.Middleware("castellers"))
 	return r
 }

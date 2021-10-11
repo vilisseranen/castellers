@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
 )
 
 const RECURRING_EVENTS_TABLE = "recurring_events"
@@ -18,7 +17,7 @@ type RecurringEvent struct {
 }
 
 func (r *RecurringEvent) Get(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "RecurringEvent.Get", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "RecurringEvent.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, description, interval FROM %s WHERE uuid= ?", RECURRING_EVENTS_TABLE))
 	defer stmt.Close()
@@ -30,7 +29,7 @@ func (r *RecurringEvent) Get(ctx context.Context) error {
 }
 
 func (r *RecurringEvent) CreateRecurringEvent(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "RecurringEvent.CreateRecurringEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "RecurringEvent.CreateRecurringEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, name, description, interval) VALUES (?, ?, ?, ?)", RECURRING_EVENTS_TABLE))
 	defer stmt.Close()

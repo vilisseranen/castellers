@@ -2,6 +2,19 @@ version: '3.7'
 
 services:
 
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.36.0
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+    networks:
+      - elastic
+    depends_on:
+      - apm-server
+
   apm-server:
     container_name: apm-server
     image: docker.elastic.co/apm/apm-server:${ELASTIC_VERSION}
@@ -9,8 +22,8 @@ services:
     user: root
     networks:
       - elastic
-    ports:
-      - 8200:8200
+    expose:
+      - "8200"
     volumes:
       - ./apm-server.yml:/usr/share/apm-serer/apm-server.yml:ro
     command: ["--strict.perms=false", "-system.hostfs=/hostfs"]

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/vilisseranen/castellers/common"
-	"go.elastic.co/apm"
 )
 
 const PARTICIPATION_TABLE = "participation"
@@ -21,7 +20,7 @@ type Participation struct {
 // A member will say if he or she participates BEFORE the event:
 // We always insert in the table
 func (p *Participation) Participate(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Participation.Participate", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Participation.Participate")
 	defer span.End()
 
 	// Check if a participation already exists
@@ -60,7 +59,7 @@ func (p *Participation) Participate(ctx context.Context) error {
 }
 
 func (p *Participation) GetParticipation(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "Participation.GetParticipation", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "Participation.GetParticipation")
 	defer span.End()
 	// Check if a participation already exists
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT answer, presence FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))
@@ -77,7 +76,7 @@ func (p *Participation) GetParticipation(ctx context.Context) error {
 
 // A member might be present even if he is not registered for the event
 func (p *Participation) Present(ctx context.Context) error {
-	span, ctx := apm.StartSpan(ctx, "GetEvent", APM_SPAN_TYPE_REQUEST)
+	ctx, span := tracer.Start(ctx, "GetEvent")
 	defer span.End()
 	// Check if a participation already exists
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT count(*) FROM %s WHERE member_uuid= ? AND event_uuid= ?", PARTICIPATION_TABLE))

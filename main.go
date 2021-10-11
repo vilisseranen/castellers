@@ -6,7 +6,9 @@ import (
 
 func main() {
 	a := app.App{}
-	a.Initialize()
+
+	otelClose := a.Initialize()
+	defer otelClose()
 
 	a.Run(":8080")
 }

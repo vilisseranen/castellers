@@ -9,7 +9,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailSummaryPayload struct {
@@ -19,7 +18,7 @@ type EmailSummaryPayload struct {
 }
 
 func SendSummaryEmail(ctx context.Context, payload EmailSummaryPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendSummaryEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendSummaryEmail")
 	defer span.End()
 
 	common.Debug("Send summary Event Email")

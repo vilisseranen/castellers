@@ -8,7 +8,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailModifiedPayload struct {
@@ -24,7 +23,7 @@ type change struct {
 }
 
 func SendModifiedEventEmail(ctx context.Context, payload EmailModifiedPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendModifiedEventEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendModifiedEventEmail")
 	defer span.End()
 
 	profileLink := common.GetConfigString("domain") + "/memberEdit/" + payload.Member.UUID

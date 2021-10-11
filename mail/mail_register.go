@@ -5,7 +5,6 @@ import (
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
-	"go.elastic.co/apm"
 )
 
 type EmailRegisterPayload struct {
@@ -15,7 +14,7 @@ type EmailRegisterPayload struct {
 }
 
 func SendRegistrationEmail(ctx context.Context, payload EmailRegisterPayload) error {
-	span, ctx := apm.StartSpan(ctx, "mail.SendRegistrationEmail", APM_SPAN_TYPE_CRON)
+	ctx, span := tracer.Start(ctx, "mail.SendRegistrationEmail")
 	defer span.End()
 
 	loginLink := common.GetConfigString("domain") + "/reset?" +
