@@ -108,7 +108,7 @@ func checkAndSendNotification() {
 			for _, member := range members {
 				p.MemberUUID = member.UUID
 				p.EventUUID = event.UUID
-				err = p.GetParticipation(nil) // TODO: pass context
+				err = p.GetParticipation(ctx)
 				if err != nil {
 					switch err {
 					case sql.ErrNoRows:
@@ -174,7 +174,7 @@ func checkAndSendNotification() {
 			// Get participation for all members
 			for index, member := range members {
 				p := model.Participation{EventUUID: notification.ObjectUUID, MemberUUID: member.UUID}
-				if err := p.GetParticipation(nil); err != nil { // TODO: pass context
+				if err := p.GetParticipation(ctx); err != nil {
 					switch err {
 					case sql.ErrNoRows:
 						members[index].Participation = ""
