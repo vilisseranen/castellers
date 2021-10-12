@@ -19,6 +19,7 @@ filebeat.inputs:
   paths: /var/log/castellers_main.log
   fields:
     event.category: main
+    event.dataset: castellers
   fields_under_root: true
 
 processors:
@@ -57,6 +58,12 @@ filebeat.autodiscover:
             contains:
               docker.container.image: castellers
           config:
-            - type: container
+            - type: docker
               containers.ids:
-                - ${data.docker.container.id}
+                - '${data.docker.container.id}'
+              processors:
+                - add_fields:
+                   fields:
+                     event.category: main
+                     event.dataset: castellers
+                   target: ''
