@@ -3,8 +3,6 @@ package common
 import (
 	"context"
 
-	"google.golang.org/grpc"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -32,7 +30,7 @@ func InitOtelProvider() func() {
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint("localhost:4317"),
-		otlptracegrpc.WithDialOption(grpc.WithBlock()),
+		otlptracegrpc.WithDialOption(),
 	)
 	if err != nil {
 		Error("Failed to create trace exporter: %v", err)
