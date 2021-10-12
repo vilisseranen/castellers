@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -37,31 +38,36 @@ type Event struct {
 	RecurringEvent string
 }
 
-func (e *Event) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
+func (e *Event) Get(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.Get")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	var description, locationName sql.NullString // to manage possible NULL fields
-	err = stmt.QueryRow(e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng)
+	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng)
 	e.Description = nullToEmptyString(description)
 	e.LocationName = nullToEmptyString(locationName)
 	return err
 }
 
-func (e *Event) GetAttendance() error {
-	stmt, err := db.Prepare(fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
+func (e *Event) GetAttendance(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.GetAttendance")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	err = stmt.QueryRow(e.UUID).Scan(&e.Attendance)
+	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Attendance)
 	return err
-
 }
 
-func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
+func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([]Event, error) {
+	ctx, span := tracer.Start(ctx, "Event.GetAll")
+	defer span.End()
 	now := int(time.Now().Unix())
 	offset := page * limit
 	queryString := ""
@@ -70,7 +76,7 @@ func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
 	} else {
 		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
 	}
-	rows, err := db.Query(queryString, now, limit, offset)
+	rows, err := db.QueryContext(ctx, queryString, now, limit, offset)
 	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -91,13 +97,16 @@ func (e *Event) GetAll(page, limit int, pastEvents bool) ([]Event, error) {
 	return Events, nil
 }
 
-func (e *Event) UpdateEvent() error {
-	stmt, err := db.Prepare(fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
+func (e *Event) UpdateEvent(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.UpdateEvent")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(
+		ctx,
 		e.Name,
 		e.StartDate,
 		e.EndDate,
@@ -110,25 +119,30 @@ func (e *Event) UpdateEvent() error {
 	return err
 }
 
-func (e *Event) DeleteEvent() error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid= ?", EVENTS_TABLE))
+func (e *Event) DeleteEvent(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.DeleteEvent")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid= ?", EVENTS_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	_, err = stmt.Exec(e.UUID)
+	_, err = stmt.ExecContext(ctx, e.UUID)
 	return err
 }
 
-func (e *Event) CreateEvent() error {
-	stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
+func (e *Event) CreateEvent(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.CreateEvent")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Error(err.Error())
 		common.Error("%v\n", e)
 		return err
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(
+		ctx,
 		e.UUID,
 		e.Name,
 		e.StartDate,
@@ -148,8 +162,10 @@ func (e *Event) CreateEvent() error {
 	return err
 }
 
-func (e *Event) GetUpcomingEventsWithoutNotification(eventType string) ([]Event, error) {
-	rows, err := db.Query(fmt.Sprintf(
+func (e *Event) GetUpcomingEventsWithoutNotification(ctx context.Context, eventType string) ([]Event, error) {
+	ctx, span := tracer.Start(ctx, "Event.GetUpcomingEventsWithoutNotification")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') AND deleted=0 ORDER BY startDate",
 		EVENTS_TABLE, eventType), time.Now().Unix())
 	defer rows.Close()

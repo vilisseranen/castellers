@@ -1,6 +1,8 @@
 package mail
 
 import (
+	"context"
+
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
@@ -11,7 +13,10 @@ type EmailRegisterPayload struct {
 	Token  string       `json:"token"`
 }
 
-func SendRegistrationEmail(payload EmailRegisterPayload) error {
+func SendRegistrationEmail(ctx context.Context, payload EmailRegisterPayload) error {
+	ctx, span := tracer.Start(ctx, "mail.SendRegistrationEmail")
+	defer span.End()
+
 	loginLink := common.GetConfigString("domain") + "/reset?" +
 		"t=" + payload.Token +
 		"&a=activation"
@@ -40,7 +45,7 @@ func SendRegistrationEmail(payload EmailRegisterPayload) error {
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err := sendMail(email); err != nil {
+	if err := sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/mail"
@@ -38,10 +38,13 @@ const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 100
 
 func GetEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetEvent")
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 	e := model.Event{UUID: UUID}
-	if err := e.Get(); err != nil {
+	if err := e.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Event not found: %s", err.Error())
@@ -52,9 +55,9 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if requestHasAuthorizationToken(r) {
+	if requestHasAuthorizationToken(ctx, r) {
 		common.Debug("Request has authorization token")
-		tokenAuth, err := ExtractToken(r)
+		tokenAuth, err := ExtractToken(ctx, r)
 		if err != nil {
 			common.Warn("Error reading token: %s", err.Error())
 			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
@@ -62,7 +65,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
 		common.Debug("Getting participation for %s", p)
-		if err := p.GetParticipation(); err != nil {
+		if err := p.GetParticipation(r.Context()); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
 				common.Warn("Error checking participation of member %s to event %s", tokenAuth.UserId, e.UUID)
@@ -72,7 +75,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		e.Participation = p.Answer
 		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
-			if err := e.GetAttendance(); err != nil {
+			if err := e.GetAttendance(ctx); err != nil {
 				common.Warn("Error counting the number of people registered or the event: %s", err.Error())
 				RespondWithError(w, http.StatusInternalServerError, ERRORGETPRESENCE)
 				return
@@ -83,6 +86,8 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetEvents(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetEvents")
+	defer span.End()
 
 	limit, _ := strconv.Atoi(r.FormValue("limit"))
 	page, _ := strconv.Atoi(r.FormValue("page"))
@@ -97,15 +102,15 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		pastEvents = true
 	}
 	e := model.Event{}
-	events, err := e.GetAll(page, limit, pastEvents)
+	events, err := e.GetAll(ctx, page, limit, pastEvents)
 	if err != nil {
 		common.Warn("Error getting events: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENTS)
 		return
 	}
 	// if request is authenticated
-	if requestHasAuthorizationToken(r) {
-		tokenAuth, err := ExtractToken(r)
+	if requestHasAuthorizationToken(ctx, r) {
+		tokenAuth, err := ExtractToken(ctx, r)
 		if err != nil && err.Error() == "Token is expired" {
 			common.Debug("Token expired, cannot get participation: %s", err.Error())
 		} else if err != nil {
@@ -115,7 +120,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		} else {
 			for index, event := range events {
 				p := model.Participation{EventUUID: event.UUID, MemberUUID: tokenAuth.UserId}
-				if err := p.GetParticipation(); err != nil {
+				if err := p.GetParticipation(ctx); err != nil {
 					switch err {
 					case sql.ErrNoRows:
 						common.Debug("No participation for member %s for event %s", tokenAuth.UserId, event.UUID)
@@ -130,7 +135,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 			// if token contain permission admin
 			if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 				for index, event := range events {
-					if err := event.GetAttendance(); err != nil {
+					if err := event.GetAttendance(ctx); err != nil {
 						common.Warn("Error getting attendance: %s", err.Error())
 						RespondWithError(w, http.StatusInternalServerError, ERRORGETATTENDANCE)
 						return
@@ -144,6 +149,9 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "CreateEvent")
+	defer span.End()
+
 	// Decode the event
 	var event model.Event
 	decoder := json.NewDecoder(r.Body)
@@ -156,7 +164,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	common.Debug("Creating event: %s", event)
 
 	// Validation on events data
-	if validEventData(event) == false {
+	if validEventData(ctx, event) == false {
 		common.Debug("Invalid request payload: %s", event)
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
@@ -188,7 +196,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			recurringEvent.Name = event.Name
 			recurringEvent.Description = event.Description
 			recurringEvent.Interval = event.Recurring.Interval
-			if err := recurringEvent.CreateRecurringEvent(); err != nil {
+			if err := recurringEvent.CreateRecurringEvent(ctx); err != nil {
 				common.Warn("Error creating recurring event: %s", err.Error())
 				RespondWithError(w, http.StatusInternalServerError, ERRORCREATERECURRINGEVENT)
 				return
@@ -231,7 +239,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Create the events
 	for _, event := range events {
-		if err := event.CreateEvent(); err != nil {
+		if err := event.CreateEvent(ctx); err != nil {
 			common.Warn("Error creating recurring event: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORCREATERECURRINGEVENT)
 			return
@@ -248,7 +256,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(payloadBytes).Encode(payload)
 
 		n := model.Notification{NotificationType: model.TypeEventCreated, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-		if err := n.CreateNotification(); err != nil {
+		if err := n.CreateNotification(ctx); err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
@@ -258,11 +266,14 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "UpdateEvent")
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 	var e model.Event
 	eventBeforeUpdate := model.Event{UUID: UUID}
-	if err := eventBeforeUpdate.Get(); err != nil {
+	if err := eventBeforeUpdate.Get(ctx); err != nil {
 		common.Warn("Error getting event before update: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEEVENT)
 		return
@@ -276,14 +287,14 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// Validation on events data
-	if validEventData(e) == false {
+	if validEventData(ctx, e) == false {
 		common.Debug("Invalid request payload: %s", e)
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
 	e.UUID = UUID
 
-	if err := e.UpdateEvent(); err != nil {
+	if err := e.UpdateEvent(ctx); err != nil {
 		common.Warn("Error updating event: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEEVENT)
 		return
@@ -298,7 +309,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(payloadBytes).Encode(payload)
 
 		n := model.Notification{NotificationType: model.TypeEventModified, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-		if err := n.CreateNotification(); err != nil {
+		if err := n.CreateNotification(ctx); err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
@@ -310,15 +321,18 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "DeleteEvent")
+	defer span.End()
+
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 	e := model.Event{UUID: UUID}
-	if err := e.Get(); err != nil {
+	if err := e.Get(ctx); err != nil {
 		common.Warn("Error getting event to delete: %s")
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEEVENT)
 		return
 	}
-	if err := e.DeleteEvent(); err != nil {
+	if err := e.DeleteEvent(ctx); err != nil {
 		common.Warn("Error deleting event to delete: %s")
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEEVENT)
 		return
@@ -328,7 +342,7 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
 		n := model.Notification{NotificationType: model.TypeEventDeleted, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-		if err := n.CreateNotification(); err != nil {
+		if err := n.CreateNotification(ctx); err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
@@ -339,7 +353,10 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusOK, nil)
 }
 
-func validEventData(event model.Event) bool {
+func validEventData(ctx context.Context, event model.Event) bool {
+	ctx, span := tracer.Start(ctx, "validEventData")
+	defer span.End()
+
 	var valid = true
 	var validType = false
 	if event.StartDate > event.EndDate ||

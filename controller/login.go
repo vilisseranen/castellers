@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -41,6 +42,9 @@ const ResetCredentialsPermission = "reset_credentials"
 const ParticipateEventPermission = "participate_event"
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "Login")
+	defer span.End()
+
 	var credentialsInRequest model.Credentials
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&credentialsInRequest); err != nil {
@@ -49,7 +53,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	credentialsInDB := model.Credentials{Username: credentialsInRequest.Username}
-	if err := credentialsInDB.GetCredentials(); err != nil {
+	if err := credentialsInDB.GetCredentials(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Info("User has no credentials: %s", err.Error())
@@ -67,7 +71,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 		return
 	}
-	tokens, err := createMemberToken(credentialsInDB.UUID)
+	tokens, err := createMemberToken(ctx, credentialsInDB.UUID)
 	if err != nil {
 		common.Warn("Error creating the token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATETOKEN)
@@ -76,12 +80,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusOK, tokens)
 }
 
-func createMemberToken(uuid string) (map[string]string, error) {
-	permissions, err := getMemberPermissions(uuid)
+func createMemberToken(ctx context.Context, uuid string) (map[string]string, error) {
+	ctx, span := tracer.Start(ctx, "createMemberToken")
+	defer span.End()
+
+	permissions, err := getMemberPermissions(ctx, uuid)
 	if err != nil {
 		return nil, err
 	}
-	token, err := createToken(uuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	token, err := createToken(ctx, uuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 	if err != nil {
 		return nil, err
 	}
@@ -93,19 +100,22 @@ func createMemberToken(uuid string) (map[string]string, error) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	au, err := ExtractToken(r)
+	ctx, span := tracer.Start(r.Context(), "Logout")
+	defer span.End()
+
+	au, err := ExtractToken(ctx, r)
 	if err != nil {
 		common.Warn("Invalid token: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
 		return
 	}
-	deleted, delErr := deleteTokenInCache(au.RefreshUuid)
+	deleted, delErr := deleteTokenInCache(ctx, au.RefreshUuid)
 	if delErr != nil || deleted == 0 {
 		common.Warn("Cannot delete refresh token in cache: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
 		return
 	}
-	deleted, delErr = deleteTokenInCache(au.TokenUuid)
+	deleted, delErr = deleteTokenInCache(ctx, au.TokenUuid)
 	if delErr != nil || deleted == 0 {
 		common.Warn("Cannot delete access token in cache: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
@@ -114,7 +124,10 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusAccepted, "Successfully logged out")
 }
 
-func createToken(uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
+func createToken(ctx context.Context, uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
+	ctx, span := tracer.Start(ctx, "createToken")
+	defer span.End()
+
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * time.Duration(access_ttl_minutes)).Unix()
 	td.AccessUuid = common.GenerateUUID()
@@ -149,14 +162,14 @@ func createToken(uuid string, email string, permissions []string, access_ttl_min
 		return nil, err
 	}
 	// save in cache
-	saveErr := saveTokenInCache(uuid, td)
+	saveErr := saveTokenInCache(ctx, uuid, td)
 	if saveErr != nil {
 		return nil, err
 	}
 	return td, nil
 }
 
-func extractTokenString(r *http.Request) string {
+func extractTokenString(ctx context.Context, r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")
 	if len(strArr) == 2 {
@@ -165,11 +178,17 @@ func extractTokenString(r *http.Request) string {
 	return ""
 }
 
-func requestHasAuthorizationToken(r *http.Request) bool {
-	return extractTokenString(r) != ""
+func requestHasAuthorizationToken(ctx context.Context, r *http.Request) bool {
+	ctx, span := tracer.Start(ctx, "requestHasAuthorizationToken")
+	defer span.End()
+
+	return extractTokenString(ctx, r) != ""
 }
 
-func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
+func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token, error) {
+	ctx, span := tracer.Start(ctx, "requestHasAuthorizationToken")
+	defer span.End()
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			common.Debug("Incorrect signing method")
@@ -188,7 +207,7 @@ func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
 		// }
 		return nil, err
 	}
-	_, err = checkTokenInCache(token)
+	_, err = checkTokenInCache(ctx, token)
 	if err != nil {
 		common.Debug("Cannot find token in cache: %s", err.Error())
 		return nil, err
@@ -196,9 +215,11 @@ func verifyToken(tokenString, tokenType string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func ExtractToken(r *http.Request) (*AccessTokenDetails, error) {
-	tokenString := extractTokenString(r)
-	token, err := verifyToken(tokenString, "access")
+func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, error) {
+	ctx, span := tracer.Start(ctx, "ExtractToken")
+	defer span.End()
+	tokenString := extractTokenString(ctx, r)
+	token, err := verifyToken(ctx, tokenString, "access")
 	if err != nil {
 		return nil, err
 	}
@@ -237,33 +258,42 @@ func ExtractToken(r *http.Request) (*AccessTokenDetails, error) {
 	return nil, err
 }
 
-func saveTokenInCache(uuid string, td *TokenDetails) error {
+func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error {
+	ctx, span := tracer.Start(ctx, "saveTokenInCache")
+	defer span.End()
+
 	// We add 1 second because we check in redis after we check the token
 	// The token could be removed from redis right after we do the static validation
 	at := time.Unix(td.AtExpires+1, 0)
 	rt := time.Unix(td.RtExpires+1, 0)
 	now := time.Now()
 
-	errAccess := RedisClient.Set(td.AccessUuid, uuid, at.Sub(now)).Err()
+	errAccess := RedisClient.Set(ctx, td.AccessUuid, uuid, at.Sub(now)).Err()
 	if errAccess != nil {
 		return errAccess
 	}
-	errRefresh := RedisClient.Set(td.RefreshUuid, uuid, rt.Sub(now)).Err()
+	errRefresh := RedisClient.Set(ctx, td.RefreshUuid, uuid, rt.Sub(now)).Err()
 	if errRefresh != nil {
 		return errRefresh
 	}
 	return nil
 }
 
-func deleteTokenInCache(uuid string) (int64, error) {
-	deleted, err := RedisClient.Del(uuid).Result()
+func deleteTokenInCache(ctx context.Context, uuid string) (int64, error) {
+	ctx, span := tracer.Start(ctx, "deleteTokenInCache")
+	defer span.End()
+
+	deleted, err := RedisClient.Del(ctx, uuid).Result()
 	if err != nil {
 		return 0, err
 	}
 	return deleted, nil
 }
 
-func checkTokenInCache(token *jwt.Token) (string, error) {
+func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
+	ctx, span := tracer.Start(ctx, "checkTokenInCache")
+	defer span.End()
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	err := errors.New("Error decoding token")
 	if ok && token.Valid {
@@ -271,7 +301,7 @@ func checkTokenInCache(token *jwt.Token) (string, error) {
 		if !ok {
 			return "", err
 		}
-		userUuid, err := RedisClient.Get(tokenUuid).Result()
+		userUuid, err := RedisClient.Get(ctx, tokenUuid).Result()
 		if err != nil {
 			return "", err
 		}
@@ -281,6 +311,8 @@ func checkTokenInCache(token *jwt.Token) (string, error) {
 }
 
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "ExtractToken")
+	defer span.End()
 	mapToken := map[string]string{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&mapToken); err != nil {
@@ -290,7 +322,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	refreshToken := mapToken["refresh_token"]
 
-	token, err := verifyToken(refreshToken, "refresh")
+	token, err := verifyToken(ctx, refreshToken, "refresh")
 	//if there is an error, the token must have expired
 	if err != nil {
 		common.Debug("Token verification failed: %s", err.Error())
@@ -317,20 +349,20 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//Delete the previous Refresh Token
-		deleted, delErr := deleteTokenInCache(refreshUuid)
+		deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
 		if delErr != nil || deleted == 0 { //if any goes wrong
 			common.Warn("Error deleting token in cache: %s", delErr.Error())
 			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 			return
 		}
-		permissions, err := getMemberPermissions(userUuid)
+		permissions, err := getMemberPermissions(ctx, userUuid)
 		if err != nil {
 			common.Warn("Error getting permissions: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 			return
 		}
 		//Create new pairs of refresh and access tokens
-		ts, createErr := createToken(userUuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+		ts, createErr := createToken(ctx, userUuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 		if createErr != nil {
 			common.Warn("Error creating a new token pair: %s", createErr.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
@@ -347,19 +379,26 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ResetCredentialsToken(uuid string, email string, ttl int) (string, error) {
-	token, err := createToken(uuid, email, []string{ResetCredentialsPermission}, ttl, 0)
+func ResetCredentialsToken(ctx context.Context, uuid string, email string, ttl int) (string, error) {
+	ctx, span := tracer.Start(ctx, "ResetCredentialsToken")
+	defer span.End()
+	token, err := createToken(ctx, uuid, email, []string{ResetCredentialsPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 
-func ParticipateEventToken(uuid string, ttl int) (string, error) {
-	token, err := createToken(uuid, "", []string{ParticipateEventPermission}, ttl, 0)
+func ParticipateEventToken(ctx context.Context, uuid string, ttl int) (string, error) {
+	ctx, span := tracer.Start(ctx, "ParticipateEventToken")
+	defer span.End()
+	token, err := createToken(ctx, uuid, "", []string{ParticipateEventPermission}, ttl, 0)
 	return token.AccessToken, err
 }
 
-func getMemberPermissions(uuid string) ([]string, error) {
+func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {
+	ctx, span := tracer.Start(ctx, "getMemberPermissions")
+	defer span.End()
+
 	member := model.Member{UUID: uuid}
-	if err := member.Get(); err != nil {
+	if err := member.Get(ctx); err != nil {
 		return []string{}, err
 	}
 	var permissions []string
@@ -374,6 +413,8 @@ func getMemberPermissions(uuid string) ([]string, error) {
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "ParticipateEventToken")
+	defer span.End()
 	var member model.Member
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&member); err != nil {
@@ -381,7 +422,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnprocessableEntity, ERRORINVALIDPAYLOAD)
 		return
 	}
-	err := member.GetByEmail()
+	err := member.GetByEmail(ctx)
 	if err != nil {
 		common.Warn("Cannot get user by email: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
@@ -389,7 +430,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	if err == nil {
 		n := model.Notification{NotificationType: model.TypeForgotPassword, ObjectUUID: member.UUID, SendDate: int(time.Now().Unix())}
-		if err := n.CreateNotification(); err != nil {
+		if err := n.CreateNotification(ctx); err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return

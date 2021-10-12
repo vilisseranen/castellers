@@ -2,11 +2,15 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"net/smtp"
 
 	"github.com/vilisseranen/castellers/common"
+	"go.opentelemetry.io/otel"
 )
+
+var tracer = otel.Tracer("castellers")
 
 type emailInfo struct {
 	Header       emailHeader
@@ -82,7 +86,9 @@ func buildHeader(title, to string) string {
 		"\r\n"
 }
 
-func sendMail(email emailInfo) error {
+func sendMail(ctx context.Context, email emailInfo) error {
+	ctx, span := tracer.Start(ctx, "mail.sendMail")
+	defer span.End()
 
 	body, err := email.buildEmail()
 	if err != nil {

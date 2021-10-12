@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/XSAM/otelsql"
+	_ "github.com/mattn/go-sqlite3"
+	"go.opentelemetry.io/otel"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/vilisseranen/castellers/common"
 )
@@ -18,10 +23,15 @@ const initQuery = `CREATE TABLE IF NOT EXISTS schema_version
 );`
 
 var db *sql.DB
+var tracer = otel.Tracer("castellers")
 
 func InitializeDB(dbname string) {
 	var err error
-	db, err = sql.Open("sqlite3", dbname+"?_foreign_keys=on")
+	driverName, err := otelsql.Register("sqlite3", semconv.DBSystemSqlite.Value.AsString())
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	db, err = sql.Open(driverName, dbname+"?_foreign_keys=on")
 	if err != nil {
 		common.Fatal(err.Error())
 	}

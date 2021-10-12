@@ -1,0 +1,12 @@
+apm-server:
+  host: "0.0.0.0:8200"
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+
+apm-server.kibana.enabled: true
+apm-server.kibana.host: "kibana:5601"

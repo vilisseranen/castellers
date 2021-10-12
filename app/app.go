@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/controller"
@@ -21,7 +20,7 @@ type App struct {
 	scheduler controller.Scheduler
 }
 
-func (a *App) Initialize() {
+func (a *App) Initialize() func() {
 
 	common.ReadConfig()
 
@@ -37,6 +36,8 @@ func (a *App) Initialize() {
 		log.Fatalf("Error configuring the logger: %v", err)
 	}
 
+	otelClose := common.InitOtelProvider()
+
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
 	routes.AttachV1API(a.Router)
@@ -50,7 +51,8 @@ func (a *App) Initialize() {
 	common.InitializeTranslations()
 
 	// Define logger
-	a.handler = handlers.CombinedLoggingHandler(f, a.Router)
+	a.handler = handlers.ProxyHeaders(a.Router)
+	a.handler = handlers.CombinedLoggingHandler(f, a.handler)
 
 	// Define CORS handlers
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
@@ -58,6 +60,8 @@ func (a *App) Initialize() {
 	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
 	allowCredentials := handlers.AllowCredentials()
 	a.handler = handlers.CORS(originsOk, headersOk, methodsOk, allowCredentials)(a.handler)
+
+	return otelClose
 }
 
 func (a *App) Run(addr string) {

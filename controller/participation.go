@@ -17,8 +17,10 @@ const (
 )
 
 func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "ParticipateEvent")
+	defer span.End()
 	vars := mux.Vars(r)
-	tokenAuth, err := ExtractToken(r)
+	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -28,7 +30,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	memberUUID := tokenAuth.UserId
 	event := model.Event{UUID: eventUUID}
 	member := model.Member{UUID: memberUUID}
-	if err := event.Get(); err != nil {
+	if err := event.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Event not found: %s", err.Error())
@@ -39,7 +41,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := member.Get(); err != nil {
+	if err := member.Get(ctx); err != nil {
 		common.Warn("Error getting Member: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
 		return
@@ -63,7 +65,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	p.EventUUID = eventUUID
 	p.MemberUUID = memberUUID
 
-	if err := p.Participate(); err != nil {
+	if err := p.Participate(ctx); err != nil {
 		common.Warn("Error participating event: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
 		return
@@ -72,12 +74,14 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func PresenceEvent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "PresenceEvent")
+	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]
 	memberUUID := vars["member_uuid"]
 	event := model.Event{UUID: eventUUID}
 	member := model.Member{UUID: memberUUID}
-	if err := event.Get(); err != nil {
+	if err := event.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Event not found: %s", err.Error())
@@ -88,7 +92,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := member.Get(); err != nil {
+	if err := member.Get(ctx); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			common.Debug("Member not found: %s", err.Error())
@@ -117,7 +121,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 	p.EventUUID = eventUUID
 	p.MemberUUID = memberUUID
 
-	if err := p.Present(); err != nil {
+	if err := p.Present(ctx); err != nil {
 		common.Warn("Error setting presence to event: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPRESENCEEVENT)
 		return
@@ -126,10 +130,12 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetEventParticipation")
+	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]
 	m := model.Member{}
-	members, err := m.GetAll()
+	members, err := m.GetAll(ctx)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)
@@ -137,7 +143,7 @@ func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 	}
 	for index, member := range members {
 		p := model.Participation{EventUUID: eventUUID, MemberUUID: member.UUID}
-		if err := p.GetParticipation(); err != nil {
+		if err := p.GetParticipation(r.Context()); err != nil {
 			switch err {
 			case sql.ErrNoRows:
 				continue

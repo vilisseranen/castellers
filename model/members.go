@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -53,8 +54,10 @@ type Credentials struct {
 	PasswordHashed []byte `json:"-"`
 }
 
-func (m *Member) CreateMember() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (m *Member) CreateMember(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.CreateMember")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	defer stmt.Close()
@@ -63,7 +66,8 @@ func (m *Member) CreateMember() error {
 		common.Error("%v\n", m)
 		return err
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(
+		ctx,
 		stringOrNull(m.UUID),
 		common.Encrypt(m.FirstName),
 		common.Encrypt(m.LastName),
@@ -84,12 +88,14 @@ func (m *Member) CreateMember() error {
 	return err
 }
 
-func (m *Member) EditMember() error {
+func (m *Member) EditMember(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.EditMember")
+	defer span.End()
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(fmt.Sprintf(
+	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
 		MEMBERSTABLE))
 	defer stmt.Close()
@@ -98,7 +104,7 @@ func (m *Member) EditMember() error {
 		common.Error("%v\n")
 		return err
 	}
-	_, err = stmt.Exec(
+	_, err = stmt.ExecContext(ctx,
 		common.Encrypt(m.FirstName),
 		common.Encrypt(m.LastName),
 		common.Encrypt(m.Height),
@@ -124,8 +130,10 @@ func (m *Member) EditMember() error {
 	return err
 }
 
-func (m *Member) Get() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (m *Member) Get(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.Get")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
 		MEMBERSTABLE))
 	defer stmt.Close()
@@ -133,7 +141,7 @@ func (m *Member) Get() error {
 		common.Fatal(err.Error())
 	}
 	var rolesAsString string
-	err = stmt.QueryRow(m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
+	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
 	if err == nil {
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
@@ -149,8 +157,10 @@ func (m *Member) Get() error {
 	return err
 }
 
-func (m *Member) GetAll() ([]Member, error) {
-	rows, err := db.Query(fmt.Sprintf(
+func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
+	ctx, span := tracer.Start(ctx, "Member.GetAll")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
 		MEMBERSTABLE))
 	defer rows.Close()
@@ -185,8 +195,10 @@ func (m *Member) GetAll() ([]Member, error) {
 	return members, nil
 }
 
-func (m *Member) DeleteMember() error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
+func (m *Member) DeleteMember(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
@@ -194,7 +206,7 @@ func (m *Member) DeleteMember() error {
 		return err
 	}
 
-	_, err = stmt.Exec(m.UUID)
+	_, err = stmt.ExecContext(ctx, m.UUID)
 	return err
 }
 
@@ -205,72 +217,82 @@ func (m *Member) sanitizeEmptyRoles() {
 	return
 }
 
-func (m *Member) Activate() error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERSTABLE))
+func (m *Member) Activate(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.Activate")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
-	_, err = stmt.Exec(m.UUID)
+	_, err = stmt.ExecContext(ctx, m.UUID)
 	return err
 }
 
-func (c *Credentials) ResetCredentials(username string, password []byte) error {
+func (c *Credentials) ResetCredentials(ctx context.Context, username string, password []byte) error {
+	ctx, span := tracer.Start(ctx, "Credentials.ResetCredentials")
+	defer span.End()
 	member := Member{UUID: c.UUID}
-	err := member.Activate()
+	err := member.Activate(ctx)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MEMBERSCREDENTIALSTABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
-	_, err = stmt.Exec(c.UUID)
+	_, err = stmt.ExecContext(ctx, c.UUID)
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
-	stmt, err = db.Prepare(fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MEMBERSCREDENTIALSTABLE))
+	stmt, err = db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
 
-	_, err = stmt.Exec(c.UUID, username, password)
+	_, err = stmt.ExecContext(ctx, c.UUID, username, password)
 	return err
 }
 
-func (c *Credentials) GetCredentials() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (c *Credentials) GetCredentials(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Credentials.GetCredentials")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT uuid, password FROM %s WHERE username= ?",
 		MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	err = stmt.QueryRow(c.Username).Scan(&c.UUID, &c.PasswordHashed)
+	err = stmt.QueryRowContext(ctx, c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
 }
 
-func (c *Credentials) GetCredentialsByUUID() error {
-	stmt, err := db.Prepare(fmt.Sprintf(
+func (c *Credentials) GetCredentialsByUUID(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Credentials.GetCredentialsByUUID")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT username FROM %s WHERE uuid= ?",
 		MEMBERSCREDENTIALSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	err = stmt.QueryRow(c.UUID).Scan(&c.Username)
+	err = stmt.QueryRowContext(ctx, c.UUID).Scan(&c.Username)
 	return err
 }
 
-func (m *Member) GetByEmail() error {
+func (m *Member) GetByEmail(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.GetByEmail")
+	defer span.End()
 	found := false
-	members, err := m.GetAll()
+	members, err := m.GetAll(ctx)
 	if err != nil {
 		return err
 	}

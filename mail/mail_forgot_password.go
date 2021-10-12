@@ -2,6 +2,7 @@ package mail
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 
 	"github.com/vilisseranen/castellers/common"
@@ -44,7 +45,10 @@ func (e emailForgotInfo) GetBody() (string, error) {
 	return body.String(), nil
 }
 
-func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
+func SendForgotPasswordEmail(ctx context.Context, payload EmailForgotPasswordPayload) error {
+	ctx, span := tracer.Start(ctx, "mail.SendForgotPasswordEmail")
+	defer span.End()
+
 	resetLink := common.GetConfigString("domain") + "/reset?" +
 		"t=" + payload.Token
 	if payload.Credentials.Username != "" {
@@ -87,7 +91,7 @@ func SendForgotPasswordEmail(payload EmailForgotPasswordPayload) error {
 	}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 
-	if err := sendMail(email); err != nil {
+	if err := sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
 		return err
 	}

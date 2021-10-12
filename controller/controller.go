@@ -1,11 +1,15 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/extra/redisotel/v8"
+	"github.com/go-redis/redis/v8"
+	"go.opentelemetry.io/otel"
+
 	"github.com/vilisseranen/castellers/common"
 )
 
@@ -20,6 +24,7 @@ const (
 
 var RedisClient *redis.Client
 var version string
+var tracer = otel.Tracer("castellers")
 
 func RespondWithError(w http.ResponseWriter, code int, message string) {
 	RespondWithJSON(w, code, map[string]string{"error": message})
@@ -39,10 +44,11 @@ func InitializeRedis() {
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr: dsn, //redis port
 	})
-	_, err := RedisClient.Ping().Result()
+	_, err := RedisClient.Ping(context.Background()).Result()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	RedisClient.AddHook(redisotel.TracingHook{})
 }
 
 func Version(w http.ResponseWriter, r *http.Request) {

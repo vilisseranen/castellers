@@ -1,0 +1,20 @@
+receivers:
+  otlp/receiver:
+    protocols:
+      grpc:
+
+exporters:
+  otlp/apm:
+    endpoint: http://apm-server:8200
+    tls:
+      insecure: true
+  logging:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp/receiver]
+      exporters: [otlp/apm, logging]
+    metrics:
+      receivers: [otlp/receiver]
+      exporters: [otlp/apm, logging]
