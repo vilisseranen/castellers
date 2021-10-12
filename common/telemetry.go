@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -29,7 +30,7 @@ func InitOtelProvider() func() {
 	// Set up a trace exporter
 	traceExporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint("localhost:4317"),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", GetConfigString("otlp_endpoint"))),
 		otlptracegrpc.WithDialOption(),
 	)
 	if err != nil {
