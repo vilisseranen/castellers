@@ -317,6 +317,12 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 		return
 	}
+	_, err = checkTokenInCache(ctx, token)
+	if err != nil {
+		common.Debug("Cannot find token in cache: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+		return
+	}
 	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
 		common.Debug("Token invalid: %s", err.Error())
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
