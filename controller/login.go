@@ -207,11 +207,6 @@ func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token
 		// }
 		return nil, err
 	}
-	_, err = checkTokenInCache(ctx, token)
-	if err != nil {
-		common.Debug("Cannot find token in cache: %s", err.Error())
-		return nil, err
-	}
 	return token, nil
 }
 
@@ -262,16 +257,9 @@ func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error 
 	ctx, span := tracer.Start(ctx, "saveTokenInCache")
 	defer span.End()
 
-	// We add 1 second because we check in redis after we check the token
-	// The token could be removed from redis right after we do the static validation
-	at := time.Unix(td.AtExpires+1, 0)
-	rt := time.Unix(td.RtExpires+1, 0)
+	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	errAccess := RedisClient.Set(ctx, td.AccessUuid, uuid, at.Sub(now)).Err()
-	if errAccess != nil {
-		return errAccess
-	}
 	errRefresh := RedisClient.Set(ctx, td.RefreshUuid, uuid, rt.Sub(now)).Err()
 	if errRefresh != nil {
 		return errRefresh
@@ -329,6 +317,12 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 		return
 	}
+	_, err = checkTokenInCache(ctx, token)
+	if err != nil {
+		common.Debug("Cannot find token in cache: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+		return
+	}
 	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
 		common.Debug("Token invalid: %s", err.Error())
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
@@ -336,25 +330,27 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		refreshUuid, ok := claims["token_uuid"].(string)
-		if !ok {
-			common.Info("Token claim 'token_uuid' is invalid")
-			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
-			return
-		}
+		// refreshUuid, ok := claims["token_uuid"].(string)
+		// if !ok {
+		// 	common.Info("Token claim 'token_uuid' is invalid")
+		// 	RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
+		// 	return
+		// }
 		userUuid, ok := claims["user_uuid"].(string)
 		if !ok {
 			common.Info("Token claim 'user_uuid' is invalid")
 			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
 			return
 		}
-		//Delete the previous Refresh Token
-		deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
-		if delErr != nil || deleted == 0 { //if any goes wrong
-			common.Warn("Error deleting token in cache: %s", delErr.Error())
-			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
-			return
-		}
+		// TODO: Link refresh token to a parent DEVICE ID.
+		//       After that, we only delete the refresh tokens
+		//       from this device ID when the device is logged out.
+		// deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
+		// if delErr != nil || deleted == 0 { //if any goes wrong
+		// 	common.Warn("Error deleting token in cache: %s", delErr.Error())
+		// 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
+		// 	return
+		// }
 		permissions, err := getMemberPermissions(ctx, userUuid)
 		if err != nil {
 			common.Warn("Error getting permissions: %s", err.Error())

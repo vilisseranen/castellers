@@ -6,6 +6,10 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+const (
+	BASE_PATH = "/api/"
+)
+
 var tracer = otel.Tracer("castellers")
 
 func CreateRouter(staticDir string) *mux.Router {
