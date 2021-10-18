@@ -64,7 +64,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
-		common.Debug("Getting participation for %s", p)
+		common.Debug("Getting participation for User %s Event: %s", p.MemberUUID, p.EventUUID)
 		if err := p.GetParticipation(r.Context()); err != nil {
 			// the sql.ErrNoRows error is OK, it means the member has not yet given an answer for this event
 			if err != sql.ErrNoRows {
@@ -73,6 +73,7 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		common.Debug("Participation for User %s Event: %s is Answer: %s", p.MemberUUID, p.EventUUID, p.Answer)
 		e.Participation = p.Answer
 		if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			if err := e.GetAttendance(ctx); err != nil {
