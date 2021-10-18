@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	"github.com/gorilla/mux"
 
 	"github.com/vilisseranen/castellers/controller"
@@ -11,51 +9,50 @@ import (
 
 func AttachV1API(r *mux.Router) {
 
-	const (
-		API       = "v1"
-		BASE_PATH = "/api/" + API
-	)
+	API_VERSION := "v1"
+
 	// castells API
 
-	r.HandleFunc(fmt.Sprintf("%s/castells/types", BASE_PATH), controller.GetCastellTypeList).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/types/{type:[0-9]+d[0-9]+}", BASE_PATH), controller.GetCastellType).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.GetCastellModels, model.MEMBERSTYPEREGULAR)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.GetCastellModels, model.MEMBERSTYPEREGULAR)).Queries("event", "{event_uuid:[0-9a-f]+}").Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models", BASE_PATH), checkTokenType(controller.CreateCastellModel, model.MEMBERSTYPEADMIN)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetCastellModel, model.MEMBERSTYPEREGULAR)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteCastellModel, model.MEMBERSTYPEADMIN)).Methods("DELETE")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.EditCastellModel, model.MEMBERSTYPEADMIN)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.AttachCastellModelToEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DettachCastellModelFromEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s := r.PathPrefix(BASE_PATH + API_VERSION).Subrouter()
+
+	s.HandleFunc("/castells/types", controller.GetCastellTypeList).Methods("GET")
+	s.HandleFunc("/castells/types/{type:[0-9]+d[0-9]+}", controller.GetCastellType).Methods("GET")
+	s.HandleFunc("/castells/models", checkTokenType(controller.GetCastellModels, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	s.HandleFunc("/castells/models", checkTokenType(controller.CreateCastellModel, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/castells/models/{uuid:[0-9a-f]+}", checkTokenType(controller.GetCastellModel, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	s.HandleFunc("/castells/models/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteCastellModel, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/castells/models/{uuid:[0-9a-f]+}", checkTokenType(controller.EditCastellModel, model.MEMBERSTYPEADMIN)).Methods("PUT")
+	s.HandleFunc("/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.AttachCastellModelToEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/castells/models/{model_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.DettachCastellModelFromEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
 
 	// Initialize, login, tokens, version
-	r.HandleFunc(fmt.Sprintf("%s/initialize", BASE_PATH), controller.Initialize).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/initialize", BASE_PATH), controller.IsInitialized).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/login", BASE_PATH), controller.Login).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/logout", BASE_PATH), controller.Logout).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/refresh", BASE_PATH), controller.RefreshToken).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/forgot_password", BASE_PATH), controller.ForgotPassword).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/version", BASE_PATH), controller.Version).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/reset_credentials", BASE_PATH), checkTokenType(controller.ResetCredentials, controller.ResetCredentialsPermission)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/change_password", BASE_PATH), checkTokenType(controller.ResetCredentials, model.MEMBERSTYPEREGULAR)).Methods("POST")
+	s.HandleFunc("/initialize", controller.Initialize).Methods("POST")
+	s.HandleFunc("/initialize", controller.IsInitialized).Methods("GET")
+	s.HandleFunc("/login", controller.Login).Methods("POST")
+	s.HandleFunc("/logout", controller.Logout).Methods("POST")
+	s.HandleFunc("/refresh", controller.RefreshToken).Methods("POST")
+	s.HandleFunc("/forgot_password", controller.ForgotPassword).Methods("POST")
+	s.HandleFunc("/version", controller.Version).Methods("GET")
+	s.HandleFunc("/reset_credentials", checkTokenType(controller.ResetCredentials, controller.ResetCredentialsPermission)).Methods("POST")
+	s.HandleFunc("/change_password", checkTokenType(controller.ResetCredentials, model.MEMBERSTYPEREGULAR)).Methods("POST")
 
 	// Events
-	r.HandleFunc(fmt.Sprintf("%s/events", BASE_PATH), controller.GetEvents).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/events/{uuid:[0-9a-f]+}", BASE_PATH), controller.GetEvent).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/events", BASE_PATH), checkTokenType(controller.CreateEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/events/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.UpdateEvent, model.MEMBERSTYPEADMIN)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("%s/events/{uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
-	r.HandleFunc(fmt.Sprintf("%s/events/{event_uuid:[0-9a-f]+}/members", BASE_PATH), checkTokenType(controller.GetEventParticipation, model.MEMBERSTYPEADMIN)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.PresenceEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/events", controller.GetEvents).Methods("GET")
+	s.HandleFunc("/events/{uuid:[0-9a-f]+}", controller.GetEvent).Methods("GET")
+	s.HandleFunc("/events", checkTokenType(controller.CreateEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/events/{uuid:[0-9a-f]+}", checkTokenType(controller.UpdateEvent, model.MEMBERSTYPEADMIN)).Methods("PUT")
+	s.HandleFunc("/events/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/events/{event_uuid:[0-9a-f]+}/members", checkTokenType(controller.GetEventParticipation, model.MEMBERSTYPEADMIN)).Methods("GET")
+	s.HandleFunc("/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.PresenceEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
 
 	// Members
-	r.HandleFunc(fmt.Sprintf("%s/members", BASE_PATH), checkTokenType(controller.GetMembers, model.MEMBERSTYPEREGULAR)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/members", BASE_PATH), checkTokenType(controller.CreateMember, model.MEMBERSTYPEADMIN)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/members/roles", BASE_PATH), controller.GetRoles).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.GetMember, model.MEMBERSTYPEREGULAR)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.EditMember, model.MEMBERSTYPEREGULAR)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("%s/members/{member_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.DeleteMember, model.MEMBERSTYPEADMIN)).Methods("DELETE")
-	r.HandleFunc(fmt.Sprintf("%s/members/{member_uuid:[0-9a-f]+}/registration", BASE_PATH), checkTokenType(controller.SendRegistrationEmail, model.MEMBERSTYPEADMIN)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/members/events/{event_uuid:[0-9a-f]+}", BASE_PATH), checkTokenType(controller.ParticipateEvent, model.MEMBERSTYPEREGULAR, controller.ParticipateEventPermission)).Methods("POST")
+	s.HandleFunc("/members", checkTokenType(controller.GetMembers, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	s.HandleFunc("/members", checkTokenType(controller.CreateMember, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/members/roles", controller.GetRoles).Methods("GET")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.GetMember, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.EditMember, model.MEMBERSTYPEREGULAR)).Methods("PUT")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.DeleteMember, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/registration", checkTokenType(controller.SendRegistrationEmail, model.MEMBERSTYPEADMIN)).Methods("GET")
+	s.HandleFunc("/members/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.ParticipateEvent, model.MEMBERSTYPEREGULAR, controller.ParticipateEventPermission)).Methods("POST")
 
 }
