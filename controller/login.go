@@ -330,25 +330,27 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		refreshUuid, ok := claims["token_uuid"].(string)
-		if !ok {
-			common.Info("Token claim 'token_uuid' is invalid")
-			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
-			return
-		}
+		// refreshUuid, ok := claims["token_uuid"].(string)
+		// if !ok {
+		// 	common.Info("Token claim 'token_uuid' is invalid")
+		// 	RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
+		// 	return
+		// }
 		userUuid, ok := claims["user_uuid"].(string)
 		if !ok {
 			common.Info("Token claim 'user_uuid' is invalid")
 			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
 			return
 		}
-		//Delete the previous Refresh Token
-		deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
-		if delErr != nil || deleted == 0 { //if any goes wrong
-			common.Warn("Error deleting token in cache: %s", delErr.Error())
-			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
-			return
-		}
+		// TODO: Link refresh token to a parent DEVICE ID.
+		//       After that, we only delete the refresh tokens
+		//       from this device ID when the device is logged out.
+		// deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
+		// if delErr != nil || deleted == 0 { //if any goes wrong
+		// 	common.Warn("Error deleting token in cache: %s", delErr.Error())
+		// 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
+		// 	return
+		// }
 		permissions, err := getMemberPermissions(ctx, userUuid)
 		if err != nil {
 			common.Warn("Error getting permissions: %s", err.Error())
