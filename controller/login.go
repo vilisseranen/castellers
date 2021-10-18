@@ -207,11 +207,6 @@ func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token
 		// }
 		return nil, err
 	}
-	_, err = checkTokenInCache(ctx, token)
-	if err != nil {
-		common.Debug("Cannot find token in cache: %s", err.Error())
-		return nil, err
-	}
 	return token, nil
 }
 
@@ -262,16 +257,9 @@ func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error 
 	ctx, span := tracer.Start(ctx, "saveTokenInCache")
 	defer span.End()
 
-	// We add 1 second because we check in redis after we check the token
-	// The token could be removed from redis right after we do the static validation
-	at := time.Unix(td.AtExpires+1, 0)
-	rt := time.Unix(td.RtExpires+1, 0)
+	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	errAccess := RedisClient.Set(ctx, td.AccessUuid, uuid, at.Sub(now)).Err()
-	if errAccess != nil {
-		return errAccess
-	}
 	errRefresh := RedisClient.Set(ctx, td.RefreshUuid, uuid, rt.Sub(now)).Err()
 	if errRefresh != nil {
 		return errRefresh
