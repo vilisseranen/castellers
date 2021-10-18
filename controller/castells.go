@@ -112,7 +112,9 @@ func EditCastellModel(w http.ResponseWriter, r *http.Request) {
 func GetCastellModels(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(r.Context(), "GetCastellModels")
 	defer span.End()
-	event := r.FormValue("event")
+
+	event := r.URL.Query().Get("event")
+
 	m := model.CastellModel{}
 	models := []model.CastellModel{}
 	if event != "" {
