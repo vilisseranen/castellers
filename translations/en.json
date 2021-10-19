@@ -65,5 +65,7 @@
     "create_event_main_recurring": "This is a recurring event.",
     "create_event_main_location": "Location:",
     "practice": "Practice",
-    "registeredForEvent": "We expect %d castellers for this event."
+    "registeredForEvent": "We expect %d castellers for this event.",
+    "presentation": "Presentation",
+    "social": "Social"
 }
