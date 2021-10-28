@@ -185,6 +185,7 @@ func checkAndSendNotification() {
 					}
 				}
 				members[index].Participation = p.Answer
+				members[index].Presence = p.Presence
 			}
 			// Sort by FirstName then by Participation
 			sort.Slice(members, func(i, j int) bool { return members[i].FirstName < members[j].FirstName })

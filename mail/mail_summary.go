@@ -53,7 +53,7 @@ func SendSummaryEmail(ctx context.Context, payload EmailSummaryPayload) error {
 	// count number of castellers registered for the event
 	registeredForEvent := 0
 	for _, m := range summary.Members {
-		if m.Participation == "yes" {
+		if m.Presence == "yes" || (m.Presence != "no" && m.Participation == "yes") {
 			registeredForEvent += 1
 		}
 	}
