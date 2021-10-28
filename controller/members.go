@@ -137,7 +137,6 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m.UUID = common.GenerateUUID()
-	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {

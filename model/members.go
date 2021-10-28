@@ -38,7 +38,6 @@ type Member struct {
 	Type          string   `json:"type"`      // Encrypted
 	Email         string   `json:"email"`     // Encrypted
 	Contact       string   `json:"contact"`   // Encrypted
-	Code          string   `json:"-"`
 	Activated     int      `json:"activated"`
 	Subscribed    int      `json:"subscribed"`
 	Deleted       int      `json:"-"`
@@ -58,7 +57,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.CreateMember")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
@@ -78,7 +77,6 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Encrypt(m.Type),
 		common.Encrypt(m.Email),
 		common.Encrypt(m.Contact),
-		stringOrNull(m.Code),
 		stringOrNull(m.Language))
 	if err != nil {
 		common.Error(err.Error())
@@ -134,14 +132,14 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
 		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	var rolesAsString string
-	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language)
+	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Activated, &m.Subscribed, &m.Language)
 	if err == nil {
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
@@ -161,7 +159,7 @@ func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code, activated, subscribed, language FROM %s WHERE deleted=0",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, activated, subscribed, language FROM %s WHERE deleted=0",
 		MEMBERSTABLE))
 	defer rows.Close()
 	if err != nil {
@@ -174,7 +172,7 @@ func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Code, &m.Activated, &m.Subscribed, &m.Language); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Activated, &m.Subscribed, &m.Language); err != nil {
 			return nil, err
 		}
 		m.FirstName = common.Decrypt([]byte(m.FirstName))

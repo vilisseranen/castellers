@@ -43,7 +43,6 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	m.Type = model.MEMBERSTYPEADMIN // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
-	m.Code = common.GenerateCode() // TODO remove Code
 
 	// Create the Member now
 	if err := m.CreateMember(ctx); err != nil {
