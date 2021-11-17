@@ -155,12 +155,44 @@ func (m *Member) Get(ctx context.Context) error {
 	return err
 }
 
-func (m *Member) GetAll(ctx context.Context) ([]Member, error) {
+func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([]Member, error) {
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
-	rows, err := db.QueryContext(ctx, fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, activated, subscribed, language FROM %s WHERE deleted=0",
-		MEMBERSTABLE))
+	queryString := []string{fmt.Sprintf(
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s",
+		MEMBERSTABLE)}
+	filters := []string{}
+	statusFilters := []string{}
+	typeFilters := []string{}
+	queryValues := []interface{}{}
+
+	// filter on status
+	for _, status := range strings.Split(memberStatus, ",") {
+		if status != "" {
+			statusFilters = append(statusFilters, "status = ?")
+			queryValues = append(queryValues, status)
+		}
+	}
+	if len(statusFilters) > 0 {
+		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(statusFilters, " OR ")))
+	}
+
+	// filter on type
+	for _, mType := range strings.Split(memberType, ",") {
+		if mType != "" {
+			typeFilters = append(typeFilters, "type = ?")
+			queryValues = append(queryValues, mType)
+		}
+	}
+	if len(typeFilters) > 0 {
+		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(typeFilters, " OR ")))
+	}
+
+	filter := strings.Join(filters, " AND ")
+	queryString = compact(append(queryString, filter))
+	query := strings.Join(queryString, " WHERE ")
+	common.Debug("SQL query: %s; params(values=%v)", query, queryValues)
+	rows, err := db.QueryContext(ctx, query, queryValues...)
 	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
