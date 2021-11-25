@@ -134,8 +134,10 @@ func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]
+	memberStatusList := memberStatusListFromQuery(r.FormValue("status"))
+	memberTypeList := memberTypeListFromQuery(r.FormValue("type"))
 	m := model.Member{}
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, memberStatusList, memberTypeList)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)

@@ -96,7 +96,7 @@ func checkAndSendNotification() {
 			// Get All members
 			m := model.Member{}
 			p := model.Participation{}
-			members, err := m.GetAll(ctx)
+			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED}, []string{})
 			if err != nil {
 				// Cannot get the members, complete failure
 				common.Error("%v\n", err)
@@ -162,7 +162,7 @@ func checkAndSendNotification() {
 				continue
 			}
 			m := model.Member{}
-			members, err := m.GetAll(ctx)
+			members, err := m.GetAll(ctx, []string{}, []string{})
 			if err != nil {
 				// Cannot get the members, complete failure
 				common.Error("%v\n", err)
@@ -252,7 +252,7 @@ func checkAndSendNotification() {
 		case model.TypeEventDeleted:
 			// Get All members
 			m := model.Member{}
-			members, err := m.GetAll(ctx)
+			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED}, []string{})
 			if err != nil {
 				// Cannot get the members, complete failure
 				common.Error("Error getting members: %v\n", err)
@@ -291,7 +291,7 @@ func checkAndSendNotification() {
 		case model.TypeEventModified:
 			// Get All members
 			m := model.Member{}
-			members, err := m.GetAll(ctx)
+			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED}, []string{})
 			if err != nil {
 				// Cannot get the members, complete failure
 				common.Error("%v\n", err)
@@ -328,7 +328,7 @@ func checkAndSendNotification() {
 		case model.TypeEventCreated:
 			// Get All members
 			m := model.Member{}
-			members, err := m.GetAll(ctx)
+			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED}, []string{})
 			if err != nil {
 				// Cannot get the members, complete failure
 				common.Error("%v\n", err)

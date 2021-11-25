@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -79,8 +80,11 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(r.Context(), "GetMembers")
 	defer span.End()
 
+	memberStatusList := memberStatusListFromQuery(r.FormValue("status"))
+	memberTypeList := memberTypeListFromQuery(r.FormValue("type"))
+
 	m := model.Member{}
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, memberStatusList, memberTypeList)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBERS)
@@ -446,4 +450,32 @@ func validateChangeType(ctx context.Context, m model.Member, code string, adminU
 		return false
 	}
 	return true
+}
+
+func memberStatusListFromQuery(queryParam string) []string {
+	memberStatusList := []string{}
+	for _, status := range strings.Split(queryParam, ",") {
+		if status != "" && common.StringInSlice(status, []string{
+			model.MEMBERSSTATUSACTIVATED,
+			model.MEMBERSSTATUSCREATED,
+			model.MEMBERSSTATUSDELETED,
+			model.MEMBERSSTATUSPAUSED,
+			model.MEMBERSSTATUSPURGED}) {
+			memberStatusList = append(memberStatusList, status)
+		}
+	}
+	return memberStatusList
+}
+
+func memberTypeListFromQuery(queryParam string) []string {
+	memberTypeList := []string{}
+	for _, mType := range strings.Split(queryParam, ",") {
+		if mType != "" && common.StringInSlice(mType, []string{
+			model.MEMBERSTYPEADMIN,
+			model.MEMBERSTYPEGUEST,
+			model.MEMBERSTYPEREGULAR}) {
+			memberTypeList = append(memberTypeList, mType)
+		}
+	}
+	return memberTypeList
 }

@@ -17,12 +17,11 @@ const (
 	MEMBERSTYPEREGULAR = "member"
 	MEMBERSTYPEGUEST   = "guest"
 
-	// TODO: replace activated and deleted fields with status
-	MEMBERSSTATUSCREATED   = 0
-	MEMBERSSTATUSACTIVATED = 1
-	MEMBERSSTATUSPAUSED    = 2
-	MEMBERSSTATUSDELETED   = 3
-	MEMBERSSTATUSPURGED    = 4
+	MEMBERSSTATUSCREATED   = "created"
+	MEMBERSSTATUSACTIVATED = "active"
+	MEMBERSSTATUSPAUSED    = "paused"
+	MEMBERSSTATUSDELETED   = "deleted"
+	MEMBERSSTATUSPURGED    = "purged"
 
 	MEMBERSEMAILNOTFOUNDMESSAGE = "No member found with this email"
 )
@@ -35,12 +34,11 @@ type Member struct {
 	Weight        string   `json:"weight"`    // Encrypted
 	Roles         []string `json:"roles"`     // Encrypted
 	Extra         string   `json:"extra"`     // Encrypted
-	Type          string   `json:"type"`      // Encrypted
 	Email         string   `json:"email"`     // Encrypted
 	Contact       string   `json:"contact"`   // Encrypted
-	Activated     int      `json:"activated"`
+	Type          string   `json:"type"`
+	Status        string   `json:"status"`
 	Subscribed    int      `json:"subscribed"`
-	Deleted       int      `json:"-"`
 	Language      string   `json:"language"`
 	Participation string   `json:"participation"`
 	Presence      string   `json:"presence"`
@@ -74,7 +72,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Encrypt(m.Weight),
 		common.Encrypt(strings.Join(m.Roles, ",")),
 		common.Encrypt(m.Extra),
-		common.Encrypt(m.Type),
+		m.Type,
 		common.Encrypt(m.Email),
 		common.Encrypt(m.Contact),
 		stringOrNull(m.Language))
@@ -109,7 +107,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		common.Encrypt(m.Weight),
 		common.Encrypt(strings.Join(m.Roles, ",")),
 		common.Encrypt(m.Extra),
-		common.Encrypt(m.Type),
+		m.Type,
 		common.Encrypt(m.Email),
 		common.Encrypt(m.Contact),
 		m.Language,
@@ -132,14 +130,14 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, activated, subscribed, language FROM %s WHERE uuid= ? AND deleted=0",
-		MEMBERSTABLE))
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s WHERE uuid= ? AND status != '%s'",
+		MEMBERSTABLE, MEMBERSSTATUSDELETED))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	var rolesAsString string
-	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Activated, &m.Subscribed, &m.Language)
+	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language)
 	if err == nil {
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
@@ -147,7 +145,6 @@ func (m *Member) Get(ctx context.Context) error {
 		m.Weight = common.Decrypt([]byte(m.Weight))
 		m.Roles = strings.Split(common.Decrypt([]byte(rolesAsString)), ",")
 		m.Extra = common.Decrypt([]byte(m.Extra))
-		m.Type = common.Decrypt([]byte(m.Type))
 		m.Email = common.Decrypt([]byte(m.Email))
 		m.Contact = common.Decrypt([]byte(m.Contact))
 		m.sanitizeEmptyRoles()
@@ -155,7 +152,7 @@ func (m *Member) Get(ctx context.Context) error {
 	return err
 }
 
-func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([]Member, error) {
+func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []string) ([]Member, error) {
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
@@ -167,7 +164,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([
 	queryValues := []interface{}{}
 
 	// filter on status
-	for _, status := range strings.Split(memberStatus, ",") {
+	for _, status := range memberStatusList {
 		if status != "" {
 			statusFilters = append(statusFilters, "status = ?")
 			queryValues = append(queryValues, status)
@@ -178,7 +175,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([
 	}
 
 	// filter on type
-	for _, mType := range strings.Split(memberType, ",") {
+	for _, mType := range memberTypeList {
 		if mType != "" {
 			typeFilters = append(typeFilters, "type = ?")
 			queryValues = append(queryValues, mType)
@@ -204,7 +201,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Activated, &m.Subscribed, &m.Language); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language); err != nil {
 			return nil, err
 		}
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
@@ -213,7 +210,6 @@ func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([
 		m.Weight = common.Decrypt([]byte(m.Weight))
 		m.Roles = strings.Split(common.Decrypt([]byte(rolesAsString)), ",")
 		m.Extra = common.Decrypt([]byte(m.Extra))
-		m.Type = common.Decrypt([]byte(m.Type))
 		m.Email = common.Decrypt([]byte(m.Email))
 		m.Contact = common.Decrypt([]byte(m.Contact))
 		m.sanitizeEmptyRoles()
@@ -228,8 +224,8 @@ func (m *Member) GetAll(ctx context.Context, memberStatus, memberType string) ([
 func (m *Member) DeleteMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
-		MEMBERSTABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status='%s' WHERE uuid=?",
+		MEMBERSTABLE, MEMBERSSTATUSDELETED))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -250,7 +246,7 @@ func (m *Member) sanitizeEmptyRoles() {
 func (m *Member) Activate(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Activate")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET activated = 1 WHERE uuid= ?", MEMBERSTABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status = '%s' WHERE uuid= ?", MEMBERSTABLE, MEMBERSSTATUSACTIVATED))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
@@ -322,7 +318,7 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.GetByEmail")
 	defer span.End()
 	found := false
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, []string{}, []string{})
 	if err != nil {
 		return err
 	}
@@ -338,4 +334,14 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 		return errors.New(MEMBERSEMAILNOTFOUNDMESSAGE)
 	}
 	return nil
+}
+
+func compact(s []string) []string {
+	var r []string
+	for _, str := range s {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+	return r
 }
