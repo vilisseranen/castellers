@@ -105,10 +105,17 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	if !emailAvailable(ctx, m) {
-		common.Info("Email not available: %s", m.Email)
-		RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
+	if err := model.ValidateType(m.Type); err != nil {
+		common.Info("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
 		return
+	}
+	if m.Type != model.MEMBERSTYPEGUEST {
+		if !emailAvailable(ctx, m) {
+			common.Info("Email not available: %s", m.Email)
+			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
+			return
+		}
 	}
 	if missingRequiredFields(m) {
 		common.Info("Missing fields in request payload")
@@ -133,11 +140,6 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	if err := model.ValidateLanguage(m.Language); err != nil {
 		common.Info("Error validating language: " + err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
-		return
-	}
-	if err := model.ValidateType(m.Type); err != nil {
-		common.Info("Error validating language: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
 		return
 	}
 	m.UUID = common.GenerateUUID()
@@ -369,7 +371,13 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func missingRequiredFields(m model.Member) bool {
-	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+	missingFields := false
+	if m.Type == model.MEMBERSTYPEGUEST { // Guests don't have an email
+		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Language == "")
+	} else {
+		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+	}
+	return missingFields
 }
 
 func emailAvailable(ctx context.Context, m model.Member) bool {
