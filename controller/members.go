@@ -117,6 +117,8 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
+	} else if m.Type == model.MEMBERSTYPEGUEST {
+		m.Email = ""
 	}
 	if missingRequiredFields(m) {
 		common.Info("Missing fields in request payload")
