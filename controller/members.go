@@ -32,6 +32,7 @@ const (
 	ERRORRESETCREDENTIALS       = "Error resetting credentials"
 	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
 	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
+	ERRORUPDATEMEMBERTYPE       = "Error changing the type of the member"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -209,6 +210,11 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			common.Info("Member cannot be found: %s", err.Error())
 			RespondWithError(w, http.StatusBadRequest, ERRORGETMEMBER)
+			return
+		}
+		if currentMember.Type != model.MEMBERSTYPEGUEST && m.Type == model.MEMBERSTYPEGUEST {
+			common.Info("Cannot change a regular member into a guest. Current: %s, requested: %s", currentMember.Email, m.Email)
+			RespondWithError(w, http.StatusBadRequest, ERRORUPDATEMEMBERTYPE)
 			return
 		}
 		if currentMember.Email != m.Email && !emailAvailable(ctx, m) {
