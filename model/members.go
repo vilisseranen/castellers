@@ -54,13 +54,17 @@ type Credentials struct {
 func (m *Member) CreateMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.CreateMember")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
-		common.Error(err.Error())
-		common.Error("%v\n", m)
+		tx.Rollback()
+		common.Error("Error: %v on member: %v", err.Error(), m)
 		return err
 	}
 	_, err = stmt.ExecContext(
@@ -77,9 +81,31 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Encrypt(m.Contact),
 		stringOrNull(m.Language))
 	if err != nil {
-		common.Error(err.Error())
-		common.Error("%v\n", m)
+		tx.Rollback()
+		common.Error("Error: %v on member: %v", err.Error(), m)
 		return err
+	}
+	stmt, err = tx.PrepareContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET status = '%s' WHERE uuid = ?",
+		MEMBERSTABLE, MEMBERSSTATUSACTIVATED))
+	defer stmt.Close()
+	if err != nil {
+		tx.Rollback()
+		common.Error("Error: %v on member: %v", err.Error(), m)
+		return err
+	}
+	_, err = stmt.ExecContext(
+		ctx,
+		stringOrNull(m.UUID))
+	if err != nil {
+		tx.Rollback()
+		common.Error("Error: %v on member: %v", err.Error(), m)
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		common.Error("%v\n", err)
+		tx.Rollback()
 	}
 	return err
 }
