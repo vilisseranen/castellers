@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	ERRORCREATETOKEN  = "Error creating the token"
-	ERRORREFRESHTOKEN = "Error refreshing token"
-	ERRORTOKENEXPIRED = "Token has expired"
-	ERRORTOKENINVALID = "Token is invalid"
+	ERRORCREATETOKEN      = "Error creating the token"
+	ERRORREFRESHTOKEN     = "Error refreshing token"
+	ERRORTOKENEXPIRED     = "Token has expired"
+	ERRORTOKENINVALID     = "Token is invalid"
+	ERRORGUESTCANNOTLOGIN = "Guests cannot login"
 )
 
 type TokenDetails struct {
@@ -330,12 +331,6 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		// refreshUuid, ok := claims["token_uuid"].(string)
-		// if !ok {
-		// 	common.Info("Token claim 'token_uuid' is invalid")
-		// 	RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
-		// 	return
-		// }
 		userUuid, ok := claims["user_uuid"].(string)
 		if !ok {
 			common.Info("Token claim 'user_uuid' is invalid")
@@ -400,10 +395,11 @@ func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {
 	var permissions []string
 	if member.Type == model.MEMBERSTYPEREGULAR {
 		permissions = append(permissions, model.MEMBERSTYPEREGULAR)
-	}
-	if member.Type == model.MEMBERSTYPEADMIN {
+	} else if member.Type == model.MEMBERSTYPEADMIN {
 		permissions = append(permissions, model.MEMBERSTYPEREGULAR)
 		permissions = append(permissions, model.MEMBERSTYPEADMIN)
+	} else {
+		return []string{}, errors.New(ERRORGUESTCANNOTLOGIN)
 	}
 	return permissions, nil
 }
