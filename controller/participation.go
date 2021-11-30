@@ -70,6 +70,15 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
 		return
 	}
+	// If the member says they will participate, it means it is an active member (even if the answer is no)
+	if p.Answer == common.AnswerYes {
+		err = member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
+		if err != nil {
+			common.Warn("Error activating member: %v", member)
+			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
+			return
+		}
+	}
 	RespondWithJSON(w, http.StatusCreated, p)
 }
 
@@ -125,6 +134,15 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		common.Warn("Error setting presence to event: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPRESENCEEVENT)
 		return
+	}
+	// If the member is present , it means it is an active member
+	if p.Presence == common.AnswerYes {
+		err := member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
+		if err != nil {
+			common.Warn("Error activating member: %v", member)
+			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusCreated, p)
 }
