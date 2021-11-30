@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -33,6 +34,8 @@ const (
 	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
 	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
 	ERRORUPDATEMEMBERTYPE       = "Error changing the type of the member"
+	ERRORACTIVATINGMEMBER       = "Error setting the member as active"
+	ERRORCHANGINGMEMBERSTATUS   = "Error changing the status of the member"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +192,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	// if member, request can only be about themselves
 	// if admin can be for anyone
 
-	tokenAuth, err := ExtractToken(r.Context(), r)
+	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -214,6 +217,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, ERRORGETMEMBER)
 			return
 		}
+		// A regular cannot be converted to a guest
 		if currentMember.Type != model.MEMBERSTYPEGUEST && m.Type == model.MEMBERSTYPEGUEST {
 			common.Info("Cannot change a regular member into a guest. Current: %s, requested: %s", currentMember.Email, m.Email)
 			RespondWithError(w, http.StatusBadRequest, ERRORUPDATEMEMBERTYPE)
@@ -280,6 +284,15 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			common.Warn("Error updating member: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEMEMBER)
 			return
+		}
+		// When a guest is converted to a regular, we need to set the status to created
+		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST {
+			err := m.SetStatus(ctx, model.MEMBERSSTATUSCREATED)
+			if err != nil {
+				common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
+				RespondWithError(w, http.StatusInternalServerError, ERRORCHANGINGMEMBERSTATUS)
+				return
+			}
 		}
 		RespondWithJSON(w, http.StatusAccepted, m)
 		return

@@ -269,16 +269,16 @@ func (m *Member) sanitizeEmptyRoles() {
 	return
 }
 
-func (m *Member) Activate(ctx context.Context) error {
-	ctx, span := tracer.Start(ctx, "Member.Activate")
+func (m *Member) SetStatus(ctx context.Context, status string) error {
+	ctx, span := tracer.Start(ctx, "Member.SetStatus")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status = '%s' WHERE uuid= ?", MEMBERSTABLE, MEMBERSSTATUSACTIVATED))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status = ? WHERE uuid= ?", MEMBERSTABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
-	_, err = stmt.ExecContext(ctx, m.UUID)
+	_, err = stmt.ExecContext(ctx, status, m.UUID)
 	return err
 }
 
@@ -286,7 +286,7 @@ func (c *Credentials) ResetCredentials(ctx context.Context, username string, pas
 	ctx, span := tracer.Start(ctx, "Credentials.ResetCredentials")
 	defer span.End()
 	member := Member{UUID: c.UUID}
-	err := member.Activate(ctx)
+	err := member.SetStatus(ctx, MEMBERSSTATUSACTIVATED)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
