@@ -25,10 +25,13 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate reminder notifications
-	s.cron.AddFunc("@every 10s", generateEventsNotificationsReminder)
+	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
 
 	// Look for upcoming events and generate summary notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
+
+	// Change status of member who have not participated in some time
+	s.cron.AddFunc("@every 10s", pauseAbsentMembers)
 
 	s.cron.Start()
 }
@@ -415,6 +418,28 @@ func generateEventsNotificationsSummary() {
 			}
 		} else {
 			continue
+		}
+	}
+}
+
+func pauseAbsentMembers() {
+	ctx, span := tracer.Start(context.Background(), "pauseMembers")
+	defer span.End()
+
+	m := model.Member{}
+	members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED}, []string{})
+	if err != nil {
+		common.Error("%v\n", err)
+	}
+	for _, member := range members {
+		// Get last participation
+		lastEvent, err := member.GetMemberLastParticipation(ctx)
+		if err != nil {
+			common.Error("%v\n", err)
+		}
+		if time.Now().Unix()-int64(lastEvent.StartDate) > int64(common.GetConfigInt("inactive_delay_days"))*24*3600 {
+			common.Debug("Setting member %v as %s", member, model.MEMBERSSTATUSPAUSED)
+			member.SetStatus(ctx, model.MEMBERSSTATUSPAUSED)
 		}
 	}
 }
