@@ -5,7 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -31,6 +33,9 @@ const (
 	ERRORRESETCREDENTIALS       = "Error resetting credentials"
 	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
 	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
+	ERRORUPDATEMEMBERTYPE       = "Error changing the type of the member"
+	ERRORACTIVATINGMEMBER       = "Error setting the member as active"
+	ERRORCHANGINGMEMBERSTATUS   = "Error changing the status of the member"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -79,8 +84,11 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(r.Context(), "GetMembers")
 	defer span.End()
 
+	memberStatusList := memberStatusListFromQuery(r.FormValue("status"))
+	memberTypeList := memberTypeListFromQuery(r.FormValue("type"))
+
 	m := model.Member{}
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, memberStatusList, memberTypeList)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBERS)
@@ -101,10 +109,19 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	if !emailAvailable(ctx, m) {
-		common.Info("Email not available: %s", m.Email)
-		RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
+	if err := model.ValidateType(m.Type); err != nil {
+		common.Info("Error validating language: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
 		return
+	}
+	if m.Type != model.MEMBERSTYPEGUEST {
+		if !emailAvailable(ctx, m) {
+			common.Info("Email not available: %s", m.Email)
+			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
+			return
+		}
+	} else if m.Type == model.MEMBERSTYPEGUEST {
+		m.Email = ""
 	}
 	if missingRequiredFields(m) {
 		common.Info("Missing fields in request payload")
@@ -131,13 +148,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
 		return
 	}
-	if err := model.ValidateType(m.Type); err != nil {
-		common.Info("Error validating language: " + err.Error())
-		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
-		return
-	}
 	m.UUID = common.GenerateUUID()
-	m.Code = common.GenerateCode()
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
@@ -181,7 +192,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	// if member, request can only be about themselves
 	// if admin can be for anyone
 
-	tokenAuth, err := ExtractToken(r.Context(), r)
+	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
 		common.Warn("Error reading token: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
@@ -204,6 +215,12 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			common.Info("Member cannot be found: %s", err.Error())
 			RespondWithError(w, http.StatusBadRequest, ERRORGETMEMBER)
+			return
+		}
+		// A regular cannot be converted to a guest
+		if currentMember.Type != model.MEMBERSTYPEGUEST && m.Type == model.MEMBERSTYPEGUEST {
+			common.Info("Cannot change a regular member into a guest. Current: %s, requested: %s", currentMember.Email, m.Email)
+			RespondWithError(w, http.StatusBadRequest, ERRORUPDATEMEMBERTYPE)
 			return
 		}
 		if currentMember.Email != m.Email && !emailAvailable(ctx, m) {
@@ -267,6 +284,15 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			common.Warn("Error updating member: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEMEMBER)
 			return
+		}
+		// When a guest is converted to a regular, we need to set the status to created
+		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST {
+			err := m.SetStatus(ctx, model.MEMBERSSTATUSCREATED)
+			if err != nil {
+				common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
+				RespondWithError(w, http.StatusInternalServerError, ERRORCHANGINGMEMBERSTATUS)
+				return
+			}
 		}
 		RespondWithJSON(w, http.StatusAccepted, m)
 		return
@@ -366,7 +392,13 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func missingRequiredFields(m model.Member) bool {
-	return (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+	missingFields := false
+	if m.Type == model.MEMBERSTYPEGUEST { // Guests don't have an email
+		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Language == "")
+	} else {
+		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
+	}
+	return missingFields
 }
 
 func emailAvailable(ctx context.Context, m model.Member) bool {
@@ -447,4 +479,32 @@ func validateChangeType(ctx context.Context, m model.Member, code string, adminU
 		return false
 	}
 	return true
+}
+
+func memberStatusListFromQuery(queryParam string) []string {
+	memberStatusList := []string{}
+	for _, status := range strings.Split(queryParam, ",") {
+		if status != "" && common.StringInSlice(status, []string{
+			model.MEMBERSSTATUSACTIVATED,
+			model.MEMBERSSTATUSCREATED,
+			model.MEMBERSSTATUSDELETED,
+			model.MEMBERSSTATUSPAUSED,
+			model.MEMBERSSTATUSPURGED}) {
+			memberStatusList = append(memberStatusList, status)
+		}
+	}
+	return memberStatusList
+}
+
+func memberTypeListFromQuery(queryParam string) []string {
+	memberTypeList := []string{}
+	for _, mType := range strings.Split(queryParam, ",") {
+		if mType != "" && common.StringInSlice(mType, []string{
+			model.MEMBERSTYPEADMIN,
+			model.MEMBERSTYPEGUEST,
+			model.MEMBERSTYPEREGULAR}) {
+			memberTypeList = append(memberTypeList, mType)
+		}
+	}
+	return memberTypeList
 }

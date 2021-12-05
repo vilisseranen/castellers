@@ -56,7 +56,7 @@ func (e *Event) Get(ctx context.Context) error {
 func (e *Event) GetAttendance(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.GetAttendance")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND answer='yes'", PARTICIPATION_TABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND (presence = 'yes' OR (presence != 'no' AND answer = 'yes'))", PARTICIPATION_TABLE))
 	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())

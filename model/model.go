@@ -31,7 +31,9 @@ func InitializeDB(dbname string) {
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	db, err = sql.Open(driverName, dbname+"?_foreign_keys=on")
+	// This connection does not enforce the foreign_keys constraints
+	// to make update easier
+	db, err = sql.Open(driverName, dbname)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -98,6 +100,18 @@ func InitializeDB(dbname string) {
 		} else {
 			common.Info("Schema %s already installed.\n", version)
 		}
+	}
+
+	// close connection for updates
+	err = db.Close()
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+
+	// Open a new connection with foreign_keys constraints
+	db, err = sql.Open(driverName, dbname+"?_foreign_keys=on")
+	if err != nil {
+		common.Fatal(err.Error())
 	}
 
 }

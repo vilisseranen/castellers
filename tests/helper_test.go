@@ -96,7 +96,7 @@ func (test *TestHelper) addEvent(uuid, name string, startDate, endDate int) {
 }
 
 func (test *TestHelper) addAMember() string {
-	test.addMember("deadbeef", "Ramon", "Gerard", "", "", "Cap de rengla", "segon,baix,terç", "member", "ramon@gerard.ca", "", "toto")
+	test.addMember("deadbeef", "Ramon", "Gerard", "", "", "Cap de rengla", "segon,baix,terç", "member", "ramon@gerard.ca", "")
 	test.addCredentials("deadbeef", "member", "member")
 	payload := []byte(`{
 		"username":"member",
@@ -110,7 +110,7 @@ func (test *TestHelper) addAMember() string {
 }
 
 func (test *TestHelper) addAnAdmin() string {
-	test.addMember("deadfeed", "Romà", "Èric", "", "", "Cap de colla", "baix,second", "admin", "romà@eric.ca", "", "tutu")
+	test.addMember("deadfeed", "Romà", "Èric", "", "", "Cap de colla", "baix,second", "admin", "romà@eric.ca", "")
 	test.addCredentials("deadfeed", "admin", "admin")
 	payload := []byte(`{
 		"username":"admin",
@@ -123,7 +123,7 @@ func (test *TestHelper) addAnAdmin() string {
 	return t["access_token"].(string)
 }
 
-func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, extra, roles, memberType, email, contact, code string) {
+func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, extra, roles, memberType, email, contact string) {
 	db, err := sql.Open("sqlite3", testDbName)
 	if err != nil {
 		common.Fatal(err.Error())
@@ -134,7 +134,7 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		tx.Rollback()
 		common.Fatal(err.Error())
 	}
-	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO members(uuid, firstName, lastName, height, weight, roles, extra, type, email, contact) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		tx.Rollback()
 		common.Fatal(err.Error())
@@ -148,10 +148,9 @@ func (test *TestHelper) addMember(uuid, firstName, lastName, height, weight, ext
 		common.Encrypt(weight),
 		common.Encrypt(roles),
 		common.Encrypt(extra),
-		common.Encrypt(memberType),
+		memberType,
 		common.Encrypt(email),
-		common.Encrypt(contact),
-		code)
+		common.Encrypt(contact))
 	if err != nil {
 		tx.Rollback()
 		common.Fatal(err.Error())

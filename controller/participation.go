@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/vilisseranen/castellers/common"
@@ -70,6 +71,18 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
 		return
 	}
+	// If the member says they will participate, it means it is an active member
+	inactive_delay_past := uint(time.Now().Unix()) - uint(common.GetConfigInt("inactive_delay_days"))*3600*24
+	inactive_delay_future := uint(time.Now().Unix()) + uint(common.GetConfigInt("inactive_delay_days"))*3600*24
+	if p.Answer == common.AnswerYes && member.Status == model.MEMBERSSTATUSPAUSED &&
+		event.StartDate >= inactive_delay_past && event.StartDate <= inactive_delay_future {
+		err = member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
+		if err != nil {
+			common.Warn("Error activating member: %v", member)
+			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
+			return
+		}
+	}
 	RespondWithJSON(w, http.StatusCreated, p)
 }
 
@@ -126,6 +139,18 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORPRESENCEEVENT)
 		return
 	}
+	// If the member is present , it means it is an active member
+	inactive_delay_past := uint(time.Now().Unix()) - uint(common.GetConfigInt("inactive_delay_days"))*3600*24
+	inactive_delay_future := uint(time.Now().Unix()) + uint(common.GetConfigInt("inactive_delay_days"))*3600*24
+	if p.Presence == common.AnswerYes && member.Status == model.MEMBERSSTATUSPAUSED &&
+		event.StartDate >= inactive_delay_past && event.StartDate <= inactive_delay_future {
+		err := member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
+		if err != nil {
+			common.Warn("Error activating member: %v", member)
+			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
+			return
+		}
+	}
 	RespondWithJSON(w, http.StatusCreated, p)
 }
 
@@ -134,8 +159,10 @@ func GetEventParticipation(w http.ResponseWriter, r *http.Request) {
 	defer span.End()
 	vars := mux.Vars(r)
 	eventUUID := vars["event_uuid"]
+	memberStatusList := memberStatusListFromQuery(r.FormValue("status"))
+	memberTypeList := memberTypeListFromQuery(r.FormValue("type"))
 	m := model.Member{}
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, memberStatusList, memberTypeList)
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETPARTICIPATION)

@@ -21,7 +21,7 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 
 	// Only execute if it is the first member
 	var m model.Member
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, []string{}, []string{})
 	if err != nil {
 		common.Warn("Error getting all members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
@@ -43,7 +43,6 @@ func Initialize(w http.ResponseWriter, r *http.Request) {
 	m.Type = model.MEMBERSTYPEADMIN // Make sure it's an admin
 	defer r.Body.Close()
 	m.UUID = common.GenerateUUID()
-	m.Code = common.GenerateCode() // TODO remove Code
 
 	// Create the Member now
 	if err := m.CreateMember(ctx); err != nil {
@@ -69,7 +68,7 @@ func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	defer span.End()
 
 	var m model.Member
-	members, err := m.GetAll(ctx)
+	members, err := m.GetAll(ctx, []string{}, []string{})
 	if err != nil {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
