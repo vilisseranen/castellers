@@ -31,7 +31,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
 
 	// Change status of member who have not participated in some time
-	s.cron.AddFunc("@every 10s", pauseAbsentMembers)
+	s.cron.AddFunc("@every 10m", pauseAbsentMembers)
 
 	s.cron.Start()
 }
