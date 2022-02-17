@@ -85,23 +85,6 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Error("Error: %v on member: %v", err.Error(), m)
 		return err
 	}
-	stmt, err = tx.PrepareContext(ctx, fmt.Sprintf(
-		"UPDATE %s SET status = '%s' WHERE uuid = ?",
-		MEMBERSTABLE, MEMBERSSTATUSACTIVATED))
-	defer stmt.Close()
-	if err != nil {
-		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
-		return err
-	}
-	_, err = stmt.ExecContext(
-		ctx,
-		stringOrNull(m.UUID))
-	if err != nil {
-		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
-		return err
-	}
 	err = tx.Commit()
 	if err != nil {
 		common.Error("%v\n", err)
@@ -210,6 +193,8 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	if len(typeFilters) > 0 {
 		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(typeFilters, " OR ")))
 	}
+
+	filters = append(filters, fmt.Sprintf("status NOT IN ('%s', '%s')", MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED))
 
 	filter := strings.Join(filters, " AND ")
 	queryString = compact(append(queryString, filter))
@@ -349,7 +334,7 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 		return err
 	}
 	for _, member := range members {
-		if member.Email == m.Email {
+		if strings.ToLower(member.Email) == strings.ToLower(m.Email) {
 			common.Debug("Found a member with email %s", m.Email)
 			*m = member
 			found = true
