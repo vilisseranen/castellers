@@ -405,7 +405,7 @@ func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracer.Start(r.Context(), "ParticipateEventToken")
+	ctx, span := tracer.Start(r.Context(), "ForgotPassword")
 	defer span.End()
 	var member model.Member
 	decoder := json.NewDecoder(r.Body)
@@ -415,9 +415,11 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := member.GetByEmail(ctx)
+	// Even if the member is not found, we cannot give an error because that will be a way to
+	// find which users are in the system
 	if err != nil {
 		common.Warn("Cannot get user by email: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
+		RespondWithJSON(w, http.StatusAccepted, "")
 		return
 	}
 	if err == nil {
