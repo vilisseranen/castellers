@@ -85,23 +85,6 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Error("Error: %v on member: %v", err.Error(), m)
 		return err
 	}
-	stmt, err = tx.PrepareContext(ctx, fmt.Sprintf(
-		"UPDATE %s SET status = '%s' WHERE uuid = ?",
-		MEMBERSTABLE, MEMBERSSTATUSACTIVATED))
-	defer stmt.Close()
-	if err != nil {
-		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
-		return err
-	}
-	_, err = stmt.ExecContext(
-		ctx,
-		stringOrNull(m.UUID))
-	if err != nil {
-		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
-		return err
-	}
 	err = tx.Commit()
 	if err != nil {
 		common.Error("%v\n", err)
