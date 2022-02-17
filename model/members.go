@@ -211,6 +211,8 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(typeFilters, " OR ")))
 	}
 
+	filters = append(filters, fmt.Sprintf("status NOT IN ('%s', '%s')", MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED))
+
 	filter := strings.Join(filters, " AND ")
 	queryString = compact(append(queryString, filter))
 	query := strings.Join(queryString, " WHERE ")
