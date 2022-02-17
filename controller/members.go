@@ -168,7 +168,15 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATEMEMBER)
 		return
 	}
-	if m.Type != model.MEMBERSTYPEGUEST {
+	// When a guest is converted to a regular, we need to set the status to created
+	if m.Type == model.MEMBERSTYPEGUEST {
+		err := m.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
+		if err != nil {
+			common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
+			RespondWithError(w, http.StatusInternalServerError, ERRORCHANGINGMEMBERSTATUS)
+			return
+		}
+	} else {
 		payload := mail.EmailRegisterPayload{Member: m, Author: a}
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
