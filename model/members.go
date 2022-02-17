@@ -351,7 +351,7 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 		return err
 	}
 	for _, member := range members {
-		if member.Email == m.Email {
+		if strings.ToLower(member.Email) == strings.ToLower(m.Email) {
 			common.Debug("Found a member with email %s", m.Email)
 			*m = member
 			found = true
