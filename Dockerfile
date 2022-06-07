@@ -8,7 +8,7 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 
 RUN go get -d -v -u
 ARG TARGETOS TARGETARCH
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /go/bin/import
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /go/bin/import
 
 
 FROM scratch
