@@ -4,8 +4,6 @@ name: 'build images'
 on: [push]
 
 jobs:
-  app-version:
-    runs-on: ubuntu-latest
   docker:
     runs-on: ubuntu-latest
     needs: [test]
