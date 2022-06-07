@@ -42,7 +42,7 @@ jobs:
           DOCKER_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${GITHUB_REPOSITORY#*/}
           SHORTREF=${GITHUB_SHA::8}
 
-          if [[ ${github.ref} != 'refs/heads/master' ]]; then
+          if [[ ${{github.ref}} != 'refs/heads/master' ]]; then
             VERSION='dev'
             TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
           else
