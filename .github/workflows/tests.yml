@@ -4,15 +4,43 @@ name: 'tests'
 on: [push, pull_request]
 
 jobs:
-  build:
+  go-versions:
+    name: Lookup go versions
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [ '1.16', 'latest' ]
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
     steps:
     - uses: actions/checkout@v3
-    - name: Setup go
+    - uses: arnested/go-version-action@v1
+      id: versions
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: go-versions
+    strategy:
+      matrix:
+        version: ${{ fromJSON(needs.go-versions.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Go
       uses: actions/setup-go@v3
       with:
-        go-version: ${{ matrix.go }}
-    - run: go version
+        go-version: ${{ matrix.version }}
+        check-latest: true
+    - name: go test
+      run: go test -v ./...
+
+
+
+  # build:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       go: [ '1.16', 'latest' ]
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Setup go
+  #     uses: actions/setup-go@v3
+  #     with:
+  #       go-version: ${{ matrix.go }}
+  #   - run: go version
