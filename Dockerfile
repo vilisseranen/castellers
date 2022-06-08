@@ -7,6 +7,9 @@ RUN apk add ca-certificates && \
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 
+ARG TARGETOS
+ARG TARGETARCH
+
 RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /go/bin/import
 
 FROM scratch
