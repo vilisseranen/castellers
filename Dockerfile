@@ -2,8 +2,7 @@ FROM --platform=$BUILDPLATFORM golang:1.16-alpine as builder
 
 RUN apk add ca-certificates && \
     apk add tzdata && \
-    apk add --update gcc musl-dev && \
-    apk add gcc-aarch64-linux-gnu
+    apk add --update gcc musl-dev
 
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
