@@ -10,7 +10,7 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 go build -o /go/bin/import
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=gcc go build -o /go/bin/import
 
 FROM scratch
 
