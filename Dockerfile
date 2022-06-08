@@ -2,7 +2,8 @@ FROM --platform=$BUILDPLATFORM golang:1.16-alpine as builder
 
 RUN apk add ca-certificates && \
     apk add tzdata && \
-    apk add --update gcc musl-dev
+    apk add --update gcc musl-dev && \
+    apk add gcc-aarch64-linux-gnu
 
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
@@ -10,8 +11,8 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=aarch64-linux-gnu-gcc && CC_FOR_TARGET=gcc-aarch64-linux-gnu; fi && \
-    env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=$CC CC_FOR_TARGET=$CC_FOR_TARGET go build -o /go/bin/import
+RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=aarch64-alpine-linux-musl-gcc; fi && \
+    env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=$CC go build -o /go/bin/import
 
 FROM scratch
 
