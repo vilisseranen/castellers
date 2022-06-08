@@ -10,7 +10,8 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=gcc go build -o /go/bin/import
+RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=aarch64-linux-gnu-gcc && CC_FOR_TARGET=gcc-aarch64-linux-gnu; fi && \
+    env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=$CC CC_FOR_TARGET=$CC_FOR_TARGET go build -o /go/bin/import
 
 FROM scratch
 
