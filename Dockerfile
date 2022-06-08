@@ -2,7 +2,7 @@ FROM --platform=$BUILDPLATFORM golang:1.16-alpine as builder
 
 RUN apk add ca-certificates && \
     apk add tzdata && \
-    apk add gcc musl-dev
+    apk add --update gcc musl-dev
 
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
@@ -10,7 +10,7 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /go/bin/import
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 go build -o /go/bin/import
 
 FROM scratch
 
