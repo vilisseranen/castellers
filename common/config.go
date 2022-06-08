@@ -46,6 +46,7 @@ func ReadConfig() {
 	viper.SetDefault("jwt.registration_ttl_minutes", 10080)
 	viper.SetDefault("otlp_endpoint", "127.0.0.1")
 	viper.SetDefault("inactive_delay_days", 21)
+	viper.SetDefault("otel_enable", false)
 
 	// read config file
 	err := viper.ReadInConfig()
@@ -77,6 +78,7 @@ func ReadConfig() {
 	viper.BindEnv("jwt.participation_ttl_minutes", "APP_PARTICIPATION_TTL_MINUTES")
 	viper.BindEnv("jwt.registration_ttl_minutes", "APP_REGISTRATION_TTL_MINUTES")
 	viper.BindEnv("otlp_endpoint", "APP_OTLP_ENDPOINT")
+	viper.BindEnv("otel_enable", "APP_OTLP_ENABLE")
 	viper.BindEnv("inactive_delay_days", "APP_INACTIVE_DELAY_DAYS")
 
 	var c config
