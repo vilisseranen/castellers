@@ -76,3 +76,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.prep.outputs.tags }}
+      - name: Deploy
+        uses: wshihadeh/docker-deployment-action@v2
+        # if: (github.event_name == 'push' && github.head_ref == 'master')
+        with:
+          remote_docker_host: ec2-user@api.amunt.castellersdemontreal.info
+          ssh_private_key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+          ssh_public_key: ${{ secrets.DOCKER_SSH_PUBLIC_KEY }}
+          stack_file_name: docker-compose/docker-compose.yml
+          copy_stack_file: true
+          pull_images_first: true
