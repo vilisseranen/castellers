@@ -77,13 +77,13 @@ jobs:
       #     push: true
       #     tags: ${{ steps.prep.outputs.tags }}
       - name: Deploy
-        uses: wshihadeh/docker-deployment-action@v2
+        uses: fifsky/ssh-action@master
         # if: (github.event_name == 'push' && github.head_ref == 'master')
         with:
-          remote_docker_host: ec2-user@api.amunt.castellersdemontreal.info
-          ssh_private_key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
-          ssh_public_key: ${{ secrets.DOCKER_SSH_PUBLIC_KEY }}
-          stack_file_name: /home/ec2-user/castellers/docker-compose/docker-compose.yml
-          copy_stack_file: true
-          pull_images_first: true
-          args: up
+          host: api.amunt.castellersdemontreal.info
+          user: ec2-user
+          key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
+          command: |
+            cd /home/ec2-user/castellers/docker-compose/
+            docker-compose pull
+            docker-compose up -d
