@@ -86,6 +86,6 @@ jobs:
           command: |
             cd /home/ec2-user/castellers/docker-compose/
             git reset --hard
-            git pull
+            git pull --force
             docker-compose pull
             docker-compose up -d
