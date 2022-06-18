@@ -3,12 +3,14 @@ version: '3.4'
 services:
 
   letsencrypt:
+    container_name: letsencrypt
     image: certbot/dns-route53:arm64v8-latest
     command: "certonly --dns-route53 -d api.amunt.castellersdemontreal.info --agree-tos --email vilisseranen@gmail.com -n"
     volumes:
       - "letsencrypt:/etc/letsencrypt"
 
   nginx:
+    container_name: nginx
     image: nginx:latest
     ports:
       - 443:443
@@ -27,7 +29,6 @@ services:
       - logs:/var/log
       - data:/data
       - etc:/etc/castellers
-
     networks:
       - internal
 

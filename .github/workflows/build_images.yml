@@ -85,5 +85,7 @@ jobs:
           key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
           command: |
             cd /home/ec2-user/castellers/docker-compose/
+            git reset --hard
+            git pull
             docker-compose pull
             docker-compose up -d
