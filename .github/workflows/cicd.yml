@@ -42,7 +42,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${GITHUB_REPOSITORY#*/}
+          DOCKER_IMAGE=${GITHUB_REPOSITORY}
           SHORTREF=${GITHUB_SHA::8}
 
           if [[ ${{github.ref}} != 'refs/heads/master' ]]; then
