@@ -1,0 +1,49 @@
+version: '3.4'
+
+services:
+
+  letsencrypt:
+    container_name: letsencrypt
+    image: certbot/dns-route53:arm64v8-latest
+    command: "certonly --dns-route53 -d api.amunt.castellersdemontreal.info --agree-tos --email vilisseranen@gmail.com -n"
+    volumes:
+      - "letsencrypt:/etc/letsencrypt"
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - 443:443
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - letsencrypt:/etc/nginx/ssl/:ro
+    networks:
+      - internal
+
+  castellers:
+    container_name: castellers
+    image: vilisseranen/castellers:latest
+    restart: always
+    volumes:
+      - logs:/var/log
+      - data:/data
+      - etc:/etc/castellers
+    networks:
+      - internal
+
+  redis:
+    container_name: redis
+    networks:
+      - internal
+    image: redis:latest
+    restart: always
+
+networks:
+  internal:
+
+volumes:
+  logs:
+  data:
+  etc:
+  letsencrypt:

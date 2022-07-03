@@ -20,7 +20,7 @@ type App struct {
 	scheduler controller.Scheduler
 }
 
-func (a *App) Initialize() func() {
+func (a *App) Initialize() {
 
 	common.ReadConfig()
 
@@ -36,7 +36,9 @@ func (a *App) Initialize() func() {
 		log.Fatalf("Error configuring the logger: %v", err)
 	}
 
-	otelClose := common.InitOtelProvider()
+	if common.GetConfigBool("otel_enable") {
+		common.InitOtelProvider()
+	}
 
 	model.InitializeDB(common.GetConfigString("db_name"))
 	a.Router = routes.CreateRouter("static")
@@ -60,11 +62,15 @@ func (a *App) Initialize() func() {
 	methodsOk := handlers.AllowedMethods([]string{"DELETE", "GET", "HEAD", "POST", "PUT", "OPTIONS"})
 	allowCredentials := handlers.AllowCredentials()
 	a.handler = handlers.CORS(originsOk, headersOk, methodsOk, allowCredentials)(a.handler)
-
-	return otelClose
 }
 
 func (a *App) Run(addr string) {
 	a.scheduler.Start()
 	log.Fatal(http.ListenAndServe(addr, a.handler))
+}
+
+func (a *App) Close() {
+	if common.GetConfigBool("otel_enable") {
+		common.CloseOtelProvider()
+	}
 }

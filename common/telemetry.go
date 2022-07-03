@@ -12,7 +12,9 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func InitOtelProvider() func() {
+var tracerProvider *sdktrace.TracerProvider
+
+func InitOtelProvider() {
 	Debug("Initializing Opentelemetry Provider")
 
 	ctx := context.Background()
@@ -40,7 +42,7 @@ func InitOtelProvider() func() {
 	// Register the trace exporter with a TracerProvider, using a batch
 	// span processor to aggregate spans before export.
 	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
-	tracerProvider := sdktrace.NewTracerProvider(
+	tracerProvider = sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(res),
 		sdktrace.WithSpanProcessor(bsp),
@@ -51,14 +53,15 @@ func InitOtelProvider() func() {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	Debug("Opentelemetry Provider Initialized")
+}
 
-	return func() {
-		Debug("Shutting down Opentelemetry Provider")
-		// Shutdown will flush any remaining spans and shut down the exporter.
-		err = tracerProvider.Shutdown(ctx)
+func CloseOtelProvider() {
+	Debug("Shutting down Opentelemetry Provider")
+	// Shutdown will flush any remaining spans and shut down the exporter.
+	err := tracerProvider.Shutdown(context.Background())
 
-		if err != nil {
-			Error("Failed to shutdown TracerProvider: %v", err)
-		}
+	if err != nil {
+		Error("Failed to shutdown TracerProvider: %v", err)
 	}
+
 }
