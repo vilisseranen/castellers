@@ -23,7 +23,7 @@ services:
 
   castellers:
     container_name: castellers
-    image: vilisseranen/castellers:dev
+    image: vilisseranen/castellers:latest
     restart: always
     volumes:
       - logs:/var/log
