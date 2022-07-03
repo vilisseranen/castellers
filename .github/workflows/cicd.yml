@@ -42,9 +42,8 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=${GITHUB_REPOSITORY}
+          DOCKER_IMAGE=vilisseranen/castellers
           SHORTREF=${GITHUB_SHA::8}
-
           if [[ ${{github.ref}} != 'refs/heads/master' ]]; then
             VERSION='dev'
             TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
