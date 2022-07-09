@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -18,9 +17,7 @@ func InitOtelProvider() {
 	ctx := context.Background()
 
 	// Configure a new exporter using environment variables for sending data to Honeycomb over gRPC.
-	client := otlptracehttp.NewClient()
-	exporter, err := otlptrace.New(ctx, client)
-
+	exporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
 		Error("failed to initialize exporter: %v", err)
 	}
