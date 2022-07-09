@@ -77,8 +77,7 @@ func ReadConfig() {
 	viper.BindEnv("jwt.reset_ttl_minutes", "APP_RESET_TTL_MINUTES")
 	viper.BindEnv("jwt.participation_ttl_minutes", "APP_PARTICIPATION_TTL_MINUTES")
 	viper.BindEnv("jwt.registration_ttl_minutes", "APP_REGISTRATION_TTL_MINUTES")
-	viper.BindEnv("otlp_endpoint", "APP_OTLP_ENDPOINT")
-	viper.BindEnv("otel_enable", "APP_OTLP_ENABLE")
+	viper.BindEnv("otel_enable", "APP_OTEL_ENABLE")
 	viper.BindEnv("inactive_delay_days", "APP_INACTIVE_DELAY_DAYS")
 
 	var c config
