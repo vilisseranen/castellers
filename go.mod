@@ -13,6 +13,7 @@ require (
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/nicksnyder/go-i18n/v2 v2.1.2
 	github.com/robfig/cron v1.2.0
@@ -21,17 +22,16 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.25.0
 	go.opentelemetry.io/otel v1.8.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.8.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.8.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.8.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.8.0
 	go.opentelemetry.io/otel/trace v1.8.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20211113001501-0c823b97ae02 // indirect
+	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/sys v0.0.0-20220708085239-5a0f0661e09d // indirect
 	golang.org/x/text v0.3.7
+	google.golang.org/genproto v0.0.0-20220708155623-50e5f4832e73 // indirect
 	gopkg.in/ini.v1 v1.64.0 // indirect
 )
