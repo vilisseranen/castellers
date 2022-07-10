@@ -44,7 +44,6 @@ func ReadConfig() {
 	viper.SetDefault("jwt.reset_ttl_minutes", 60)
 	viper.SetDefault("jwt.participation_ttl_minutes", 2880)
 	viper.SetDefault("jwt.registration_ttl_minutes", 10080)
-	viper.SetDefault("otlp_endpoint", "127.0.0.1")
 	viper.SetDefault("inactive_delay_days", 21)
 	viper.SetDefault("otel_enable", false)
 
