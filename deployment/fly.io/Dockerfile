@@ -21,8 +21,8 @@ RUN apk add bash
 EXPOSE 8080
 
 # Copy Litestream configuration file & startup script.
-COPY fly.io/etc/litestream.yml /etc/litestream.yml
-COPY fly.io/scripts/run.sh /scripts/run.sh
+COPY deployment/fly.io/etc/litestream.yml /etc/litestream.yml
+COPY deployment/fly.io/scripts/run.sh /scripts/run.sh
 
 RUN chmod +x /scripts/run.sh
 
