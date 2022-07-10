@@ -27,8 +27,6 @@ func InitOtelProvider() {
 		sdktrace.WithBatcher(exporter),
 	)
 
-	defer func() { _ = tracerProvider.Shutdown(ctx) }()
-
 	// Set the Tracer Provider and the W3C Trace Context propagator as globals
 	otel.SetTracerProvider(tracerProvider)
 
