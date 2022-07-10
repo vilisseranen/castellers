@@ -4,4 +4,4 @@ dbs:
       - url: ${REPLICA_URL}
         retention: 2160h # 90 days
         retention-check-interval: 1h
-        snapshot-interval: 24h
+        snapshot-interval: 1h
