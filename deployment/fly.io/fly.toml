@@ -17,7 +17,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT="grpc://api.honeycomb.io:443"
 OTEL_SERVICE_NAME="castellers"
 
 [build]
-  dockerfile = "Dockerfile.fly"
+  dockerfile = "Dockerfile"
 
 [mounts]
 source="castellers_data"
