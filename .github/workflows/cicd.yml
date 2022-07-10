@@ -3,6 +3,9 @@ name: 'Test and deploy'
 
 on: [push, pull_request]
 
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
 jobs:
   go-versions:
     name: Lookup go versions
@@ -82,16 +85,6 @@ jobs:
     needs: [docker]
     if: (github.event_name == 'push' && github.ref == 'refs/heads/master')
     steps:
-      - name: Deploy
-        uses: fifsky/ssh-action@master
-        with:
-          host: api.amunt.castellersdemontreal.info
-          user: ec2-user
-          key: ${{ secrets.DOCKER_SSH_PRIVATE_KEY }}
-          command: |
-            cd /home/ec2-user/castellers/docker-compose/
-            git reset --hard
-            git checkout master
-            git pull --force
-            docker-compose pull
-            docker-compose up -d
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --no-cache --config deployment/fly.io/fly.toml

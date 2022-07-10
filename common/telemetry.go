@@ -2,14 +2,11 @@ package common
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 var tracerProvider *sdktrace.TracerProvider
@@ -19,38 +16,30 @@ func InitOtelProvider() {
 
 	ctx := context.Background()
 
-	res, err := resource.New(ctx,
-		resource.WithAttributes(
-			// the service name used to display traces in backends
-			semconv.ServiceNameKey.String("castellers"),
-		),
-	)
+	// Configure a new exporter using environment variables for sending data to Honeycomb over gRPC.
+	exporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
-		Error("Failed to create resource: %v", err)
+		Error("failed to initialize exporter: %v", err)
 	}
 
-	// Set up a trace exporter
-	traceExporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", GetConfigString("otlp_endpoint"))),
-		otlptracegrpc.WithDialOption(),
-	)
-	if err != nil {
-		Error("Failed to create trace exporter: %v", err)
-	}
-
-	// Register the trace exporter with a TracerProvider, using a batch
-	// span processor to aggregate spans before export.
-	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
+	// Create a new tracer provider with a batch span processor and the otlp exporter.
 	tracerProvider = sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(res),
-		sdktrace.WithSpanProcessor(bsp),
+		sdktrace.WithBatcher(exporter),
 	)
+
+	// Set the Tracer Provider and the W3C Trace Context propagator as globals
 	otel.SetTracerProvider(tracerProvider)
 
 	// set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	// Register the trace context and baggage propagators so data is propagated across services/processes.
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
 
 	Debug("Opentelemetry Provider Initialized")
 }
