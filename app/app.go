@@ -36,6 +36,12 @@ func (a *App) Initialize() {
 		log.Fatalf("Error configuring the logger: %v", err)
 	}
 
+	if common.GetConfigBool("smtp.enabled") &&
+		(common.GetConfigString("smtp.username") == "" ||
+			common.GetConfigString("smtp.password") == "") {
+		common.Warn("SMTP is enabled but username or password not set")
+	}
+
 	if common.GetConfigBool("otel_enable") {
 		common.InitOtelProvider()
 	}

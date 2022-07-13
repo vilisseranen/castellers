@@ -11,7 +11,7 @@ type config struct {
 	DBName     string     `mapstructure:"db_name"`
 	Domain     string     `mapstructure:"domain"`
 	Debug      bool       `mapstructure:"debug"`
-	SMTPServer string     `mapstructure:"smtp_server"`
+	SMTPServer string     `mapstructure:"smtp.server"`
 	Encryption encryption `mapstructure:"encryption"`
 }
 
@@ -32,9 +32,11 @@ func ReadConfig() {
 	viper.SetDefault("db_name", "castellers.db")
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
-	viper.SetDefault("smtp_server", "127.0.0.1")
-	viper.SetDefault("smtp_port", "25")
-	viper.SetDefault("smtp_enabled", true)
+	viper.SetDefault("smtp.server", "127.0.0.1")
+	viper.SetDefault("smtp.port", "25")
+	viper.SetDefault("smtp.username", "")
+	viper.SetDefault("smtp.password", "")
+	viper.SetDefault("smtp.enabled", true)
 	viper.SetDefault("reminder_time_before_event", 172800)   // 2 days
 	viper.SetDefault("summary_time_before_event", 86400)     // 1 day
 	viper.SetDefault("encryption.iterations", 10000)         // For hashing encryption key
@@ -62,9 +64,11 @@ func ReadConfig() {
 	viper.BindEnv("domain")
 	viper.BindEnv("cdn")
 	viper.BindEnv("debug")
-	viper.BindEnv("smtp_server")
-	viper.BindEnv("smtp_port")
-	viper.BindEnv("smtp_enabled")
+	viper.BindEnv("smtp.server", "APP_SMTP_SERVER")
+	viper.BindEnv("smtp.port", "APP_SMTP_PORT")
+	viper.BindEnv("smtp.username", "APP_SMTP_USERNAME")
+	viper.BindEnv("smtp.password", "APP_SMTP_PASSWORD")
+	viper.BindEnv("smtp.enabled", "APP_SMTP_ENABLED")
 	viper.BindEnv("redis_dsn")
 	viper.BindEnv("reminder_time_before_event")
 	viper.BindEnv("summary_time_before_event")

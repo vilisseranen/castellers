@@ -1,4 +1,4 @@
-FROM vilisseranen/castellers:latest as castellers
+FROM vilisseranen/castellers:dev as castellers
 
 FROM alpine as litestream
 

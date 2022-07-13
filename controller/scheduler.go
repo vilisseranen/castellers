@@ -54,7 +54,7 @@ func checkAndSendNotification() {
 		switch notificationType := notification.NotificationType; notificationType {
 		case model.TypeMemberRegistration:
 			// Send the email
-			if common.GetConfigBool("smtp_enabled") {
+			if common.GetConfigBool("smtp.enabled") {
 				var payload mail.EmailRegisterPayload
 				if err := json.Unmarshal(notification.Payload, &payload); err != nil {
 					common.Error("%v\n", err)
@@ -225,7 +225,7 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
-			if common.GetConfigBool("smtp_enabled") {
+			if common.GetConfigBool("smtp.enabled") {
 				// Get a token to create credentials
 				resetCredentialsToken, err := ResetCredentialsToken(ctx, m.UUID, m.Email, common.GetConfigInt("jwt.reset_ttl_minutes"))
 				if err != nil {
