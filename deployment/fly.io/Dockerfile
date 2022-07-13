@@ -16,7 +16,7 @@ COPY --from=castellers /sql /sql
 COPY --from=castellers /VERSION /VERSION
 COPY --from=litestream /usr/local/bin/litestream /usr/local/bin/litestream
 
-RUN apk add bash
+RUN apk add --no-cache bash sqlite
 
 EXPOSE 8080
 
