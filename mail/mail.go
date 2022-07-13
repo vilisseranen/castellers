@@ -79,7 +79,7 @@ func (e emailInfo) buildEmail() (string, error) {
 func buildHeader(title, to string) string {
 	return "Subject: " + title + "\r\n" +
 		"To: " + to + "\r\n" +
-		"From: Castellers de Montréal <" + common.GetConfigString("smtp_username") + ">\r\n" +
+		"From: Castellers de Montréal <" + common.GetConfigString("smtp.username") + ">\r\n" +
 		"Reply-To: " + common.GetConfigString("reply_to") + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
@@ -97,9 +97,9 @@ func sendMail(ctx context.Context, email emailInfo) error {
 	}
 
 	var auth smtp.Auth
-	auth = smtp.PlainAuth("", common.GetConfigString("smtp_username"), common.GetConfigString("smtp_password"), common.GetConfigString("smtp_server"))
-	addr := common.GetConfigString("smtp_server") + ":" + common.GetConfigString("smtp_port")
-	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp_username"), []string{email.Top.To}, []byte(body)); err != nil {
+	auth = smtp.PlainAuth("", common.GetConfigString("smtp.username"), common.GetConfigString("smtp.password"), common.GetConfigString("smtp.server"))
+	addr := common.GetConfigString("smtp.server") + ":" + common.GetConfigString("smtp.port")
+	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp.username"), []string{email.Top.To}, []byte(body)); err != nil {
 		common.Error(err.Error())
 		return err
 	}

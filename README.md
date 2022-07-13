@@ -16,8 +16,8 @@ Event planning for Montreal castellers
 db_name: castellers.db
 debug: false
 domain: http://<DOMAIN_NAME>:8080
-log_file: castellers.log
-smtp_server: <SMTP_SERVER>:<SMTP_PORT>
+log.file: castellers.log
+smtp.server: <SMTP_SERVER>:<SMTP_PORT>
 ```
 
 - `sudo docker run --name app -d -v app_var_log:/var/log -v app_data:/data -v app_etc:/etc/castellers -p 127.0.0.1:8080:8080/tcp test`
