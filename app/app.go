@@ -50,7 +50,7 @@ func (a *App) Initialize() {
 	a.Router = routes.CreateRouter("static")
 	routes.AttachV1API(a.Router)
 
-	f, err := os.OpenFile(common.GetConfigString("log_file"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(common.GetConfigString("log.file"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		common.Fatal("Error opening file: %v", err)
 	}

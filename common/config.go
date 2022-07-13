@@ -7,7 +7,7 @@ import (
 )
 
 type config struct {
-	LogFile    string     `mapstructure:"log_file"`
+	LogFile    string     `mapstructure:"log.file"`
 	DBName     string     `mapstructure:"db_name"`
 	Domain     string     `mapstructure:"domain"`
 	Debug      bool       `mapstructure:"debug"`
@@ -28,7 +28,8 @@ func ReadConfig() {
 	viper.AddConfigPath(".")
 
 	// setting defaults
-	viper.SetDefault("log_file", "castellers.log")
+	viper.SetDefault("log.file", "castellers.log")
+	viper.SetDefault("log.level", "info")
 	viper.SetDefault("db_name", "castellers.db")
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
@@ -58,7 +59,7 @@ func ReadConfig() {
 
 	// read environment variables
 	viper.SetEnvPrefix("app")
-	viper.BindEnv("log_file")
+	viper.BindEnv("log.file")
 	viper.BindEnv("log.level", "APP_LOG_LEVEL")
 	viper.BindEnv("db_name")
 	viper.BindEnv("domain")

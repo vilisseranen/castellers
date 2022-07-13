@@ -16,7 +16,7 @@ Event planning for Montreal castellers
 db_name: castellers.db
 debug: false
 domain: http://<DOMAIN_NAME>:8080
-log_file: castellers.log
+log.file: castellers.log
 smtp.server: <SMTP_SERVER>:<SMTP_PORT>
 ```
 
