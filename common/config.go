@@ -32,7 +32,8 @@ func ReadConfig() {
 	viper.SetDefault("db_name", "castellers.db")
 	viper.SetDefault("domain", "localhost")
 	viper.SetDefault("debug", false)
-	viper.SetDefault("smtp_server", "127.0.0.1:25")
+	viper.SetDefault("smtp_server", "127.0.0.1")
+	viper.SetDefault("smtp_port", "25")
 	viper.SetDefault("smtp_enabled", true)
 	viper.SetDefault("reminder_time_before_event", 172800)   // 2 days
 	viper.SetDefault("summary_time_before_event", 86400)     // 1 day
@@ -62,6 +63,7 @@ func ReadConfig() {
 	viper.BindEnv("cdn")
 	viper.BindEnv("debug")
 	viper.BindEnv("smtp_server")
+	viper.BindEnv("smtp_port")
 	viper.BindEnv("smtp_enabled")
 	viper.BindEnv("redis_dsn")
 	viper.BindEnv("reminder_time_before_event")
