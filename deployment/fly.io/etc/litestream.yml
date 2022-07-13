@@ -1,5 +1,5 @@
 dbs:
-  - path: /data/castellers.db
+  - path: ${APP_DB_NAME}
     replicas:
       - url: ${REPLICA_URL}
         retention: 2160h # 90 days
