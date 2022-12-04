@@ -215,6 +215,8 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				anEvent.EndDate = date + event.EndDate - event.StartDate
 				anEvent.RecurringEvent = recurringEvent.UUID
 				anEvent.Type = event.Type
+				anEvent.Location = event.Location
+				anEvent.LocationName = event.LocationName
 				events = append(events, anEvent)
 
 				// Adjust for Daylight Saving Time
