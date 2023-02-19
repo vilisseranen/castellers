@@ -1,0 +1,23 @@
+---
+name: 'Validate after merge and deploy'
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  verify_version:
+    uses: ./.github/workflows/job_check_version.yml
+  test:
+    uses: ./.github/workflows/job_test.yml
+  docker:
+    needs: [test, verify_version]
+    uses: ./.github/workflows/job_docker_image.yml
+    with:
+      tags: |
+        latest
+        ${{ needs.verify_version.outputs.version }}
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}

@@ -1,0 +1,21 @@
+---
+name: 'Validate PR before merge'
+
+on:
+  pull_request:
+
+jobs:
+  verify_version:
+    uses: ./.github/workflows/job_check_version.yml
+  test:
+    uses: ./.github/workflows/job_test.yml
+  docker:
+    needs: [test]
+    uses: ./.github/workflows/job_docker_image.yml
+    with:
+      tags: |
+        dev
+        ${{ github.sha }}
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
