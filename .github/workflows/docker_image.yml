@@ -11,11 +11,9 @@ on:
       DOCKER_HUB_USERNAME:
         description: 'Docker Hub username'
         required: true
-        type: string
       DOCKER_HUB_PASSWORD:
         description: 'Docker Hub password'
         required: true
-        type: string
 
 jobs:
   docker:
