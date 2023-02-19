@@ -19,7 +19,8 @@ jobs:
         id: prep
         run: |
           DOCKER_IMAGE=""
-          TAGS=(${${inputs.tags}//\n/ })
+          TAGS="${{ inputs.tags }}"
+          TAGS=(${TAGS//\n/ })
           for tag in "${!TAGS[@]}"
           do
             DOCKER_IMAGE=$DOCKER_IMAGE+"${{ github.repository }}:$tag"
