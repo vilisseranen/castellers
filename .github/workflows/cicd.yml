@@ -7,6 +7,18 @@ env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
 jobs:
+  verify-version:
+    name: Verify VERSION has changed
+    steps:
+      - uses: actions/checkout@v3
+      - uses: tj-actions/verify-changed-files@v13
+        id: verify-changed-version
+        with:
+          files:
+            - VERSION
+      - if: steps.verify-changed-version.outputs.files_changed == 'false'
+        run: |
+        exit 1
   go-versions:
     name: Lookup go versions
     runs-on: ubuntu-latest
