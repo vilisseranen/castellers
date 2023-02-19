@@ -15,7 +15,7 @@ jobs:
     uses: ./.github/workflows/build_test.yml
   docker:
     if: (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
-    uses: ./.github/workflows/docker.yml
+    uses: ./.github/workflows/docker_image.yml
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
