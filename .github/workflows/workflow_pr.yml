@@ -8,6 +8,7 @@ jobs:
   verify_version:
     uses: ./.github/workflows/job_check_version.yml
   show_version:
+    runs-on: ubuntu-latest
     needs: [verify_version]
     steps:
       - name: show version
