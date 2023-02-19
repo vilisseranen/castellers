@@ -5,7 +5,7 @@ on:
     outputs:
       version:
         description: "version specified from VERSION"
-        value: ${{ jobs.verify_version.outputs.version }}
+        value: ${{ jobs.verify-version.outputs.version }}
       
 jobs:
   verify-version:
