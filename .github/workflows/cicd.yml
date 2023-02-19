@@ -18,7 +18,7 @@ jobs:
             - VERSION
       - if: steps.verify-changed-version.outputs.files_changed == 'false'
         run: |
-        exit 1
+          exit 1
   go-versions:
     name: Lookup go versions
     runs-on: ubuntu-latest
