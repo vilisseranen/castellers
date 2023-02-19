@@ -14,5 +14,5 @@ jobs:
           FILES: |
             VERSION
       - name: Cancel the build if VERSION has not changed
-        if: !steps.verify-changed-version.outputs.diff
+        if: steps.verify-changed-version.outputs.count == 0
         uses: andymckay/cancel-action@0.3
