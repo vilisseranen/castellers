@@ -21,6 +21,9 @@ jobs:
       tags: |
         dev
         ${{ github.sha }}
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
