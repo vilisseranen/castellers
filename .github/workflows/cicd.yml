@@ -11,16 +11,7 @@ jobs:
     name: Verify VERSION has changed
     runs-on: ubuntu-latest
     if: (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
-    steps:
-      - uses: actions/checkout@v3
-      - uses: tj-actions/verify-changed-files@v13
-        id: verify-changed-version
-        with:
-          files: |
-            VERSION
-      - name: Cancel the build if VERSION has not changed
-        if: steps.verify-changed-version.outputs.files_changed == 'false'
-        uses: andymckay/cancel-action@0.3
+    uses: ./.github/workflows/check_versions.yml
   go-versions:
     name: Lookup go versions
     runs-on: ubuntu-latest
