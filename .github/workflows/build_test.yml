@@ -2,6 +2,7 @@ name: 'Build and test'
 
 on: [workflow_call]
 
+jobs:
   go-versions:
     name: Lookup go versions
     runs-on: ubuntu-latest
