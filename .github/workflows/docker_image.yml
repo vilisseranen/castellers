@@ -32,7 +32,6 @@ jobs:
           do
             DOCKER_IMAGE=$DOCKER_IMAGE+"${{ github.repository }}:$tag"
           done
-          DOCKER_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${GITHUB_REPOSITORY#*/}
           echo ::set-output name=tags::${DOCKER_IMAGE}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
