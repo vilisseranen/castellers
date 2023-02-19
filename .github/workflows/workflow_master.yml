@@ -9,10 +9,10 @@ on:
 jobs:
   verify_version:
     uses: ./.github/workflows/job_check_version.yml
-  build_test:
+  test:
     uses: ./.github/workflows/job_test.yml
   docker:
-    needs: [build_test, verify_version]
+    needs: [test, verify_version]
     uses: ./.github/workflows/job_docker_image.yml
     with:
       tags: |
