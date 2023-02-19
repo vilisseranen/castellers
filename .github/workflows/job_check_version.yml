@@ -6,6 +6,10 @@ on:
       version:
         description: "version specified from VERSION"
         value: ${{ jobs.verify-version.outputs.version }}
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
       
 jobs:
   verify-version:
