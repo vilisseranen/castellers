@@ -18,7 +18,7 @@ jobs:
         with:
           files: |
             VERSION
-      - name: Fails if VERSION has not changed
+      - name: Cancel the build if VERSION has not changed
         if: steps.verify-changed-version.outputs.files_changed == 'false'
         uses: andymckay/cancel-action@0.3
   go-versions:
