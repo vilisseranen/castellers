@@ -1,0 +1,20 @@
+name: 'Build and push docker image'
+
+on:
+  workflow_call:
+    secrets:
+      FLY_API_TOKEN:
+        description: 'TOken to deploy to fly.io'
+        required: true
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --no-cache --config deployment/fly.io/fly.toml
