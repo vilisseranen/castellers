@@ -1,13 +1,22 @@
 name: 'Check version'
 
-on: [workflow_call]
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: "version specified from VERSION"
+      
 
 jobs:
   verify-version:
     name: Verify VERSION has changed
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read_version.outputs.version }}
     steps:
       - uses: actions/checkout@v3
+      - id: read_version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
       - uses: technote-space/get-diff-action@v6
         id: verify-changed-version
         with:
