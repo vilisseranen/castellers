@@ -9,8 +9,10 @@ jobs:
     uses: ./.github/workflows/job_check_version.yml
   show_version:
     needs: [verify_version]
-    run: |
-      echo ${{ needs.verify_version.outputs.version }}
+    steps:
+      - name: show version
+        run: |
+          echo ${{ needs.verify_version.outputs.version }}
   # test:
   #   uses: ./.github/workflows/job_test.yml
   # docker:
