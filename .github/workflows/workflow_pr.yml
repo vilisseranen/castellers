@@ -15,7 +15,6 @@ jobs:
     with:
       tags: |
         dev
-        ${{ needs.verify_version.outputs.version }}
         ${{ github.sha }}
     secrets:
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
