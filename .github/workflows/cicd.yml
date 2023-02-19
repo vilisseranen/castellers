@@ -14,8 +14,8 @@ jobs:
       - uses: tj-actions/verify-changed-files@v13
         id: verify-changed-version
         with:
-          files:
-            - VERSION
+          files: |
+            VERSION
       - if: steps.verify-changed-version.outputs.files_changed == 'false'
         run: |
           exit 1
