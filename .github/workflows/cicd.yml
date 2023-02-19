@@ -20,8 +20,7 @@ jobs:
             VERSION
       - name: Fails if VERSION has not changed
         if: steps.verify-changed-version.outputs.files_changed == 'false'
-        run: |
-          exit 1
+        uses: andymckay/cancel-action@0.3
   go-versions:
     name: Lookup go versions
     runs-on: ubuntu-latest
