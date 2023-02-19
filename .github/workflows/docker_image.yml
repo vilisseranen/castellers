@@ -28,9 +28,9 @@ jobs:
           DOCKER_IMAGE=""
           TAGS="${{ inputs.tags }}"
           TAGS=(${TAGS//\n/ })
-          for tag in "${!TAGS[@]}"
+          for tag in "${TAGS[@]}"
           do
-            DOCKER_IMAGE=$DOCKER_IMAGE+"${{ github.repository }}:$tag,"
+            DOCKER_IMAGE="${DOCKER_IMAGE}${{ github.repository }}:$tag,"
           done
           echo ::set-output name=tags::${DOCKER_IMAGE}
       - name: Set up QEMU
