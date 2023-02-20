@@ -18,13 +18,14 @@ jobs:
       - id: read_version
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
       - id: verify-changed-version
-        run: |
-          git diff ${{ github.head_ref }} ${{ github.base_ref }} --exit-code -- VERSION
-          echo "version_changed=$?" >> $GITHUB_OUTPUT
+        uses: technote-space/get-diff-action@v6
+        with:
+          PATTERNS: |
+            VERSION
       - name: Cancel the build if VERSION has not changed
-        if: steps.verify-changed-version.outputs.modified == 0
+        if: steps.verify-changed-version.outputs.count == 0
         uses: andymckay/cancel-action@0.3
       - name: Fail the job if VERSION has not changed
-        if: steps.verify-changed-version.outputs.modified == 0
+        if: steps.verify-changed-version.outputs.count == 0
         run: |
           exit 1
