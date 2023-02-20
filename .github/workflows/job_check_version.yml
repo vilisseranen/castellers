@@ -24,7 +24,7 @@ jobs:
       - id: verify-changed-version
         run: |
           git diff --exit-code VERSION
-          echo "version_changed=$? >> $GITHUB_OUTPUT
+          echo "version_changed=$?" >> $GITHUB_OUTPUT
       - name: Cancel the build if VERSION has not changed
         if: steps.verify-changed-version.outputs.modified == 0
         uses: andymckay/cancel-action@0.3
