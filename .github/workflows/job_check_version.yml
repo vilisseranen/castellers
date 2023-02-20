@@ -21,10 +21,16 @@ jobs:
       - uses: actions/checkout@v3
       - id: read_version
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
-      - uses: mudlabs/simple-diff@v1.2.0
-        id: verify-changed-version
+      - id: verify-changed-version
+        run: |
+          git diff --exit-code VERSION
+          echo "version_changed=$? >> $GITHUB_OUTPUT
         with:
           path: VERSION
       - name: Cancel the build if VERSION has not changed
-        if: steps.verify-changed-version.outputs.modified == false
+        if: steps.verify-changed-version.outputs.modified == 0
         uses: andymckay/cancel-action@0.3
+      - name: Fail the job if VERSION has not changed
+        if: steps.verify-changed-version.outputs.modified == 0
+        run: |
+          exit 1
