@@ -23,7 +23,7 @@ jobs:
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
       - id: verify-changed-version
         run: |
-          git diff ${{ vars.GITHUB_REF_NAME }}..${{ vars.GITHUB_BASE_REF }} --exit-code -- VERSION
+          git diff ${{ env.GITHUB_REF_NAME }}..${{ env.GITHUB_BASE_REF }} --exit-code -- VERSION
           echo "version_changed=$?" >> $GITHUB_OUTPUT
       - name: Cancel the build if VERSION has not changed
         if: steps.verify-changed-version.outputs.modified == 0
