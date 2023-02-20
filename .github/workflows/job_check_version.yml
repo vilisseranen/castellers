@@ -5,7 +5,7 @@ on:
     outputs:
       version:
         description: "version specified from VERSION"
-        value: ${{ jobs.verify_version.outputs.version }}
+        value: ${{ jobs.verify-version.outputs.version }}
       
 jobs:
   verify-version:
@@ -17,11 +17,15 @@ jobs:
       - uses: actions/checkout@v3
       - id: read_version
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
-      - uses: technote-space/get-diff-action@v6
-        id: verify-changed-version
+      - id: verify-changed-version
+        uses: technote-space/get-diff-action@v6
         with:
-          FILES: |
+          PATTERNS: |
             VERSION
       - name: Cancel the build if VERSION has not changed
         if: steps.verify-changed-version.outputs.count == 0
         uses: andymckay/cancel-action@0.3
+      - name: Fail the job if VERSION has not changed
+        if: steps.verify-changed-version.outputs.count == 0
+        run: |
+          exit 1
