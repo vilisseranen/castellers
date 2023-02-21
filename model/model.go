@@ -8,7 +8,7 @@ import (
 	"github.com/XSAM/otelsql"
 	_ "github.com/mattn/go-sqlite3"
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/vilisseranen/castellers/common"
@@ -27,7 +27,9 @@ var tracer = otel.Tracer("castellers")
 
 func InitializeDB(dbname string) {
 	var err error
-	driverName, err := otelsql.Register("sqlite3", semconv.DBSystemSqlite.Value.AsString())
+	driverName, err := otelsql.Register("sqlite3", otelsql.WithAttributes(
+		semconv.DBSystemSqlite,
+	))
 	if err != nil {
 		common.Fatal(err.Error())
 	}

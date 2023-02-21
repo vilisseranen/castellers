@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-redis/redis/extra/redisotel/v8"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 
 	"github.com/vilisseranen/castellers/common"
@@ -48,7 +48,9 @@ func InitializeRedis() {
 	if err != nil {
 		common.Fatal(err.Error())
 	}
-	RedisClient.AddHook(redisotel.TracingHook{})
+	if err := redisotel.InstrumentTracing(RedisClient); err != nil {
+		panic(err)
+	}
 }
 
 func Version(w http.ResponseWriter, r *http.Request) {
