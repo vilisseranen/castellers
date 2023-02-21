@@ -1,6 +1,8 @@
-FROM --platform=$BUILDPLATFORM golang:1.20 as builder
+FROM --platform=$BUILDPLATFORM golang:1.20-alpine as builder
 
-RUN apt-get update && apt-get install -y gcc-aarch64-linux-gnu
+RUN apk add gcc g++
+RUN wget -P / https://musl.cc/aarch64-linux-musl-cross.tgz
+RUN tar -xvf /aarch64-linux-musl-cross.tgz -C /
 
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
@@ -8,7 +10,7 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=aarch64-linux-gnu-gcc; fi && \
+RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc; fi && \
     env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=$CC go build -ldflags='-s -w -extldflags "-static"' -o /go/bin/import
 
 FROM scratch
