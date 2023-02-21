@@ -1,4 +1,6 @@
-FROM --platform=$BUILDPLATFORM golang:1.16 as builder
+ARG BUILDPLATFORM
+
+FROM --platform=$BUILDPLATFORM golang:1.20 as builder
 
 RUN apt-get update && apt-get install -y gcc-aarch64-linux-gnu
 
