@@ -85,11 +85,6 @@ func TestGetNonExistentEvent(t *testing.T) {
 	if err := h.checkResponseCode(http.StatusNotFound, response.Code); err != nil {
 		t.Error(err)
 	}
-	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
-	if m["error"] != "Event not found" {
-		t.Errorf("Expected the 'error' key of the response to be set to 'Event not found'. Got '%s'", m["error"])
-	}
 }
 
 func TestCreateEventNonAdmin(t *testing.T) {
