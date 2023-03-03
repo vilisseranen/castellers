@@ -60,7 +60,7 @@ func TestCreateMemberCanalla(t *testing.T) {
 		"height": "70",
 		"weight": "11",
 		"extra":"bébé",
-		"roles": [""],
+		"roles": [],
 		"type": "canalla",
 		"email": "",
 		"contact": "514-111-1111",
@@ -73,6 +73,7 @@ func TestCreateMemberCanalla(t *testing.T) {
 
 	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
 		t.Error(err)
+		t.Error(response.Body)
 	}
 
 	var m map[string]interface{}
@@ -163,8 +164,7 @@ func TestCreateMemberNoExtra(t *testing.T) {
 		t.Errorf("Expected roles to be nil. Got '%v'", m["roles"])
 	}
 
-	var memberUUID string
-	memberUUID = m["uuid"].(string)
+	memberUUID := m["uuid"].(string)
 
 	req, _ = http.NewRequest("GET", "/api/v1/members/"+memberUUID, nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
