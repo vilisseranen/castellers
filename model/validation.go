@@ -41,6 +41,7 @@ var ValidMemberTypes = []string{
 	MEMBERSTYPEADMIN,
 	MEMBERSTYPEREGULAR,
 	MEMBERSTYPEGUEST,
+	MEMBERSTYPECANALLA,
 }
 
 func ValidateRoles(roles []string) error {

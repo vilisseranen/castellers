@@ -15,6 +15,7 @@ const (
 
 	MEMBERSTYPEADMIN   = "admin"
 	MEMBERSTYPEREGULAR = "member"
+	MEMBERSTYPECANALLA = "canalla"
 	MEMBERSTYPEGUEST   = "guest"
 
 	MEMBERSSTATUSCREATED   = "created"

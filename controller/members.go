@@ -114,13 +114,13 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
 		return
 	}
-	if m.Type != model.MEMBERSTYPEGUEST {
+	if m.Type != model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPECANALLA {
 		if !emailAvailable(ctx, m) {
 			common.Info("Email not available: %s", m.Email)
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
-	} else if m.Type == model.MEMBERSTYPEGUEST {
+	} else {
 		m.Email = ""
 	}
 	if missingRequiredFields(m) {
@@ -169,7 +169,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// When a guest is converted to a regular, we need to set the status to created
-	if m.Type == model.MEMBERSTYPEGUEST {
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA {
 		err := m.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
 		if err != nil {
 			common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
@@ -264,7 +264,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 		// Check if we can change role
 		// If caller is admin, we can change the role
-		// If caller is member, we cannot change he role
+		// If caller is member, we cannot change the role
 		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			// get current user and use existing values for roles, extra and type
 			existingMember := model.Member{UUID: UUID}
@@ -294,7 +294,8 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// When a guest is converted to a regular, we need to set the status to created
-		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST {
+		// Does not apply to canalla, they will stay activated and won't receive the welcome email
+		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPECANALLA {
 			err := m.SetStatus(ctx, model.MEMBERSSTATUSCREATED)
 			if err != nil {
 				common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
@@ -369,8 +370,8 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if m.Type == model.MEMBERSTYPEGUEST {
-		common.Warn("Cannot send a registration email to a guest: %s")
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA {
+		common.Warn("Cannot send a registration email to a %s (%s)", m.Type, m.UUID)
 		RespondWithError(w, http.StatusForbidden, ERRORGUESTREGISTRATIONEMAIL)
 		return
 	}
@@ -401,7 +402,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 
 func missingRequiredFields(m model.Member) bool {
 	missingFields := false
-	if m.Type == model.MEMBERSTYPEGUEST { // Guests don't have an email
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA { // Guests don't have an email
 		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Language == "")
 	} else {
 		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
@@ -510,7 +511,8 @@ func memberTypeListFromQuery(queryParam string) []string {
 		if mType != "" && common.StringInSlice(mType, []string{
 			model.MEMBERSTYPEADMIN,
 			model.MEMBERSTYPEGUEST,
-			model.MEMBERSTYPEREGULAR}) {
+			model.MEMBERSTYPEREGULAR,
+			model.MEMBERSTYPECANALLA}) {
 			memberTypeList = append(memberTypeList, mType)
 		}
 	}
