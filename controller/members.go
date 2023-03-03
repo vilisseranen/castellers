@@ -473,23 +473,6 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusOK, "")
 }
 
-// Returns true if it's valid, false otherwise
-func validateChangeType(ctx context.Context, m model.Member, code string, adminUuid string) bool {
-	ctx, span := tracer.Start(ctx, "validateChangeType")
-	defer span.End()
-	// Make sure a user does not promote him or herself
-	currentUser := model.Member{UUID: m.UUID}
-	// If member does not exist can't do any action.
-	if err := currentUser.Get(ctx); err != nil {
-		return false
-	}
-
-	if currentUser.Type == model.MEMBERSTYPEREGULAR && m.Type == model.MEMBERSTYPEADMIN && adminUuid == "" {
-		return false
-	}
-	return true
-}
-
 func memberStatusListFromQuery(queryParam string) []string {
 	memberStatusList := []string{}
 	for _, status := range strings.Split(queryParam, ",") {
