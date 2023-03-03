@@ -50,6 +50,42 @@ func TestCreateMember(t *testing.T) {
 	}
 }
 
+func TestCreateMemberCanalla(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+
+	payload := []byte(`{
+		"firstName":"Hugo",
+		"lastName": "Contini",
+		"height": "70",
+		"weight": "11",
+		"extra":"bébé",
+		"roles": [""],
+		"type": "canalla",
+		"email": "",
+		"contact": "514-111-1111",
+		"language": "fr",
+		"subscribed": 0}`)
+
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["firstName"] != "Hugo" {
+		t.Errorf("Expected member first name to be 'Hugo'. Got '%v'", m["firstName"])
+	}
+	if m["type"] != "canalla" {
+		t.Errorf("Expected extra to be 'canalla'. Got '%v'", m["extra"])
+	}
+}
+
 func TestCreateMemberInvalidRole(t *testing.T) {
 	h.clearTables()
 	access_token := h.addAnAdmin()
@@ -459,5 +495,42 @@ func TestUpdateSelf(t *testing.T) {
 
 	if m["height"] != "180" {
 		t.Errorf("Expected extra to be '180'. Got '%v'", m["height"])
+	}
+}
+
+func TestAddAndRemoveDependant(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
+	h.addMember("456", "child2_first_name", "child2_last_name", "", "", "", "", "canalla", "", "")
+
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var d []map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &d)
+
+	if len(d) != 1 {
+		t.Errorf("Expected only 1 dependant. Got '%v'", len(d))
+	} else if d[0]["uuid"] != "123" {
+		t.Errorf("Expected first dependant to be '123'. Got '%v'", d[0]["uuid"])
+	}
+
+	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/123", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusAccepted, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	json.Unmarshal(response.Body.Bytes(), &d)
+	if len(d) > 0 {
+		t.Errorf("Expected 0 dependant. Got '%v'", len(d))
 	}
 }
