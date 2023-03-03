@@ -89,7 +89,7 @@ func ReadConfig() {
 	var c config
 	err = viper.Unmarshal(&c)
 	if err != nil {
-		panic(fmt.Errorf("Unable to parse configuration, %v", err))
+		panic(fmt.Errorf("unable to parse configuration, %v", err))
 	}
 
 	if !viper.IsSet("cdn") {

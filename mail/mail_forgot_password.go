@@ -1,9 +1,7 @@
 package mail
 
 import (
-	"bytes"
 	"context"
-	"html/template"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
@@ -13,36 +11,6 @@ type EmailForgotPasswordPayload struct {
 	Member      model.Member      `json:"member"`
 	Token       string            `json:"token"`
 	Credentials model.Credentials `json:"credentials"`
-}
-
-type emailForgotInfo struct {
-	Subject                string
-	MemberName             string
-	SubjectInfo            string
-	ResetRequestedTitle    string
-	ResetRequestedText     string
-	ResetNotRequestedTitle string
-	ResetNotRequestedText  string
-	Reset                  string
-	ResetText              string
-	ResetLink              string
-	ResetButton            string
-	ImageSource            string
-	Language               string
-}
-
-func (e emailForgotInfo) GetBody() (string, error) {
-	t, err := template.ParseFiles("mail/templates/email_forgot_body.html")
-	if err != nil {
-		common.Error("Error parsing template: " + err.Error())
-		return "", err
-	}
-	body := new(bytes.Buffer)
-	if err = t.Execute(body, e); err != nil {
-		common.Error("Error generating template: " + err.Error())
-		return "", err
-	}
-	return body.String(), nil
 }
 
 func SendForgotPasswordEmail(ctx context.Context, payload EmailForgotPasswordPayload) error {

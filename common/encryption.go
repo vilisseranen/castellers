@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"fmt"
 	"io"
 
 	"golang.org/x/crypto/bcrypt"
@@ -53,7 +52,7 @@ func Decrypt(data []byte) string {
 	if err != nil {
 		panic(err.Error())
 	}
-	return fmt.Sprintf("%s", plaintext)
+	return string(plaintext)
 }
 
 func GenerateFromPassword(password string) ([]byte, error) {
