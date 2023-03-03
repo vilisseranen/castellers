@@ -16,7 +16,7 @@
     "registration_instructions": "Grâce à ce système, tu vas pouvoir nous informer de tes disponibilités pour les pratiques et les évènements. Nous t'enverrons régulièrement des courriels te permettant de nous dire si tu seras présent ou non.",
     "registration_thanks": "Merci de ta participation, nous avons hâte de bâtir des castells avec toi!",
     "forgot_title": "Réinitialisation du mot de passe",
-    "forgot_subject_info": "nous avons reçu une demande de réinitialisation de ton mot de passe.",
+    "forgot_subject_info": "Nous avons reçu une demande de réinitialisation de ton mot de passe.",
     "forgot_reset_requested_title": "Si tu as perdu ton mot de passe",
     "forgot_reset_requested_text": "Tu as effectivement demandé une réinitialisation de ton mot de passe. Tu peux utiliser le lien ci-dessous pour choisir un nouveau mot de passe.",
     "forgot_reset_not_requested_title": "Si tu n'as pas demandé de réinitialisation",

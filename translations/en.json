@@ -16,7 +16,7 @@
     "registration_instructions": "With this system, you will be able to tell us about your availability for practices and events. We will send emails regularly so that you can tell us if you will be there or not.",
     "registration_thanks": "Thanks for your participation, we can't wait to build castells with you!",
     "forgot_title": "Password reset",
-    "forgot_subject_info": "we received a request to reset your password.",
+    "forgot_subject_info": "We received a request to reset your password.",
     "forgot_reset_requested_title": "If you lost your password",
     "forgot_reset_requested_text": "You made the request to reset your password. You can use the link below to choose a new password.",
     "forgot_reset_not_requested_title": "You did not ask for the reset",
