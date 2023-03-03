@@ -3,8 +3,8 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
@@ -14,16 +14,15 @@ import (
 )
 
 const (
-	ERRORINVALIDPAYLOAD = "Invalid request payload"
-	ERRORINTERNAL       = "Internal error"
-	ERRORNOTIFICATION   = "Error creating notification"
-	ERRORAUTHENTICATION = "Error with the provided token"
-	ERRORMISSINGFIELDS  = "Missing fields in request payload"
-	ERRORUNAUTHORIZED   = "You are not authorized to perform this action."
+	ERRORINVALIDPAYLOAD = "invalid request payload"
+	ERRORINTERNAL       = "internal error"
+	ERRORNOTIFICATION   = "error creating notification"
+	ERRORAUTHENTICATION = "error with the provided token"
+	ERRORMISSINGFIELDS  = "missing fields in request payload"
+	ERRORUNAUTHORIZED   = "you are not authorized to perform this action."
 )
 
 var RedisClient *redis.Client
-var version string
 var tracer = otel.Tracer("castellers")
 
 func RespondWithError(w http.ResponseWriter, code int, message string) {
@@ -54,7 +53,7 @@ func InitializeRedis() {
 }
 
 func Version(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadFile("VERSION")
+	b, err := os.ReadFile("VERSION")
 	if err != nil {
 		common.Fatal(err.Error())
 	}

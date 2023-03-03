@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	ERRORGETCASTELLTYPE       = "Error getting castell type"
-	ERRORGETCASTELLLIST       = "Error getting castell list"
-	ERRORGETCASTELLMODEL      = "Error getting castell model"
-	ERRORCASTELLMODELNOTFOUND = "Castell model not found"
-	ERRORCASTELLTYPENOTFOUND  = "Castell type not found"
-	ERRORDELETECASTELLMODEL   = "Error deleting castell model"
-	ERRORCREATECASTELLMODEL   = "Error creating castell model"
-	ERRORUPDATECASTELLMODEL   = "Error editing castell model"
-	ERRORADDCASTELLTOEVENT    = "Error adding castell model to event"
-	ERRORREMOVECASTELLTOEVENT = "Error removing castell model from event"
+	ERRORGETCASTELLTYPE       = "error getting castell type"
+	ERRORGETCASTELLLIST       = "error getting castell list"
+	ERRORGETCASTELLMODEL      = "error getting castell model"
+	ERRORCASTELLMODELNOTFOUND = "castell model not found"
+	ERRORCASTELLTYPENOTFOUND  = "castell type not found"
+	ERRORDELETECASTELLMODEL   = "error deleting castell model"
+	ERRORCREATECASTELLMODEL   = "error creating castell model"
+	ERRORUPDATECASTELLMODEL   = "error editing castell model"
+	ERRORADDCASTELLTOEVENT    = "error adding castell model to event"
+	ERRORREMOVECASTELLTOEVENT = "error removing castell model from event"
 )
 
 func GetCastellType(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +116,7 @@ func GetCastellModels(w http.ResponseWriter, r *http.Request) {
 	event := r.URL.Query().Get("event")
 
 	m := model.CastellModel{}
-	models := []model.CastellModel{}
+	var models []model.CastellModel
 	if event != "" {
 		common.Debug("Getting models for event %s", event)
 		e := model.Event{UUID: event}

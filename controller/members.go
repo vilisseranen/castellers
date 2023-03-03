@@ -18,24 +18,24 @@ import (
 )
 
 const (
-	ERRORGETMEMBER              = "Error getting member"
-	ERRORGETMEMBERS             = "Error getting members"
-	ERRORCREATEMEMBER           = "Error creating member"
-	ERRORMEMBERNOTFOUND         = "Member not found"
-	ERRORMEMBERHEIGHT           = "Error with provided height"
-	ERRORMEMBERWEIGHT           = "Error with the provided weight"
-	ERRORMEMBERROLES            = "Error with the provided roles"
-	ERRORMEMBERLANGUAGE         = "Error with the provided language"
-	ERRORMEMBERTYPE             = "Error with the provided type"
-	ERRORUPDATEMEMBER           = "Error updating member"
-	ERRORDELETEMEMBER           = "Error deleting member"
-	ERRORREGISTRATIONEMAIL      = "Error sending the registration email"
-	ERRORRESETCREDENTIALS       = "Error resetting credentials"
-	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
-	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
-	ERRORUPDATEMEMBERTYPE       = "Error changing the type of the member"
-	ERRORACTIVATINGMEMBER       = "Error setting the member as active"
-	ERRORCHANGINGMEMBERSTATUS   = "Error changing the status of the member"
+	ERRORGETMEMBER              = "error getting member"
+	ERRORGETMEMBERS             = "error getting members"
+	ERRORCREATEMEMBER           = "error creating member"
+	ERRORMEMBERNOTFOUND         = "member not found"
+	ERRORMEMBERHEIGHT           = "error with provided height"
+	ERRORMEMBERWEIGHT           = "error with the provided weight"
+	ERRORMEMBERROLES            = "error with the provided roles"
+	ERRORMEMBERLANGUAGE         = "error with the provided language"
+	ERRORMEMBERTYPE             = "error with the provided type"
+	ERRORUPDATEMEMBER           = "error updating member"
+	ERRORDELETEMEMBER           = "error deleting member"
+	ERRORREGISTRATIONEMAIL      = "error sending the registration email"
+	ERRORRESETCREDENTIALS       = "error resetting credentials"
+	ERROREMAILUNAVAILABLE       = "this email is already used by another member."
+	ERRORGUESTREGISTRATIONEMAIL = "guests cannot receive the registration email."
+	ERRORUPDATEMEMBERTYPE       = "error changing the type of the member"
+	ERRORACTIVATINGMEMBER       = "error setting the member as active"
+	ERRORCHANGINGMEMBERSTATUS   = "error changing the status of the member"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +77,6 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 	}
 	common.Info("Permissions: %s", tokenAuth.Permissions)
 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
-	return
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {

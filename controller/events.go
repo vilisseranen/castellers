@@ -18,15 +18,15 @@ import (
 )
 
 const (
-	ERROREVENTNOTFOUND        = "Event not found"
-	ERRORGETEVENT             = "Error getting event"
-	ERRORGETEVENTS            = "Error getting events"
-	ERRORGETPRESENCE          = "Error getting presence"
-	ERRORGETATTENDANCE        = "Error getting attendance"
-	ERRORCREATERECURRINGEVENT = "Error creating recurring event"
-	ERRORGETTINGTIMEZONE      = "Error getting timezone"
-	ERRORUPDATEEVENT          = "Error updating event"
-	ERRORDELETEEVENT          = "Error deleting event"
+	ERROREVENTNOTFOUND        = "event not found"
+	ERRORGETEVENT             = "error getting event"
+	ERRORGETEVENTS            = "error getting events"
+	ERRORGETPRESENCE          = "error getting presence"
+	ERRORGETATTENDANCE        = "error getting attendance"
+	ERRORCREATERECURRINGEVENT = "error creating recurring event"
+	ERRORGETTINGTIMEZONE      = "error getting timezone"
+	ERRORUPDATEEVENT          = "error updating event"
+	ERRORDELETEEVENT          = "error deleting event"
 )
 
 // Regex to match any positive number followed by w (week) or d (days)
@@ -167,7 +167,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	common.Debug("Creating event: %s", event)
 
 	// Validation on events data
-	if validEventData(ctx, event) == false {
+	if !validEventData(ctx, event) {
 		common.Debug("Invalid request payload: %s", event)
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
@@ -292,7 +292,7 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// Validation on events data
-	if validEventData(ctx, e) == false {
+	if !validEventData(ctx, e) {
 		common.Debug("Invalid request payload: %s", e)
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
@@ -359,7 +359,7 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func validEventData(ctx context.Context, event model.Event) bool {
-	ctx, span := tracer.Start(ctx, "validEventData")
+	_, span := tracer.Start(ctx, "validEventData")
 	defer span.End()
 
 	var valid = true
