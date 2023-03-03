@@ -195,16 +195,13 @@ func checkAndSendNotification() {
 			sort.Slice(members, func(i, j int) bool { return members[i].Participation > members[j].Participation })
 			// Send email to all admins
 			for _, member := range members {
-				if member.Type == model.MEMBERSTYPEADMIN {
-					// Send the email
-					if member.Subscribed == 1 {
-						// get eventDate as a string
-						payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
-						if err := mail.SendSummaryEmail(ctx, payload); err != nil {
-							common.Error("%v\n", err)
-							failures += 1
-							continue
-						}
+				if member.Type == model.MEMBERSTYPEADMIN && member.Subscribed == 1 { // Send the email
+					// get eventDate as a string
+					payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
+					if err := mail.SendSummaryEmail(ctx, payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
 					}
 				}
 			}
