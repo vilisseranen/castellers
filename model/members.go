@@ -24,7 +24,7 @@ const (
 	MEMBERSSTATUSDELETED   = "deleted"
 	MEMBERSSTATUSPURGED    = "purged"
 
-	MEMBERSEMAILNOTFOUNDMESSAGE = "No member found with this email"
+	MEMBERSEMAILNOTFOUNDMESSAGE = "no member found with this email"
 )
 
 type Member struct {
@@ -62,12 +62,12 @@ func (m *Member) CreateMember(ctx context.Context) error {
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
 		common.Error("Error: %v on member: %v", err.Error(), m)
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		stringOrNull(m.UUID),
@@ -104,12 +104,12 @@ func (m *Member) EditMember(ctx context.Context) error {
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
 		MEMBERSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
 		common.Error("%v\n")
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx,
 		common.Encrypt(m.FirstName),
 		common.Encrypt(m.LastName),
@@ -142,10 +142,10 @@ func (m *Member) Get(ctx context.Context) error {
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s WHERE uuid= ? AND status != '%s'",
 		MEMBERSTABLE, MEMBERSSTATUSDELETED))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	var rolesAsString string
 	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language)
 	if err == nil {
@@ -202,11 +202,11 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	query := strings.Join(queryString, " WHERE ")
 	common.Debug("SQL query: %s; params(values=%v)", query, queryValues)
 	rows, err := db.QueryContext(ctx, query, queryValues...)
-	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return nil, err
 	}
+	defer rows.Close()
 
 	members := []Member{}
 
@@ -238,11 +238,11 @@ func (m *Member) DeleteMember(ctx context.Context) error {
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status='%s' WHERE uuid=?",
 		MEMBERSTABLE, MEMBERSSTATUSDELETED))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, m.UUID)
 	return err
@@ -252,18 +252,17 @@ func (m *Member) sanitizeEmptyRoles() {
 	if len(m.Roles) == 1 && m.Roles[0] == "" {
 		m.Roles = []string{}
 	}
-	return
 }
 
 func (m *Member) SetStatus(ctx context.Context, status string) error {
 	ctx, span := tracer.Start(ctx, "Member.SetStatus")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status = ? WHERE uuid= ?", MEMBERSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, status, m.UUID)
 	return err
 }
@@ -277,22 +276,22 @@ func (c *Credentials) ResetCredentials(ctx context.Context, username string, pas
 		common.Fatal(err.Error())
 	}
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MEMBERSCREDENTIALSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, c.UUID)
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
 	stmt, err = db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, username, password) VALUES (?, ?, ?)", MEMBERSCREDENTIALSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, c.UUID, username, password)
 	return err
@@ -304,10 +303,10 @@ func (c *Credentials) GetCredentials(ctx context.Context) error {
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT uuid, password FROM %s WHERE username= ?",
 		MEMBERSCREDENTIALSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	err = stmt.QueryRowContext(ctx, c.Username).Scan(&c.UUID, &c.PasswordHashed)
 	return err
 }
@@ -318,10 +317,10 @@ func (c *Credentials) GetCredentialsByUUID(ctx context.Context) error {
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
 		"SELECT username FROM %s WHERE uuid= ?",
 		MEMBERSCREDENTIALSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	err = stmt.QueryRowContext(ctx, c.UUID).Scan(&c.Username)
 	return err
 }
@@ -335,13 +334,13 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 		return err
 	}
 	for _, member := range members {
-		if strings.ToLower(member.Email) == strings.ToLower(m.Email) {
+		if strings.EqualFold(member.Email, m.Email) {
 			common.Debug("Found a member with email %s", m.Email)
 			*m = member
 			found = true
 		}
 	}
-	if found == false {
+	if !found {
 		common.Debug("Email %s not found.", m.Email)
 		return errors.New(MEMBERSEMAILNOTFOUNDMESSAGE)
 	}

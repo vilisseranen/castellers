@@ -3,8 +3,8 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 )
 
@@ -68,7 +68,7 @@ func TestNotInitialized(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 
-	b, err := ioutil.ReadFile("VERSION")
+	b, err := os.ReadFile("VERSION")
 	if err != nil {
 		t.Error(err.Error())
 	}

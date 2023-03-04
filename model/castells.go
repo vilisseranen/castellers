@@ -108,12 +108,12 @@ func (c *CastellModel) Create(ctx context.Context) error {
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT INTO %s (uuid, name, castell_type_name) VALUES (?, ?, ?)",
 		CASTELLMODELSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		c.UUID,
@@ -134,12 +134,12 @@ func (c *CastellModel) Create(ctx context.Context) error {
 				"(SELECT id FROM %s WHERE name = ? AND column = ? AND cordon = ? AND part = ?), "+
 				"(SELECT id FROM %s WHERE uuid = ?))",
 			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MEMBERSTABLE))
-		defer stmt.Close()
 		if err != nil {
 			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
+		defer stmt.Close()
 		_, err = stmt.ExecContext(
 			ctx,
 			c.UUID,
@@ -175,12 +175,12 @@ func (c *CastellModel) Edit(ctx context.Context) error {
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"DELETE FROM %s WHERE castell_model_id = (SELECT id FROM %s WHERE uuid = ?)",
 		CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		c.UUID,
@@ -199,12 +199,12 @@ func (c *CastellModel) Edit(ctx context.Context) error {
 				"(SELECT id FROM %s WHERE name = ? AND column = ? AND cordon = ? AND part = ?), "+
 				"(SELECT id FROM %s WHERE uuid = ?))",
 			CASTELLMEMBERPOSITIONSTABLE, CASTELLMODELSTABLE, CASTELLPOSITIONSTABLE, MEMBERSTABLE))
-		defer stmt.Close()
 		if err != nil {
 			tx.Rollback()
 			common.Error("%v\n", err)
 			return err
 		}
+		defer stmt.Close()
 		_, err = stmt.ExecContext(
 			ctx,
 			c.UUID,
@@ -224,12 +224,12 @@ func (c *CastellModel) Edit(ctx context.Context) error {
 	stmt, err = tx.PrepareContext(ctx, fmt.Sprintf(
 		"UPDATE %s SET name=?, castell_type_name=? WHERE uuid=?",
 		CASTELLMODELSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		tx.Rollback()
 		common.Error("%v\n", err)
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		c.Name,
@@ -290,10 +290,10 @@ func (c *CastellModel) GetAllFromEvent(ctx context.Context, event Event) ([]Cast
 		common.Fatal(err.Error())
 	}
 	rows, err := stmt.QueryContext(ctx, event.UUID)
-	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer rows.Close()
 	models := []CastellModel{}
 
 	for rows.Next() {
@@ -324,10 +324,10 @@ func (c *CastellModel) Get(ctx context.Context) error {
 		common.Fatal(err.Error())
 	}
 	rows, err := stmt.QueryContext(ctx, c.UUID)
-	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var p CastellPositionMembers
 		if err = rows.Scan(&c.Name, &c.Type, &p.Position.Name, &p.Position.Column, &p.Position.Cordon, &p.Position.Part, &p.MemberUUID); err != nil {
@@ -359,10 +359,10 @@ func (c *CastellModel) Delete(ctx context.Context) error {
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid=?",
 		CASTELLMODELSTABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, c.UUID)
 	return err
 }
@@ -372,10 +372,10 @@ func (c *CastellModel) AttachToEvent(ctx context.Context, e *Event) error {
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (castell_model_id, event_id) VALUES ((SELECT id FROM %s WHERE uuid = ?), (SELECT id FROM %s WHERE uuid = ?))",
 		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, c.UUID, e.UUID)
 	return err
 }
@@ -385,10 +385,10 @@ func (c *CastellModel) DettachFromEvent(ctx context.Context, e *Event) error {
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE castell_model_id = (SELECT id FROM %s WHERE uuid= ?) AND event_id = (SELECT id FROM %s WHERE uuid= ?)",
 		CASTELLMODELSINEVENTSTABLE, CASTELLMODELSTABLE, EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, c.UUID, e.UUID)
 	return err
 }
