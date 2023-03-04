@@ -581,7 +581,7 @@ func TestRemoveNonExistingDependant(t *testing.T) {
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
-	if err := h.checkResponseCode(http.StatusAccepted, response.Code); err != nil {
+	if err := h.checkResponseCode(http.StatusNoContent, response.Code); err != nil {
 		t.Error(err)
 	}
 

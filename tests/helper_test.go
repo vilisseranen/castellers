@@ -214,6 +214,7 @@ func (test *TestHelper) removeExistingTables() {
 	db.Exec("DROP TABLE IF EXISTS castell_members_positions")
 	db.Exec("DROP VIEW IF EXISTS castell_types_view")
 	db.Exec("DROP VIEW IF EXISTS castell_models_view")
+	db.Exec("DROP VIEW IF EXISTS members_depepdents")
 }
 
 func (test *TestHelper) clearTables() {
