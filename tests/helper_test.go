@@ -16,7 +16,6 @@ import (
 	"github.com/vilisseranen/castellers/common"
 )
 
-var a app.App
 var h TestHelper
 
 const testDbName = "test_database.db"
@@ -27,10 +26,10 @@ type TestHelper struct {
 
 func TestMain(m *testing.M) {
 	redis, err := miniredis.Run()
-	defer redis.Close()
 	if err != nil {
 		log.Fatalf("Cannot create mock redis: %v", err)
 	}
+	defer redis.Close()
 	os.Chdir("..")
 	h.app = app.App{}
 	os.Setenv("APP_DB_NAME", "test_database.db")
@@ -228,4 +227,5 @@ func (test *TestHelper) clearTables() {
 	db.Exec("DELETE FROM members_credentials")
 	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
 	db.Exec("DELETE FROM participation")
+	db.Exec("DELETE FROM members_dependent")
 }

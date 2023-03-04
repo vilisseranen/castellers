@@ -534,3 +534,63 @@ func TestAddAndRemoveDependant(t *testing.T) {
 		t.Errorf("Expected 0 dependant. Got '%v'", len(d))
 	}
 }
+
+func TestAddExistingDependant(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
+
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	req, _ = http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusNoContent, response.Code); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAddNonExistingDependant(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
+
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/999", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRemoveNonExistingDependant(t *testing.T) {
+	h.clearTables()
+	access_token := h.addAnAdmin()
+	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
+
+	// Member exists but is not depdendent
+	req, _ := http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/123", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response := h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusAccepted, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	// Member does not exist
+	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/999", nil)
+	req.Header.Add("Authorization", "Bearer "+access_token)
+	response = h.executeRequest(req)
+
+	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
+		t.Error(err)
+	}
+}
