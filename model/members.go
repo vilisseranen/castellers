@@ -12,6 +12,7 @@ import (
 const (
 	MEMBERSTABLE            = "members"
 	MEMBERSCREDENTIALSTABLE = "members_credentials"
+	MEMBERSDEPENDANTSTABLE  = "members_dependent"
 
 	MEMBERSTYPEADMIN   = "admin"
 	MEMBERSTYPEREGULAR = "member"
@@ -345,6 +346,77 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 		return errors.New(MEMBERSEMAILNOTFOUNDMESSAGE)
 	}
 	return nil
+}
+
+func (m *Member) GetDependents(ctx context.Context) ([]Member, error) {
+	ctx, span := tracer.Start(ctx, "Member.GetDependent")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
+		"SELECT dependent_uuid FROM %s WHERE responsible_uuid = ?", MEMBERSDEPENDANTSTABLE,
+	))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	rows, err := stmt.QueryContext(ctx, m.UUID)
+	if err != nil {
+		common.Fatal(err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+	var dependents []Member
+	for rows.Next() {
+		var dependent_uuid string
+		var dependent Member
+		if err = rows.Scan(&dependent_uuid); err != nil {
+			return nil, err
+		}
+		common.Debug("Found dependent with UUID %s for responsible with UUID %s", dependent_uuid, m.UUID)
+		dependent = Member{UUID: dependent_uuid}
+		if err = dependent.Get(ctx); err != nil {
+			return nil, err
+		}
+		dependents = append(dependents, dependent)
+	}
+	return dependents, nil
+}
+
+func (m *Member) AddDependent(ctx context.Context, dependent *Member) error {
+	ctx, span := tracer.Start(ctx, "Member.AddDependent")
+	defer span.End()
+
+	if err := dependent.Get(ctx); err != nil {
+		return err
+	}
+
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
+		"INSERT INTO %s(responsible_uuid, dependent_uuid) VALUES(?, ?) ON CONFLICT DO NOTHING", MEMBERSDEPENDANTSTABLE,
+	))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.ExecContext(ctx, m.UUID, dependent.UUID)
+	return err
+}
+
+func (m *Member) RemoveDependent(ctx context.Context, dependent *Member) error {
+	ctx, span := tracer.Start(ctx, "Member.RemoveDependent")
+	defer span.End()
+
+	if err := dependent.Get(ctx); err != nil {
+		return err
+	}
+
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
+		"DELETE FROM %s WHERE responsible_uuid= ? AND dependent_uuid= ?", MEMBERSDEPENDANTSTABLE,
+	))
+	if err != nil {
+		common.Fatal(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.ExecContext(ctx, m.UUID, dependent.UUID)
+	return err
 }
 
 func compact(s []string) []string {

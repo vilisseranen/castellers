@@ -36,6 +36,7 @@ const (
 	ERRORUPDATEMEMBERTYPE       = "error changing the type of the member"
 	ERRORACTIVATINGMEMBER       = "error setting the member as active"
 	ERRORCHANGINGMEMBERSTATUS   = "error changing the status of the member"
+	ERRORADDINGDEPDENENT        = "error while adding a dependent"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -499,4 +500,52 @@ func memberTypeListFromQuery(queryParam string) []string {
 		}
 	}
 	return memberTypeList
+}
+
+func AddRemoveDependent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "RemoveDependent")
+	defer span.End()
+
+	vars := mux.Vars(r)
+	responsible_uuid := vars["responsible_uuid"]
+	dependent_uuid := vars["dependent_uuid"]
+
+	// There is no validation on the type of the responsible and
+	// the dependent on purpose, to be allowed to have special cases
+	// like one person answering for 2 adults.
+
+	responsible := model.Member{UUID: responsible_uuid}
+	dependent := model.Member{UUID: dependent_uuid}
+	dependents, err := responsible.GetDependents(ctx)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPDENENT)
+		return
+	}
+	dependentsBefore := len(dependents)
+
+	if r.Method == http.MethodDelete {
+		if err = responsible.RemoveDependent(ctx, &dependent); err != nil {
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPDENENT)
+			return
+		}
+	} else if r.Method == http.MethodPost {
+		if err = responsible.AddDependent(ctx, &dependent); err != nil {
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPDENENT)
+			return
+		}
+	}
+	dependents, err = responsible.GetDependents(ctx)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPDENENT)
+		return
+	}
+	if dependentsBefore == len(dependents) {
+		RespondWithJSON(w, http.StatusNoContent, dependents)
+		return
+	}
+	if r.Method == http.MethodDelete {
+		RespondWithJSON(w, http.StatusAccepted, dependents)
+		return
+	}
+	RespondWithJSON(w, http.StatusCreated, dependents)
 }
