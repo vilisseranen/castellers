@@ -504,7 +504,7 @@ func TestAddAndRemoveDependant(t *testing.T) {
 	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
 	h.addMember("456", "child2_first_name", "child2_last_name", "", "", "", "", "canalla", "", "")
 
-	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependents/123", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -516,12 +516,12 @@ func TestAddAndRemoveDependant(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &d)
 
 	if len(d) != 1 {
-		t.Errorf("Expected only 1 dependant. Got '%v'", len(d))
+		t.Errorf("Expected only 1 dependent. Got '%v'", len(d))
 	} else if d[0]["uuid"] != "123" {
-		t.Errorf("Expected first dependant to be '123'. Got '%v'", d[0]["uuid"])
+		t.Errorf("Expected first dependent to be '123'. Got '%v'", d[0]["uuid"])
 	}
 
-	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/123", nil)
+	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependents/123", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -531,7 +531,7 @@ func TestAddAndRemoveDependant(t *testing.T) {
 
 	json.Unmarshal(response.Body.Bytes(), &d)
 	if len(d) > 0 {
-		t.Errorf("Expected 0 dependant. Got '%v'", len(d))
+		t.Errorf("Expected 0 dependent. Got '%v'", len(d))
 	}
 }
 
@@ -540,7 +540,7 @@ func TestAddExistingDependant(t *testing.T) {
 	access_token := h.addAnAdmin()
 	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
 
-	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependents/123", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -548,7 +548,7 @@ func TestAddExistingDependant(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, _ = http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/123", nil)
+	req, _ = http.NewRequest("POST", "/api/v1/members/deadfeed/dependents/123", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
@@ -562,7 +562,7 @@ func TestAddNonExistingDependant(t *testing.T) {
 	access_token := h.addAnAdmin()
 	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
 
-	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependants/999", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/members/deadfeed/dependents/999", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -577,7 +577,7 @@ func TestRemoveNonExistingDependant(t *testing.T) {
 	h.addMember("123", "child1_first_name", "child1_last_name", "", "", "", "", "canalla", "", "")
 
 	// Member exists but is not depdendent
-	req, _ := http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/123", nil)
+	req, _ := http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependents/123", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response := h.executeRequest(req)
 
@@ -586,7 +586,7 @@ func TestRemoveNonExistingDependant(t *testing.T) {
 	}
 
 	// Member does not exist
-	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependants/999", nil)
+	req, _ = http.NewRequest("DELETE", "/api/v1/members/deadfeed/dependents/999", nil)
 	req.Header.Add("Authorization", "Bearer "+access_token)
 	response = h.executeRequest(req)
 
