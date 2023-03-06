@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	ERRORCREATETOKEN      = "Error creating the token"
-	ERRORREFRESHTOKEN     = "Error refreshing token"
-	ERRORTOKENEXPIRED     = "Token has expired"
-	ERRORTOKENINVALID     = "Token is invalid"
-	ERRORGUESTCANNOTLOGIN = "Guests cannot login"
+	ERRORCREATETOKEN      = "error creating the token"
+	ERRORREFRESHTOKEN     = "error refreshing token"
+	ERRORTOKENEXPIRED     = "token has expired"
+	ERRORTOKENINVALID     = "token is invalid"
+	ERRORGUESTCANNOTLOGIN = "guests cannot login"
 )
 
 type TokenDetails struct {
@@ -187,20 +187,20 @@ func requestHasAuthorizationToken(ctx context.Context, r *http.Request) bool {
 }
 
 func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token, error) {
-	ctx, span := tracer.Start(ctx, "requestHasAuthorizationToken")
+	_, span := tracer.Start(ctx, "requestHasAuthorizationToken")
 	defer span.End()
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			common.Debug("Incorrect signing method")
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		if tokenType == "access" {
 			return []byte(common.GetConfigString("jwt.access_secret")), nil
 		} else if tokenType == "refresh" {
 			return []byte(common.GetConfigString("jwt.refresh_secret")), nil
 		}
-		return nil, errors.New("Unsupported token type")
+		return nil, errors.New("unsupported token type")
 	})
 	if err != nil {
 		// if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorExpired {
@@ -221,7 +221,7 @@ func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, er
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		err = errors.New("Error decoding token")
+		err = errors.New("error decoding token")
 		tokenUuid, ok := claims["token_uuid"].(string)
 		if !ok {
 			return nil, err
@@ -284,7 +284,7 @@ func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
 	defer span.End()
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	err := errors.New("Error decoding token")
+	err := errors.New("error decoding token")
 	if ok && token.Valid {
 		tokenUuid, ok := claims["token_uuid"].(string)
 		if !ok {
@@ -324,7 +324,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
 		return
 	}
-	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
+	if !token.Valid {
 		common.Debug("Token invalid: %s", err.Error())
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
 		return

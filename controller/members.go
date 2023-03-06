@@ -18,24 +18,25 @@ import (
 )
 
 const (
-	ERRORGETMEMBER              = "Error getting member"
-	ERRORGETMEMBERS             = "Error getting members"
-	ERRORCREATEMEMBER           = "Error creating member"
-	ERRORMEMBERNOTFOUND         = "Member not found"
-	ERRORMEMBERHEIGHT           = "Error with provided height"
-	ERRORMEMBERWEIGHT           = "Error with the provided weight"
-	ERRORMEMBERROLES            = "Error with the provided roles"
-	ERRORMEMBERLANGUAGE         = "Error with the provided language"
-	ERRORMEMBERTYPE             = "Error with the provided type"
-	ERRORUPDATEMEMBER           = "Error updating member"
-	ERRORDELETEMEMBER           = "Error deleting member"
-	ERRORREGISTRATIONEMAIL      = "Error sending the registration email"
-	ERRORRESETCREDENTIALS       = "Error resetting credentials"
-	ERROREMAILUNAVAILABLE       = "This email is already used by another member."
-	ERRORGUESTREGISTRATIONEMAIL = "Guests cannot receive the registration email."
-	ERRORUPDATEMEMBERTYPE       = "Error changing the type of the member"
-	ERRORACTIVATINGMEMBER       = "Error setting the member as active"
-	ERRORCHANGINGMEMBERSTATUS   = "Error changing the status of the member"
+	ERRORGETMEMBER              = "error getting member"
+	ERRORGETMEMBERS             = "error getting members"
+	ERRORCREATEMEMBER           = "error creating member"
+	ERRORMEMBERNOTFOUND         = "member not found"
+	ERRORMEMBERHEIGHT           = "error with provided height"
+	ERRORMEMBERWEIGHT           = "error with the provided weight"
+	ERRORMEMBERROLES            = "error with the roles provided"
+	ERRORMEMBERLANGUAGE         = "error with the language provided"
+	ERRORMEMBERTYPE             = "error with the type provided"
+	ERRORUPDATEMEMBER           = "error updating member"
+	ERRORDELETEMEMBER           = "error deleting member"
+	ERRORREGISTRATIONEMAIL      = "error sending the registration email"
+	ERRORRESETCREDENTIALS       = "error resetting credentials"
+	ERROREMAILUNAVAILABLE       = "this email is already used by another member."
+	ERRORGUESTREGISTRATIONEMAIL = "guests cannot receive the registration email."
+	ERRORUPDATEMEMBERTYPE       = "error changing the type of the member"
+	ERRORACTIVATINGMEMBER       = "error setting the member as active"
+	ERRORCHANGINGMEMBERSTATUS   = "error changing the status of the member"
+	ERRORADDINGDEPENDENT        = "error while adding a dependent"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +78,6 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 	}
 	common.Info("Permissions: %s", tokenAuth.Permissions)
 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
-	return
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {
@@ -114,13 +114,13 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERTYPE)
 		return
 	}
-	if m.Type != model.MEMBERSTYPEGUEST {
+	if m.Type != model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPECANALLA {
 		if !emailAvailable(ctx, m) {
 			common.Info("Email not available: %s", m.Email)
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
-	} else if m.Type == model.MEMBERSTYPEGUEST {
+	} else {
 		m.Email = ""
 	}
 	if missingRequiredFields(m) {
@@ -169,7 +169,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// When a guest is converted to a regular, we need to set the status to created
-	if m.Type == model.MEMBERSTYPEGUEST {
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA {
 		err := m.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
 		if err != nil {
 			common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
@@ -264,7 +264,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 		// Check if we can change role
 		// If caller is admin, we can change the role
-		// If caller is member, we cannot change he role
+		// If caller is member, we cannot change the role
 		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
 			// get current user and use existing values for roles, extra and type
 			existingMember := model.Member{UUID: UUID}
@@ -294,7 +294,8 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// When a guest is converted to a regular, we need to set the status to created
-		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST {
+		// Does not apply to canalla, they will stay activated and won't receive the welcome email
+		if currentMember.Type == model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPECANALLA {
 			err := m.SetStatus(ctx, model.MEMBERSSTATUSCREATED)
 			if err != nil {
 				common.Error(fmt.Sprintf("Error changing member status to %s", model.MEMBERSSTATUSCREATED))
@@ -369,8 +370,8 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if m.Type == model.MEMBERSTYPEGUEST {
-		common.Warn("Cannot send a registration email to a guest: %s")
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA {
+		common.Warn("Cannot send a registration email to a %s (%s)", m.Type, m.UUID)
 		RespondWithError(w, http.StatusForbidden, ERRORGUESTREGISTRATIONEMAIL)
 		return
 	}
@@ -401,7 +402,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 
 func missingRequiredFields(m model.Member) bool {
 	missingFields := false
-	if m.Type == model.MEMBERSTYPEGUEST { // Guests don't have an email
+	if m.Type == model.MEMBERSTYPEGUEST || m.Type == model.MEMBERSTYPECANALLA { // Guests don't have an email
 		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Language == "")
 	} else {
 		missingFields = (m.FirstName == "" || m.LastName == "" || m.Type == "" || m.Email == "" || m.Language == "")
@@ -472,23 +473,6 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, http.StatusOK, "")
 }
 
-// Returns true if it's valid, false otherwise
-func validateChangeType(ctx context.Context, m model.Member, code string, adminUuid string) bool {
-	ctx, span := tracer.Start(ctx, "validateChangeType")
-	defer span.End()
-	// Make sure a user does not promote him or herself
-	currentUser := model.Member{UUID: m.UUID}
-	// If member does not exist can't do any action.
-	if err := currentUser.Get(ctx); err != nil {
-		return false
-	}
-
-	if currentUser.Type == model.MEMBERSTYPEREGULAR && m.Type == model.MEMBERSTYPEADMIN && adminUuid == "" {
-		return false
-	}
-	return true
-}
-
 func memberStatusListFromQuery(queryParam string) []string {
 	memberStatusList := []string{}
 	for _, status := range strings.Split(queryParam, ",") {
@@ -510,9 +494,58 @@ func memberTypeListFromQuery(queryParam string) []string {
 		if mType != "" && common.StringInSlice(mType, []string{
 			model.MEMBERSTYPEADMIN,
 			model.MEMBERSTYPEGUEST,
-			model.MEMBERSTYPEREGULAR}) {
+			model.MEMBERSTYPEREGULAR,
+			model.MEMBERSTYPECANALLA}) {
 			memberTypeList = append(memberTypeList, mType)
 		}
 	}
 	return memberTypeList
+}
+
+func AddRemoveDependent(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "RemoveDependent")
+	defer span.End()
+
+	vars := mux.Vars(r)
+	responsible_uuid := vars["responsible_uuid"]
+	dependent_uuid := vars["dependent_uuid"]
+
+	// There is no validation on the type of the responsible and
+	// the dependent on purpose, to be allowed to have special cases
+	// like one person answering for 2 adults.
+
+	responsible := model.Member{UUID: responsible_uuid}
+	dependent := model.Member{UUID: dependent_uuid}
+	dependents, err := responsible.GetDependents(ctx)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPENDENT)
+		return
+	}
+	dependentsBefore := len(dependents)
+
+	if r.Method == http.MethodDelete {
+		if err = responsible.RemoveDependent(ctx, &dependent); err != nil {
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPENDENT)
+			return
+		}
+	} else if r.Method == http.MethodPost {
+		if err = responsible.AddDependent(ctx, &dependent); err != nil {
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPENDENT)
+			return
+		}
+	}
+	dependents, err = responsible.GetDependents(ctx)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPENDENT)
+		return
+	}
+	if dependentsBefore == len(dependents) {
+		RespondWithJSON(w, http.StatusNoContent, dependents)
+		return
+	}
+	if r.Method == http.MethodDelete {
+		RespondWithJSON(w, http.StatusAccepted, dependents)
+		return
+	}
+	RespondWithJSON(w, http.StatusCreated, dependents)
 }

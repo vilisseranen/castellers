@@ -84,14 +84,14 @@ func SendModifiedEventEmail(ctx context.Context, payload EmailModifiedPayload) e
 		Subtitle: common.Translate("modified_event_text", payload.Member.Language),
 		Text:     changesString,
 	}}
-	email.Action = emailAction{
+	email.Actions = []emailAction{{
 		Title: common.Translate("modified_event_action_title", payload.Member.Language),
 		Text:  common.Translate("modified_event_action_text", payload.Member.Language),
 		Buttons: []Button{{
 			Text: common.Translate("modified_event_action_button", payload.Member.Language),
 			Link: common.GetConfigString("domain") + "/eventShow/" + payload.EventAfterUpdate.UUID,
 		}},
-	}
+	}}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 

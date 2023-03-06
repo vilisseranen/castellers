@@ -16,7 +16,7 @@ type emailInfo struct {
 	Header       emailHeader
 	Top          emailTop
 	MainSections []emailMain
-	Action       emailAction
+	Actions      []emailAction
 	Bottom       emailBottom
 	ImageSource  string
 }
@@ -25,6 +25,7 @@ type emailHeader struct {
 	Title string
 }
 
+// To should probably go to emailHeader
 type emailTop struct {
 	Title    string
 	Subtitle string
@@ -87,7 +88,7 @@ func buildHeader(title, to string) string {
 }
 
 func sendMail(ctx context.Context, email emailInfo) error {
-	ctx, span := tracer.Start(ctx, "mail.sendMail")
+	_, span := tracer.Start(ctx, "mail.sendMail")
 	defer span.End()
 
 	body, err := email.buildEmail()
@@ -96,8 +97,7 @@ func sendMail(ctx context.Context, email emailInfo) error {
 		return err
 	}
 
-	var auth smtp.Auth
-	auth = smtp.PlainAuth("", common.GetConfigString("smtp.username"), common.GetConfigString("smtp.password"), common.GetConfigString("smtp.server"))
+	auth := smtp.PlainAuth("", common.GetConfigString("smtp.username"), common.GetConfigString("smtp.password"), common.GetConfigString("smtp.server"))
 	addr := common.GetConfigString("smtp.server") + ":" + common.GetConfigString("smtp.port")
 	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp.username"), []string{email.Top.To}, []byte(body)); err != nil {
 		common.Error(err.Error())

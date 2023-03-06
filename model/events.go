@@ -42,10 +42,10 @@ func (e *Event) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	var description, locationName sql.NullString // to manage possible NULL fields
 	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng)
 	e.Description = nullToEmptyString(description)
@@ -57,10 +57,10 @@ func (e *Event) GetAttendance(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.GetAttendance")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT COUNT(answer) FROM %s WHERE event_uuid= ? AND (presence = 'yes' OR (presence != 'no' AND answer = 'yes'))", PARTICIPATION_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Attendance)
 	return err
 }
@@ -77,10 +77,10 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([
 		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
 	}
 	rows, err := db.QueryContext(ctx, queryString, now, limit, offset)
-	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer rows.Close()
 
 	Events := []Event{}
 
@@ -101,10 +101,10 @@ func (e *Event) UpdateEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.UpdateEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ? WHERE uuid= ?", EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		e.Name,
@@ -123,10 +123,10 @@ func (e *Event) DeleteEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.DeleteEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET deleted=1 WHERE uuid= ?", EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, e.UUID)
 	return err
 }
@@ -135,12 +135,12 @@ func (e *Event) CreateEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.CreateEvent")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
-	defer stmt.Close()
 	if err != nil {
 		common.Error(err.Error())
 		common.Error("%v\n", e)
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.ExecContext(
 		ctx,
 		e.UUID,
@@ -168,10 +168,10 @@ func (e *Event) GetUpcomingEventsWithoutNotification(ctx context.Context, eventT
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
 		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') AND deleted=0 ORDER BY startDate",
 		EVENTS_TABLE, eventType), time.Now().Unix())
-	defer rows.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer rows.Close()
 
 	Events := []Event{}
 

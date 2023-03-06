@@ -35,7 +35,7 @@ func SendDeletedEventEmail(ctx context.Context, payload EmailDeletedEventPayload
 	email.MainSections = []emailMain{{
 		Title: payload.EventDeleted.Name + " " + common.Translate("on_the", payload.Member.Language) + " " + eventDate + ".",
 		Text:  common.Translate("deleted_event_text", payload.Member.Language)}}
-	email.Action = emailAction{}
+	email.Actions = []emailAction{{}}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 

@@ -25,7 +25,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate reminder notifications
-	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
+	s.cron.AddFunc("@every 10s", generateEventsNotificationsReminder)
 
 	// Look for upcoming events and generate summary notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
@@ -130,7 +130,13 @@ func checkAndSendNotification() {
 						failures += 1
 						continue
 					}
-					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token}
+					dependents, err := member.GetDependents(ctx)
+					if err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token, Dependents: dependents}
 					// get eventDate as a string
 					if err := mail.SendReminderEmail(ctx, payload); err != nil {
 						common.Error("%v\n", err)
@@ -195,16 +201,13 @@ func checkAndSendNotification() {
 			sort.Slice(members, func(i, j int) bool { return members[i].Participation > members[j].Participation })
 			// Send email to all admins
 			for _, member := range members {
-				if member.Type == model.MEMBERSTYPEADMIN {
-					// Send the email
-					if member.Subscribed == 1 {
-						// get eventDate as a string
-						payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
-						if err := mail.SendSummaryEmail(ctx, payload); err != nil {
-							common.Error("%v\n", err)
-							failures += 1
-							continue
-						}
+				if member.Type == model.MEMBERSTYPEADMIN && member.Subscribed == 1 { // Send the email
+					// get eventDate as a string
+					payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
+					if err := mail.SendSummaryEmail(ctx, payload); err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
 					}
 				}
 			}

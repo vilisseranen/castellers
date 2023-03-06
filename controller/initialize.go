@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ERRORAPPALREADYINITIALIZED = "The app is already initialized"
+	ERRORAPPALREADYINITIALIZED = "the app is already initialized"
 )
 
 func Initialize(w http.ResponseWriter, r *http.Request) {
@@ -80,5 +80,4 @@ func IsInitialized(w http.ResponseWriter, r *http.Request) {
 	}
 	common.Info("The app has no member")
 	RespondWithJSON(w, http.StatusNoContent, nil)
-	return
 }

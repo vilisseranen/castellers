@@ -3,7 +3,7 @@ package model
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/XSAM/otelsql"
 	_ "github.com/mattn/go-sqlite3"
@@ -46,7 +46,7 @@ func InitializeDB(dbname string) {
 	}
 
 	// List all update files
-	files, err := ioutil.ReadDir("sql/")
+	files, err := os.ReadDir("sql/")
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -66,8 +66,8 @@ func InitializeDB(dbname string) {
 	// For each, check if it was applied
 	for _, v := range vs {
 		version := fmt.Sprintf("%s", v)
-		if schemaInstalled(version) == false {
-			content, err := ioutil.ReadFile(fmt.Sprintf("sql/%s.sql", version))
+		if !schemaInstalled(version) {
+			content, err := os.ReadFile(fmt.Sprintf("sql/%s.sql", version))
 			if err == nil {
 				common.Info("Updating schema to %s\n", version)
 				tx, err := db.Begin()
@@ -80,11 +80,11 @@ func InitializeDB(dbname string) {
 					common.Fatal(err.Error())
 				}
 				stmt, err := tx.Prepare("INSERT INTO schema_version (version, installed) VALUES(?, 1);")
-				defer stmt.Close()
 				if err != nil {
 					tx.Rollback()
 					common.Fatal(err.Error())
 				}
+				defer stmt.Close()
 				_, err = stmt.Exec(version)
 				if err != nil {
 					tx.Rollback()
@@ -145,10 +145,10 @@ func nullToZeroInt(s sql.NullInt32) int {
 func schemaInstalled(version string) bool {
 	installed := 0
 	stmt, err := db.Prepare("SELECT COUNT(id) FROM schema_version WHERE installed = 1 AND version = ?;")
-	defer stmt.Close()
 	if err != nil {
 		common.Fatal(err.Error())
 	}
+	defer stmt.Close()
 	err = stmt.QueryRow(
 		version).Scan(&installed)
 	if err != nil {

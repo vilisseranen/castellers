@@ -40,7 +40,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		// 		return
 		// 	}
 		// }
-		common.Debug("Token is valid and allowed")
+		common.Debug("Token is valid and match required type")
 		span.End()
 		h(w, r)
 	}
