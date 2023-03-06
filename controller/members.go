@@ -36,7 +36,7 @@ const (
 	ERRORUPDATEMEMBERTYPE       = "error changing the type of the member"
 	ERRORACTIVATINGMEMBER       = "error setting the member as active"
 	ERRORCHANGINGMEMBERSTATUS   = "error changing the status of the member"
-	ERRORADDINGDEPDENENT        = "error while adding a dependent"
+	ERRORADDINGDEPENDENT        = "error while adding a dependent"
 )
 
 func GetMember(w http.ResponseWriter, r *http.Request) {
@@ -518,25 +518,25 @@ func AddRemoveDependent(w http.ResponseWriter, r *http.Request) {
 	dependent := model.Member{UUID: dependent_uuid}
 	dependents, err := responsible.GetDependents(ctx)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPDENENT)
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPENDENT)
 		return
 	}
 	dependentsBefore := len(dependents)
 
 	if r.Method == http.MethodDelete {
 		if err = responsible.RemoveDependent(ctx, &dependent); err != nil {
-			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPDENENT)
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPENDENT)
 			return
 		}
 	} else if r.Method == http.MethodPost {
 		if err = responsible.AddDependent(ctx, &dependent); err != nil {
-			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPDENENT)
+			RespondWithError(w, http.StatusBadRequest, ERRORADDINGDEPENDENT)
 			return
 		}
 	}
 	dependents, err = responsible.GetDependents(ctx)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPDENENT)
+		RespondWithError(w, http.StatusInternalServerError, ERRORADDINGDEPENDENT)
 		return
 	}
 	if dependentsBefore == len(dependents) {
