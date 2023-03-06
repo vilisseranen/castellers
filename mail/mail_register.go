@@ -34,14 +34,14 @@ func SendRegistrationEmail(ctx context.Context, payload EmailRegisterPayload) er
 		Text:     common.Translate("registration_instructions", payload.Member.Language) + "<br/><br/>" + common.Translate("registration_thanks", payload.Member.Language),
 		Author:   payload.Author.FirstName + " " + payload.Author.LastName,
 	}}
-	email.Action = emailAction{
+	email.Actions = []emailAction{{
 		Title: common.Translate("registration_confirmation_title", payload.Member.Language),
 		Text:  common.Translate("registration_confirmation_text", payload.Member.Language),
 		Buttons: []Button{{
 			Text: common.Translate("registration_activation", payload.Member.Language),
 			Link: loginLink,
 		}},
-	}
+	}}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 

@@ -56,14 +56,14 @@ func SendCreateEventEmail(ctx context.Context, payload EmailCreateEventPayload) 
 		Subtitle: common.Translate("create_event_text", payload.Member.Language),
 		Text:     eventDetails,
 	}}
-	email.Action = emailAction{
+	email.Actions = []emailAction{{
 		Title: common.Translate("create_event_action_title", payload.Member.Language),
 		Text:  common.Translate("create_event_action_text", payload.Member.Language),
 		Buttons: []Button{{
 			Text: common.Translate("create_event_action_button", payload.Member.Language),
 			Link: common.GetConfigString("domain") + "/eventShow/" + payload.Event.UUID,
 		}},
-	}
+	}}
 	email.Bottom = emailBottom{ProfileLink: profileLink, MyProfile: common.Translate("email_my_profile", payload.Member.Language), Suggestions: common.Translate("email_suggestions", payload.Member.Language)}
 	email.ImageSource = common.GetConfigString("cdn") + "/static/img/"
 

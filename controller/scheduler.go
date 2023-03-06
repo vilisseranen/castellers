@@ -25,7 +25,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
 
 	// Look for upcoming events and generate reminder notifications
-	s.cron.AddFunc("@every 10m", generateEventsNotificationsReminder)
+	s.cron.AddFunc("@every 10s", generateEventsNotificationsReminder)
 
 	// Look for upcoming events and generate summary notifications
 	s.cron.AddFunc("@every 10m", generateEventsNotificationsSummary)
@@ -130,7 +130,13 @@ func checkAndSendNotification() {
 						failures += 1
 						continue
 					}
-					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token}
+					dependents, err := member.GetDependents(ctx)
+					if err != nil {
+						common.Error("%v\n", err)
+						failures += 1
+						continue
+					}
+					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token, Dependents: dependents}
 					// get eventDate as a string
 					if err := mail.SendReminderEmail(ctx, payload); err != nil {
 						common.Error("%v\n", err)

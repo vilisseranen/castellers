@@ -16,7 +16,7 @@ type emailInfo struct {
 	Header       emailHeader
 	Top          emailTop
 	MainSections []emailMain
-	Action       emailAction
+	Actions      []emailAction
 	Bottom       emailBottom
 	ImageSource  string
 }
@@ -25,6 +25,7 @@ type emailHeader struct {
 	Title string
 }
 
+// To should probably go to emailHeader
 type emailTop struct {
 	Title    string
 	Subtitle string

@@ -44,14 +44,14 @@ func SendForgotPasswordEmail(ctx context.Context, payload EmailForgotPasswordPay
 			Text:  common.Translate("forgot_reset_requested_text", payload.Member.Language),
 		},
 	}
-	email.Action = emailAction{
+	email.Actions = []emailAction{{
 		Title: common.Translate("forgot_reset", payload.Member.Language),
 		Text:  common.Translate("forgot_reset_text", payload.Member.Language),
 		Buttons: []Button{{
 			Text: common.Translate("forgot_reset", payload.Member.Language),
 			Link: resetLink},
 		},
-	}
+	}}
 	email.Bottom = emailBottom{
 		ProfileLink: profileLink,
 		MyProfile:   common.Translate("email_my_profile", payload.Member.Language),

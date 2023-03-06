@@ -27,8 +27,40 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
+
 	eventUUID := vars["event_uuid"]
-	memberUUID := tokenAuth.UserId
+	memberUUID := vars["member_uuid"]
+
+	// Using API endpoint without member_uuid, only works for self
+	if memberUUID == "" {
+		memberUUID = tokenAuth.UserId
+	} else {
+		// Using endpoint with member_uuid, where you can set dependent participation
+		// Valid if:
+		// - token has administrator permission
+		// - request made for ourself
+		// - request made for a dependent
+		member := model.Member{UUID: tokenAuth.UserId}
+		dependents, err := member.GetDependents(ctx)
+		if err != nil {
+			common.Warn("Error getting the dependent list for %s", member.UUID)
+			RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
+			return
+		}
+		var dependentsUUID []string
+		for _, dependent := range dependents {
+			dependentsUUID = append(dependentsUUID, dependent.UUID)
+		}
+		common.Debug("member %s has dependents: %v", member.UUID, dependentsUUID)
+		if !(common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) ||
+			tokenAuth.UserId == memberUUID ||
+			common.StringInSlice(memberUUID, dependentsUUID)) {
+			common.Warn("Unauthorized to set participation for this member")
+			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
+			return
+		}
+	}
+
 	event := model.Event{UUID: eventUUID}
 	member := model.Member{UUID: memberUUID}
 	if err := event.Get(ctx); err != nil {

@@ -388,7 +388,7 @@
           <!-- INTRO : END -->
   
           <!-- CTA : BEGIN -->
-          {{ if .Action.Title }}
+          {{ range .Actions }}
           <tr>
             <td bgcolor="#26a4d3">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -396,7 +396,7 @@
                   <td style="padding: 40px 40px 5px 40px; text-align: center;">
                     <h1
                       style="margin: 0; font-family: 'Montserrat', sans-serif; font-size: 20px; line-height: 24px; color: #ffffff; font-weight: bold;">
-                      {{ .Action.Title }}
+                      {{ .Title }}
   
                     </h1>
                   </td>
@@ -405,7 +405,7 @@
                   <td
                     style="padding: 0px 40px 20px 40px; font-family: sans-serif; font-size: 17px; line-height: 23px; color: #aad4ea; text-align: center; font-weight:normal;">
                     <p style="margin: 0;">
-                      {{ .Action.Text }}
+                      {{ .Text }}
                     </p>
                   </td>
                 </tr>
@@ -416,7 +416,7 @@
                     <table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0"
                       border-spacing="20px 10px" class="center-on-narrow">
                       <tr>
-                        {{ range .Action.Buttons }}
+                        {{ range .Buttons }}
                         <td style="border-radius: 50px; background: #ffffff; text-align: center;" class="button-td">
                           <a href="{{ .Link }}"
                             style="background: #ffffff; border: 15px solid #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 50px; font-weight: bold;"
