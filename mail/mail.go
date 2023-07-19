@@ -82,7 +82,7 @@ func buildHeader(title, to string) string {
 		"To: " + to + "\r\n" +
 		"From: Castellers de Montréal <" + common.GetConfigString("smtp.username") + ">\r\n" +
 		"Reply-To: " + common.GetConfigString("reply_to") + "\r\n" +
-		"MIME-version: 1.0;\r\n" +
+		"MIME-Version: 1.0\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"\r\n"
 }
