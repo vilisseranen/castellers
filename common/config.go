@@ -70,6 +70,7 @@ func ReadConfig() {
 	viper.BindEnv("smtp.username", "APP_SMTP_USERNAME")
 	viper.BindEnv("smtp.password", "APP_SMTP_PASSWORD")
 	viper.BindEnv("smtp.enabled", "APP_SMTP_ENABLED")
+	viper.BindEnv("reply_to", "APP_REPLY_TO")
 	viper.BindEnv("redis_dsn")
 	viper.BindEnv("reminder_time_before_event")
 	viper.BindEnv("summary_time_before_event")
