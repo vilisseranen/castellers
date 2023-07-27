@@ -1,55 +1,56 @@
-# fly.toml file generated for castellers on 2022-07-04T21:52:47-04:00
+# fly.toml app configuration file generated for castellers on 2023-07-27T16:04:02-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "castellers"
+primary_region = "yul"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
+kill_timeout = "5s"
 
-[env]
-REPLICA_URL="s3://amunt.castellersdemontreal.info-backup/castellers.db"
-APP_REDIS_DSN="yul.castellers-redis.internal:6379"
-APP_DB_NAME="/data/castellers.db"
-APP_SMTP_SERVER="smtp.mailgun.org"
-APP_SMTP_PORT="587"
-APP_DOMAIN="https://amunt.castellersdemontreal.info"
-APP_LOG_LEVEL="debug"
-APP_OTEL_ENABLE="true"
-OTEL_EXPORTER_OTLP_ENDPOINT="grpc://api.honeycomb.io:443"
-OTEL_SERVICE_NAME="castellers"
+[experimental]
+  auto_rollback = true
 
 [build]
   dockerfile = "Dockerfile"
 
-[mounts]
-source="castellers_data"
-destination="/data"
+[env]
+  APP_DB_NAME = "/data/castellers.db"
+  APP_DOMAIN = "https://amunt.castellersdemontreal.info"
+  APP_LOG_LEVEL = "debug"
+  APP_OTEL_ENABLE = "true"
+  APP_REDIS_DSN = "yul.castellers-redis.internal:6379"
+  APP_SMTP_PORT = "587"
+  APP_SMTP_SERVER = "smtp.mailgun.org"
+  OTEL_EXPORTER_OTLP_ENDPOINT = "grpc://api.honeycomb.io:443"
+  OTEL_SERVICE_NAME = "castellers"
+  REPLICA_URL = "s3://amunt.castellersdemontreal.info-backup/castellers.db"
 
-[experimental]
-  allowed_public_ports = []
-  auto_rollback = true
+[[mounts]]
+  source = "castellers_data"
+  destination = "/data"
+  processes = ["app"]
 
 [[services]]
-  http_checks = []
+  protocol = "tcp"
   internal_port = 8080
   processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
   [services.concurrency]
+    type = "connections"
     hard_limit = 25
     soft_limit = 20
-    type = "connections"
-
-  [[services.ports]]
-    force_https = true
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "15s"
-    restart_limit = 0
     timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
