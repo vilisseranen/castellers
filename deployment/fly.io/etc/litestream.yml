@@ -6,3 +6,5 @@ dbs:
         retention-check-interval: 1h
         snapshot-interval: 1h
         sync-interval: 30s
+        endpoint: s3.bhs.io.cloud.ovh.net
+        region: bhs
