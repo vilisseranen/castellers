@@ -18,6 +18,18 @@ const TypeForgotPassword = "forgotPassword"
 const TypeEventDeleted = "eventDeleted"
 const TypeEventModified = "eventModified"
 const TypeEventCreated = "eventCreated"
+const TypeManualEventReminder = "manualEventReminder"
+
+const ManualReminderAudienceDefault = "default"
+const ManualReminderAudienceNoAnswerActive = "no_answer_active"
+const ManualReminderAudienceNoAnswerActivePaused = "no_answer_active_paused"
+const ManualReminderAudienceMembers = "members"
+
+type ManualReminderPayload struct {
+	Audience    string   `json:"audience"`
+	MemberUUIDs []string `json:"memberUuids,omitempty"`
+	RequestedBy string   `json:"requestedBy"`
+}
 
 const NotificationNotDelivered = 0
 const NotificationDeliverySuccess = 1
@@ -48,7 +60,7 @@ func (n *Notification) CreateNotification(ctx context.Context) error {
 		common.Error("%v\n", n)
 		return err
 	}
-	_, err = stmt.ExecContext(ctx,
+	result, err := stmt.ExecContext(ctx,
 		stringOrNull(n.NotificationType),
 		stringOrNull(n.ObjectUUID),
 		n.SendDate,
@@ -58,7 +70,13 @@ func (n *Notification) CreateNotification(ctx context.Context) error {
 		common.Error("%v\n", n)
 		return err
 	}
-	return err
+	id, err := result.LastInsertId()
+	if err != nil {
+		common.Error(err.Error())
+		return err
+	}
+	n.ID = int(id)
+	return nil
 }
 
 func (n *Notification) GetNotificationsReady(ctx context.Context) ([]Notification, error) {

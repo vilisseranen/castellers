@@ -37,4 +37,8 @@ XDG_CACHE_HOME
 # Configuration file
 config.yaml
 
+# Local dev only (not used in production)
+docker-compose.dev.yml
+Dockerfile.dev
+
 frontend/package-lock\.json
