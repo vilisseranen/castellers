@@ -40,5 +40,6 @@ config.yaml
 # Local dev only (not used in production)
 docker-compose.dev.yml
 Dockerfile.dev
+scripts/seed-local-creds.py
 
 frontend/package-lock\.json
