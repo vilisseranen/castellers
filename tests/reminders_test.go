@@ -105,7 +105,7 @@ func TestSendEventRemindersNonAdmin(t *testing.T) {
 	req.Header.Add("Authorization", "Bearer "+accessToken)
 	response := h.executeRequest(req)
 
-	if err := h.checkResponseCode(http.StatusForbidden, response.Code); err != nil {
+	if err := h.checkResponseCode(http.StatusUnauthorized, response.Code); err != nil {
 		t.Error(err)
 	}
 }
