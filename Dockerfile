@@ -1,8 +1,6 @@
-FROM --platform=$BUILDPLATFORM golang:1.20-alpine as builder
+FROM golang:1.20-alpine AS builder
 
-RUN apk add gcc g++
-RUN wget -P / https://musl.cc/aarch64-linux-musl-cross.tgz
-RUN tar -xvf /aarch64-linux-musl-cross.tgz -C /
+RUN apk add --no-cache build-base
 
 COPY . $GOPATH/src/github.com/vilisseranen/castellers
 WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
@@ -10,8 +8,7 @@ WORKDIR $GOPATH/src/github.com/vilisseranen/castellers
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN if [ "${TARGETARCH}" = "arm64" ]; then CC=/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc; fi && \
-    env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 CC=$CC go build -ldflags='-s -w -extldflags "-static"' -o /go/bin/import
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=1 go build -ldflags='-s -w -extldflags "-static"' -o /go/bin/import
 
 FROM scratch
 
@@ -25,8 +22,8 @@ COPY VERSION /VERSION
 
 VOLUME ["/data", "/var/log", "/etc/castellers"]
 
-ENV APP_DB_NAME /data/castellers.db
-ENV APP_LOG_FILE /var/log/castellers.log
+ENV APP_DB_NAME=/data/castellers.db
+ENV APP_LOG_FILE=/var/log/castellers.log
 
 EXPOSE 8080
 
