@@ -229,4 +229,5 @@ func (test *TestHelper) clearTables() {
 	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'members'")
 	db.Exec("DELETE FROM participation")
 	db.Exec("DELETE FROM members_dependent")
+	db.Exec("DELETE FROM notifications")
 }

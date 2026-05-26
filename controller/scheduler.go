@@ -36,6 +36,11 @@ func (s *Scheduler) Start() {
 	s.cron.Start()
 }
 
+// RunNotificationDeliveryOnce processes all pending notifications (used by tests and cron).
+func RunNotificationDeliveryOnce() {
+	checkAndSendNotification()
+}
+
 func checkAndSendNotification() {
 
 	ctx, span := tracer.Start(context.Background(), "checkAndSendNotification")
@@ -79,80 +84,32 @@ func checkAndSendNotification() {
 			notification.Delivered = model.NotificationDeliverySuccess
 			notification.UpdateNotificationStatus(ctx)
 		case model.TypeUpcomingEvent:
-			// This is a reminder for an upcoming event
-			event := model.Event{UUID: notification.ObjectUUID}
-			err := event.Get(ctx)
-			if err != nil {
-				// Cannot get the event, complete failure
-				common.Error("%v\n", err)
-				notification.Delivered = model.NotificationDeliveryFailure
-				notification.UpdateNotificationStatus(ctx)
-				continue
-			}
-			if event.StartDate < uint(time.Now().Unix()) {
-				// Event has begun or is finished, we don't send the notification
-				common.Info("Event %v has already started.\n", event.UUID)
-				notification.Delivered = model.NotificationTooLate
-				notification.UpdateNotificationStatus(ctx)
-				continue
-			}
-			// Get All members
 			m := model.Member{}
-			p := model.Participation{}
 			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED, model.MEMBERSSTATUSPAUSED}, []string{})
 			if err != nil {
-				// Cannot get the members, complete failure
 				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
-			failures := 0
-			for _, member := range members {
-				p.MemberUUID = member.UUID
-				p.EventUUID = event.UUID
-				err = p.GetParticipation(ctx)
-				if err != nil {
-					switch err {
-					case sql.ErrNoRows:
-						p.Answer = ""
-					default:
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-				}
-				// Send the email
-				if member.Subscribed == 1 {
-					token, err := ParticipateEventToken(ctx, member.UUID, common.GetConfigInt("jwt.participation_ttl_minutes"))
-					if err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-					dependents, err := member.GetDependents(ctx)
-					if err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-					payload := mail.EmailReminderPayload{Member: member, Event: event, Participation: p, Token: token, Dependents: dependents}
-					// get eventDate as a string
-					if err := mail.SendReminderEmail(ctx, payload); err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
-				}
-			}
-			if failures == 0 {
-				notification.Delivered = model.NotificationDeliverySuccess
-			} else if failures == len(members) {
+			deliverEventReminderNotification(ctx, &notification, members)
+		case model.TypeManualEventReminder:
+			var payload model.ManualReminderPayload
+			if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+				common.Error("%v\n", err)
 				notification.Delivered = model.NotificationDeliveryFailure
-			} else {
-				notification.Delivered = model.NotificationDeliveryPartialFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
 			}
-			notification.UpdateNotificationStatus(ctx)
+			event := model.Event{UUID: notification.ObjectUUID}
+			members, err := resolveManualReminderRecipients(ctx, event, payload)
+			if err != nil {
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
+			deliverEventReminderNotification(ctx, &notification, members)
 		case model.TypeSummaryEvent:
 			event := model.Event{UUID: notification.ObjectUUID}
 			err := event.Get(ctx)
