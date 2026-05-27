@@ -218,7 +218,8 @@ This is useful for understanding the visibility of each status.
 
 | Email / audience                                   | Status filter                                  | Type filter        | Code reference                                  |
 |----------------------------------------------------|------------------------------------------------|--------------------|--------------------------------------------------|
-| **Daily event summary** (sent to admins)           | **none** → `GetAll([], [])` → effectively `status NOT IN ('deleted','purged')` | none — body filters to `admin && subscribed==1` | `controller/scheduler.go:130-170`                |
+| **Daily event summary** — recipients               | **none** → `GetAll([], [])` → effectively `status NOT IN ('deleted','purged')` | body filters to `admin && subscribed==1` | `controller/scheduler.go:130-170`                |
+| **Daily event summary** — printed list             | `active` **OR** `Participation != ""` (any RSVP) | none             | `controller/scheduler.go:159-167`                |
 | Default reminder audience                          | `active` + `paused`                            | none               | `controller/reminders.go:120-122`                |
 | `ManualReminderAudienceNoAnswerActive`             | `active`                                       | none               | `controller/reminders.go:123-124`                |
 | `ManualReminderAudienceNoAnswerActivePaused`       | `active` + `paused`                            | none               | `controller/reminders.go:125-126`                |
@@ -228,9 +229,13 @@ This is useful for understanding the visibility of each status.
 
 ### Note on the day-before summary email
 
-The summary email lists **every member** except `deleted` and `purged` ones,
-including members that have been `paused` for years and including `guest`
-and `canalla` rows. The relevant call is:
+The summary email is **sent to** every subscribed admin (regardless of
+status, as long as the row is not `deleted` or `purged`). It **lists in
+its body** only members who are either `active` **or** who have given a
+participation answer (`Participation != ""`, meaning they answered
+`yes`, `no` or `maybe`).
+
+The recipient list is built from:
 
 ```go
 m := model.Member{}
@@ -239,7 +244,19 @@ members, err := m.GetAll(ctx, []string{}, []string{})
 
 in `controller/scheduler.go:130-131`. With empty filter slices, `GetAll`
 only applies its hard-coded `status NOT IN ('deleted', 'purged')` clause
-([`model/members.go:199`](../model/members.go)). The filtered list is
-then used both as the recipient list (further narrowed to
-`Type == admin && Subscribed == 1` at line 161) **and** as the
-`Participants` array embedded in the email body.
+([`model/members.go:199`](../model/members.go)).
+
+Each member's participation is then fetched, and a separate slice
+`participantsForEmail` is built (see `controller/scheduler.go:159-167`)
+by keeping only members where:
+
+```go
+member.Status == model.MEMBERSSTATUSACTIVATED || member.Participation != ""
+```
+
+That filtered slice is the one passed as `Participants` in the email
+payload, while the unfiltered slice continues to drive the recipient
+iteration. The intent is to keep the body actionable: long-paused
+members who never answered, and guests/canallas who were never invited
+to RSVP, are omitted; but anyone who explicitly replied — even with
+"no" or "maybe" — remains visible.
