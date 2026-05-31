@@ -1,0 +1,1 @@
+ALTER TABLE members ADD COLUMN last_activity_date INTEGER NOT NULL DEFAULT 0;

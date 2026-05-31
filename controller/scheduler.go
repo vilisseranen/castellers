@@ -41,6 +41,11 @@ func RunNotificationDeliveryOnce() {
 	checkAndSendNotification()
 }
 
+// RunPauseAbsentMembersOnce runs the inactivity pause scan once (used by tests and cron).
+func RunPauseAbsentMembersOnce() {
+	pauseAbsentMembers()
+}
+
 func checkAndSendNotification() {
 
 	ctx, span := tracer.Start(context.Background(), "checkAndSendNotification")
@@ -405,7 +410,17 @@ func pauseAbsentMembers() {
 		if err != nil {
 			common.Error("%v\n", err)
 		}
-		if time.Now().Unix()-int64(lastEvent.StartDate) > int64(common.GetConfigInt("inactive_delay_days"))*24*3600 {
+		// A manual reactivation by an admin resets the inactivity counter, so we
+		// keep the most recent of the last participated event and last_activity_date.
+		lastActivityDate, err := member.GetLastActivityDate(ctx)
+		if err != nil {
+			common.Error("%v\n", err)
+		}
+		referenceDate := int64(lastEvent.StartDate)
+		if lastActivityDate > referenceDate {
+			referenceDate = lastActivityDate
+		}
+		if time.Now().Unix()-referenceDate > int64(common.GetConfigInt("inactive_delay_days"))*24*3600 {
 			common.Debug("Setting member %v as %s", member, model.MEMBERSSTATUSPAUSED)
 			member.SetStatus(ctx, model.MEMBERSSTATUSPAUSED)
 		}

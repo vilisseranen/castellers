@@ -110,8 +110,8 @@ orthogonal to `Type`.
 | Constant                  | Value     | French label (UI) | Visible in API queries | Triggered by                                                                 |
 |---------------------------|-----------|-------------------|------------------------|-------------------------------------------------------------------------------|
 | `MEMBERSSTATUSCREATED`    | `created` | Créé              | yes                    | SQL default; reset on guest → member promotion                                |
-| `MEMBERSSTATUSACTIVATED`  | `active`  | Actif             | yes                    | `Credentials.ResetCredentials` (first password); direct creation for guest/canalla; reactivation via participation |
-| `MEMBERSSTATUSPAUSED`     | `paused`  | En pause          | yes                    | `pauseAbsentMembers` scheduler task                                           |
+| `MEMBERSSTATUSACTIVATED`  | `active`  | Actif             | yes                    | `Credentials.ResetCredentials` (first password); direct creation for guest/canalla; reactivation via participation; manual admin reactivation |
+| `MEMBERSSTATUSPAUSED`     | `paused`  | En pause          | yes                    | `pauseAbsentMembers` scheduler task; manual admin pause                       |
 | `MEMBERSSTATUSDELETED`    | `deleted` | Supprimé          | **no** (filtered out)  | `Member.DeleteMember` (soft delete)                                           |
 | `MEMBERSSTATUSPURGED`     | `purged`  | (no UI label)     | **no** (filtered out)  | external operation only (no Go writer)                                       |
 
@@ -138,6 +138,11 @@ orthogonal to `Type`.
   - when a `paused` member answers *yes* or is marked *present* on an
     event within the inactivity window
     (`controller/participation.go:109-117` and `177-185`).
+- Set manually by an admin via `PUT /members/{uuid}/status` with
+  `{"status":"active"}` (`controller.SetMemberStatus`). This goes through
+  `Member.SetStatusManual`, which also stamps `last_activity_date = now`,
+  so the inactivity scan treats the manual reactivation like a recent
+  participation and will not pause the member again right away.
 - Receives all reminder and summary emails (subject to the `subscribed`
   flag).
 
@@ -145,9 +150,13 @@ orthogonal to `Type`.
 
 - The member is temporarily inactive but **still visible**.
 - Set automatically by the scheduler task `pauseAbsentMembers`
-  ([`controller/scheduler.go:385-405`](../controller/scheduler.go)) when
-  the last participation date is older than the configuration value
-  `inactive_delay_days`.
+  ([`controller/scheduler.go`](../controller/scheduler.go)) when the most
+  recent of (last participated event, `last_activity_date`) is older than
+  the configuration value `inactive_delay_days`.
+- Set manually by an admin via `PUT /members/{uuid}/status` with
+  `{"status":"paused"}`. A manual pause is stable: the scheduler never
+  reactivates a member; only a participation (yes/present) or a manual
+  admin reactivation does.
 - Audience handling for manual reminders is defined in
   [`controller/reminders.go:118-146`](../controller/reminders.go):
   - default audience: `active` **and** `paused`
@@ -191,16 +200,21 @@ orthogonal to `Type`.
                                                            │
    guest / canalla ─► active  ◄──participation yes/present─┤
                                                            │
-                              pauseAbsentMembers (cron)    │
+                  pauseAbsentMembers (cron) / admin pause │
                        active ─────────────────────────► paused
                                                            │
-                              participation yes/present    │
+              participation yes/present / admin reactivate │
                        active ◄───────────────────────── paused
                                                            │
                        any state ──DeleteMember──► deleted │
                                                            │
                        any state ──(external op)──► purged │
 ```
+
+Manual admin transitions go through `PUT /members/{uuid}/status`
+(`controller.SetMemberStatus`, admin-only, `active` <-> `paused` only).
+A manual reactivation stamps `last_activity_date`, which
+`pauseAbsentMembers` treats as a recent activity (counter reset).
 
 Type-specific transition:
 
