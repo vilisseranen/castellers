@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/vilisseranen/castellers/common"
 )
@@ -266,6 +267,47 @@ func (m *Member) SetStatus(ctx context.Context, status string) error {
 	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, status, m.UUID)
 	return err
+}
+
+// SetStatusManual sets the status following an explicit admin action.
+// Reactivating a member (status active) resets the inactivity counter by
+// stamping last_activity_date, so pauseAbsentMembers treats the manual
+// reactivation like a recent participation.
+func (m *Member) SetStatusManual(ctx context.Context, status string) error {
+	ctx, span := tracer.Start(ctx, "Member.SetStatusManual")
+	defer span.End()
+	var query string
+	args := []interface{}{}
+	if status == MEMBERSSTATUSACTIVATED {
+		query = fmt.Sprintf("UPDATE %s SET status = ?, last_activity_date = ? WHERE uuid = ?", MEMBERSTABLE)
+		args = append(args, status, time.Now().Unix(), m.UUID)
+	} else {
+		query = fmt.Sprintf("UPDATE %s SET status = ? WHERE uuid = ?", MEMBERSTABLE)
+		args = append(args, status, m.UUID)
+	}
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		common.Fatal(err.Error())
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.ExecContext(ctx, args...)
+	return err
+}
+
+// GetLastActivityDate returns the last_activity_date stamp (Unix seconds, 0 if never set).
+func (m *Member) GetLastActivityDate(ctx context.Context) (int64, error) {
+	ctx, span := tracer.Start(ctx, "Member.GetLastActivityDate")
+	defer span.End()
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT last_activity_date FROM %s WHERE uuid = ?", MEMBERSTABLE))
+	if err != nil {
+		common.Fatal(err.Error())
+		return 0, err
+	}
+	defer stmt.Close()
+	var lastActivityDate int64
+	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&lastActivityDate)
+	return lastActivityDate, err
 }
 
 func (c *Credentials) ResetCredentials(ctx context.Context, username string, password []byte) error {

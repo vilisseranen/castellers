@@ -309,6 +309,57 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 }
 
+type setMemberStatusPayload struct {
+	Status string `json:"status"`
+}
+
+// SetMemberStatus lets an admin manually toggle a member between active and paused.
+// The route is already restricted to admins. Reactivation resets the inactivity
+// counter (see Member.SetStatusManual) so the auto-pause job does not undo it.
+func SetMemberStatus(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "SetMemberStatus")
+	defer span.End()
+
+	vars := mux.Vars(r)
+	UUID := vars["member_uuid"]
+
+	var payload setMemberStatusPayload
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&payload); err != nil {
+		common.Debug("Invalid request payload: %s", err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
+		return
+	}
+	defer r.Body.Close()
+
+	if payload.Status != model.MEMBERSSTATUSACTIVATED && payload.Status != model.MEMBERSSTATUSPAUSED {
+		common.Info("Invalid status requested: %s", payload.Status)
+		RespondWithError(w, http.StatusBadRequest, ERRORCHANGINGMEMBERSTATUS)
+		return
+	}
+
+	m := model.Member{UUID: UUID}
+	if err := m.Get(ctx); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("Member not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
+		default:
+			common.Warn("Error getting member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBER)
+		}
+		return
+	}
+
+	if err := m.SetStatusManual(ctx, payload.Status); err != nil {
+		common.Warn("Error changing member status: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORCHANGINGMEMBERSTATUS)
+		return
+	}
+	m.Status = payload.Status
+	RespondWithJSON(w, http.StatusAccepted, m)
+}
+
 func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(r.Context(), "DeleteMember")
 	defer span.End()

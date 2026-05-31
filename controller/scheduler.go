@@ -41,6 +41,11 @@ func RunNotificationDeliveryOnce() {
 	checkAndSendNotification()
 }
 
+// RunPauseAbsentMembersOnce runs the inactivity pause scan once (used by tests and cron).
+func RunPauseAbsentMembersOnce() {
+	pauseAbsentMembers()
+}
+
 func checkAndSendNotification() {
 
 	ctx, span := tracer.Start(context.Background(), "checkAndSendNotification")
@@ -156,11 +161,19 @@ func checkAndSendNotification() {
 			// Sort by FirstName then by Participation
 			sort.Slice(members, func(i, j int) bool { return members[i].FirstName < members[j].FirstName })
 			sort.Slice(members, func(i, j int) bool { return members[i].Participation > members[j].Participation })
+			// Only show active members or members who have given a participation answer.
+			// Long-paused members who never answered would otherwise clutter the summary.
+			participantsForEmail := make([]model.Member, 0, len(members))
+			for _, member := range members {
+				if member.Status == model.MEMBERSSTATUSACTIVATED || member.Participation != "" {
+					participantsForEmail = append(participantsForEmail, member)
+				}
+			}
 			// Send email to all admins
 			for _, member := range members {
 				if member.Type == model.MEMBERSTYPEADMIN && member.Subscribed == 1 { // Send the email
 					// get eventDate as a string
-					payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: members}
+					payload := mail.EmailSummaryPayload{Member: member, Event: event, Participants: participantsForEmail}
 					if err := mail.SendSummaryEmail(ctx, payload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
@@ -397,7 +410,17 @@ func pauseAbsentMembers() {
 		if err != nil {
 			common.Error("%v\n", err)
 		}
-		if time.Now().Unix()-int64(lastEvent.StartDate) > int64(common.GetConfigInt("inactive_delay_days"))*24*3600 {
+		// A manual reactivation by an admin resets the inactivity counter, so we
+		// keep the most recent of the last participated event and last_activity_date.
+		lastActivityDate, err := member.GetLastActivityDate(ctx)
+		if err != nil {
+			common.Error("%v\n", err)
+		}
+		referenceDate := int64(lastEvent.StartDate)
+		if lastActivityDate > referenceDate {
+			referenceDate = lastActivityDate
+		}
+		if time.Now().Unix()-referenceDate > int64(common.GetConfigInt("inactive_delay_days"))*24*3600 {
 			common.Debug("Setting member %v as %s", member, model.MEMBERSSTATUSPAUSED)
 			member.SetStatus(ctx, model.MEMBERSSTATUSPAUSED)
 		}

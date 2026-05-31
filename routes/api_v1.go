@@ -53,6 +53,7 @@ func AttachV1API(r *mux.Router) {
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.GetMember, model.MEMBERSTYPEREGULAR)).Methods("GET")
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.EditMember, model.MEMBERSTYPEREGULAR)).Methods("PUT")
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.DeleteMember, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/status", checkTokenType(controller.SetMemberStatus, model.MEMBERSTYPEADMIN)).Methods("PUT")
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/registration", checkTokenType(controller.SendRegistrationEmail, model.MEMBERSTYPEADMIN)).Methods("GET")
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.ParticipateEvent, model.MEMBERSTYPEREGULAR, controller.ParticipateEventPermission)).Methods("POST")
 	s.HandleFunc("/members/{responsible_uuid:[0-9a-f]+}/dependents/{dependent_uuid:[0-9a-f]+}", checkTokenType(controller.AddRemoveDependent, model.MEMBERSTYPEADMIN)).Methods("POST")
