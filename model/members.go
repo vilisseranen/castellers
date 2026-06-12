@@ -142,14 +142,14 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s WHERE uuid= ? AND status != '%s'",
-		MEMBERSTABLE, MEMBERSSTATUSDELETED))
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s WHERE uuid= ? AND status != ?",
+		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	var rolesAsString string
-	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language)
+	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language)
 	if err == nil {
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
@@ -197,7 +197,8 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(typeFilters, " OR ")))
 	}
 
-	filters = append(filters, fmt.Sprintf("status NOT IN ('%s', '%s')", MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED))
+	filters = append(filters, "status NOT IN (?, ?)")
+	queryValues = append(queryValues, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED)
 
 	filter := strings.Join(filters, " AND ")
 	queryString = compact(append(queryString, filter))
@@ -238,15 +239,15 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 func (m *Member) DeleteMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status='%s' WHERE uuid=?",
-		MEMBERSTABLE, MEMBERSSTATUSDELETED))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status=? WHERE uuid=?",
+		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, m.UUID)
+	_, err = stmt.ExecContext(ctx, MEMBERSSTATUSDELETED, m.UUID)
 	return err
 }
 

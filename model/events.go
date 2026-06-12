@@ -166,8 +166,8 @@ func (e *Event) GetUpcomingEventsWithoutNotification(ctx context.Context, eventT
 	ctx, span := tracer.Start(ctx, "Event.GetUpcomingEventsWithoutNotification")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
-		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = '%s') AND deleted=0 ORDER BY startDate",
-		EVENTS_TABLE, eventType), time.Now().Unix())
+		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = ?) AND deleted=0 ORDER BY startDate",
+		EVENTS_TABLE), time.Now().Unix(), eventType)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
