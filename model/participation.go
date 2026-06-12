@@ -140,15 +140,15 @@ func (m *Member) GetMemberLastParticipation(ctx context.Context) (Event, error) 
 
 	query := fmt.Sprintf(
 		`SELECT e.uuid FROM %s AS e LEFT JOIN %s AS p ON e.uuid = p.event_uuid
-		 WHERE p.member_uuid = ? AND (p.answer = '%s' OR p.presence = '%s') AND e.deleted = 0
-		 ORDER BY e.startDate DESC LIMIT 1;`, EVENTS_TABLE, PARTICIPATION_TABLE, common.AnswerYes, common.AnswerYes)
+		 WHERE p.member_uuid = ? AND (p.answer = ? OR p.presence = ?) AND e.deleted = 0
+		 ORDER BY e.startDate DESC LIMIT 1;`, EVENTS_TABLE, PARTICIPATION_TABLE)
 	common.Debug("SQL query: " + query)
 	stmt, err := db.PrepareContext(ctx, query)
 	defer stmt.Close()
 	if err != nil {
 		return e, err
 	}
-	err = stmt.QueryRowContext(ctx, m.UUID).Scan(&e.UUID)
+	err = stmt.QueryRowContext(ctx, m.UUID, common.AnswerYes, common.AnswerYes).Scan(&e.UUID)
 	if err != nil {
 		return e, err
 	}
