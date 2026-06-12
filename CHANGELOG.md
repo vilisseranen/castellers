@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.20.1] - 2026-06-11
+
+### Changed
+
+- Refactored SQL queries in the members, participation, and events models to bind all compared values as query parameters instead of interpolating them into the statement string, hardening against SQL injection regressions.
+
 ## [0.20.0] - 2026-05-30
 
 ### Added
