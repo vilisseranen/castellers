@@ -58,6 +58,13 @@ func AttachV1API(r *mux.Router) {
 	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.ParticipateEvent, model.MEMBERSTYPEREGULAR, controller.ParticipateEventPermission)).Methods("POST")
 	s.HandleFunc("/members/{responsible_uuid:[0-9a-f]+}/dependents/{dependent_uuid:[0-9a-f]+}", checkTokenType(controller.AddRemoveDependent, model.MEMBERSTYPEADMIN)).Methods("POST")
 	s.HandleFunc("/members/{responsible_uuid:[0-9a-f]+}/dependents/{dependent_uuid:[0-9a-f]+}", checkTokenType(controller.AddRemoveDependent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/members/{member_uuid:[0-9a-f]+}/badges", checkTokenType(controller.GetMemberBadges, model.MEMBERSTYPEREGULAR)).Methods("GET")
+
+	// Badges
+	s.HandleFunc("/badges", checkTokenType(controller.GetBadges, model.MEMBERSTYPEREGULAR)).Methods("GET")
+	s.HandleFunc("/badges/{badge_uuid:[0-9a-f]+}/members", checkTokenType(controller.GetBadgeMembers, model.MEMBERSTYPEADMIN)).Methods("GET")
+	s.HandleFunc("/badges/{badge_uuid:[0-9a-f]+}/members", checkTokenType(controller.AssignBadge, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/badges/{badge_uuid:[0-9a-f]+}/members", checkTokenType(controller.RemoveBadge, model.MEMBERSTYPEADMIN)).Methods("DELETE")
 
 	// Deprecated
 	s.HandleFunc("/members/events/{event_uuid:[0-9a-f]+}", checkTokenType(controller.ParticipateEvent, model.MEMBERSTYPEREGULAR, controller.ParticipateEventPermission)).Methods("POST")

@@ -31,9 +31,15 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	eventUUID := vars["event_uuid"]
 	memberUUID := vars["member_uuid"]
 
+	// awardEligible is true when the participation is confirmed by the member
+	// for themselves or by a parent for one of their dependents. It stays false
+	// when an admin acts on behalf of another member: the Amunt badge rewards
+	// members for using the app themselves, not admins doing the work for them.
+	awardEligible := false
 	// Using API endpoint without member_uuid, only works for self
 	if memberUUID == "" {
 		memberUUID = tokenAuth.UserId
+		awardEligible = true
 	} else {
 		// Using endpoint with member_uuid, where you can set dependent participation
 		// Valid if:
@@ -59,6 +65,10 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 			return
 		}
+		// Only reward acting for oneself or for a dependent, never an admin
+		// answering on behalf of an unrelated member.
+		awardEligible = tokenAuth.UserId == memberUUID ||
+			common.StringInSlice(memberUUID, dependentsUUID)
 	}
 
 	event := model.Event{UUID: eventUUID}
@@ -102,6 +112,11 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		common.Warn("Error participating event: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
 		return
+	}
+	// Reward members who confirm a participation themselves (or a parent doing
+	// it for a dependent) with the Amunt badge. Best-effort and idempotent.
+	if awardEligible {
+		awardBadgeByCode(ctx, model.BADGE_CODE_AMUNT, memberUUID)
 	}
 	// If the member says they will participate, it means it is an active member
 	inactive_delay_past := uint(time.Now().Unix()) - uint(common.GetConfigInt("inactive_delay_days"))*3600*24
