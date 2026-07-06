@@ -46,8 +46,12 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["member_uuid"]
 
-	// if member, request can only be about themselves
-	// if admin can be for anyone
+	// Any authenticated member can view any profile. What they see depends on
+	// who they are:
+	//   - admin: the full profile
+	//   - themselves: full profile except roles/extra (kept admin-only)
+	//   - another member: only first name, last name and badges (badges are
+	//     fetched separately). Everything else is stripped for privacy.
 
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
@@ -55,29 +59,32 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
 		return
 	}
-	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
-		m := model.Member{UUID: UUID}
-		if err := m.Get(ctx); err != nil {
-			switch err {
-			case sql.ErrNoRows:
-				common.Debug("Member not found: %s", err.Error())
-				RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
-			default:
-				common.Warn("Error getting member: %s", err.Error())
-				RespondWithError(w, http.StatusInternalServerError, ERRORMEMBERNOTFOUND)
-			}
-			return
-		}
-		if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
-			m.Roles = []string{}
-			m.Extra = ""
-		}
-		RespondWithJSON(w, http.StatusOK, m)
-		return
 
+	m := model.Member{UUID: UUID}
+	if err := m.Get(ctx); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("Member not found: %s", err.Error())
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
+		default:
+			common.Warn("Error getting member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORMEMBERNOTFOUND)
+		}
+		return
 	}
-	common.Info("Permissions: %s", tokenAuth.Permissions)
-	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
+
+	isAdmin := common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions)
+	isSelf := UUID == tokenAuth.UserId
+	switch {
+	case isAdmin:
+		// full profile
+	case isSelf:
+		m.Roles = []string{}
+		m.Extra = ""
+	default:
+		m = model.Member{UUID: m.UUID, FirstName: m.FirstName, LastName: m.LastName, Roles: []string{}}
+	}
+	RespondWithJSON(w, http.StatusOK, m)
 }
 
 func GetMembers(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +100,22 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 		common.Warn("Error getting members: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETMEMBERS)
 		return
+	}
+
+	// Non-admin members may browse the list to find a profile, but only see
+	// names: strip every other (potentially sensitive) field.
+	tokenAuth, err := ExtractToken(r.Context(), r)
+	if err != nil {
+		common.Warn("Error reading token: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		return
+	}
+	if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
+		sanitized := make([]model.Member, len(members))
+		for i, member := range members {
+			sanitized[i] = model.Member{UUID: member.UUID, FirstName: member.FirstName, LastName: member.LastName, Roles: []string{}}
+		}
+		members = sanitized
 	}
 	RespondWithJSON(w, http.StatusOK, members)
 }

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.21.0] - 2026-07-04
+
+### Added
+
+- Badges feature: new tables `badge_series`, `badges` and `member_badges` (migration `sql/0.21.0.sql`), seeded with the `welcome` series and its 7 badges (`casal`, `camisa`, `uniformeCasteller`, `motxilla`, `amunt`, `primeraDiada`, `primerCastell`). Badge names and descriptions are not stored; the UI derives i18n keys from the badge `code`.
+- Endpoint `GET /api/v1/badges` returning every badge series with its badges (any authenticated member).
+- Endpoint `GET /api/v1/members/{member_uuid}/badges` returning the badges a member has unlocked (viewable by any authenticated member).
+- Admin endpoint `GET /api/v1/badges/{badge_uuid}/members` returning the UUIDs of the members holding a badge.
+- Admin endpoints `POST` and `DELETE /api/v1/badges/{badge_uuid}/members` to grant or revoke a badge for a batch of members (payload `{ "memberUuids": [...] }`). Granting is idempotent.
+- Automatic award of the `amunt` badge when a member confirms a participation to an event through the app (any answer). It is granted to the member for whom the participation is recorded when they act for themselves or a parent acts for a dependent, but never when an admin answers on behalf of another member. Awarding is best-effort and idempotent, so it never interferes with recording the participation.
+
+### Changed
+
+- `GET /api/v1/members/{member_uuid}` now lets any authenticated member view any profile. Admins get the full profile, a member sees their own as before, and other members only receive first name, last name and UUID (all other fields are stripped).
+- `GET /api/v1/members` now returns a sanitized list (UUID, first name, last name only) to non-admin members so they can browse and search profiles without exposing roles or contact details.
+
 ## [0.20.1] - 2026-06-11
 
 ### Changed
