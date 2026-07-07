@@ -13,10 +13,21 @@ import (
 
 const (
 	welcomeSeriesUUID = "000000000000000000000000000000005e100001"
+	eventsSeriesUUID  = "000000000000000000000000000000005e100002"
 	casalBadgeUUID    = "00000000000000000000000000000000bad00001"
 	camisaBadgeUUID   = "00000000000000000000000000000000bad00002"
 	amuntBadgeUUID    = "00000000000000000000000000000000bad00005"
+	mcc2026BadgeUUID  = "00000000000000000000000000000000bad00008"
 )
+
+func findBadgeSeries(series []model.BadgeSeries, code string) *model.BadgeSeries {
+	for i := range series {
+		if series[i].Code == code {
+			return &series[i]
+		}
+	}
+	return nil
+}
 
 func (test *TestHelper) memberHasBadge(t *testing.T, memberUUID, badgeUUID, token string) bool {
 	t.Helper()
@@ -60,14 +71,23 @@ func TestGetBadges(t *testing.T) {
 	var series []model.BadgeSeries
 	json.Unmarshal(response.Body.Bytes(), &series)
 
-	if len(series) != 1 {
-		t.Fatalf("Expected 1 badge series. Got %d", len(series))
+	welcome := findBadgeSeries(series, "welcome")
+	if welcome == nil {
+		t.Fatal("Expected a 'welcome' badge series")
 	}
-	if series[0].Code != "welcome" {
-		t.Errorf("Expected series code 'welcome'. Got '%s'", series[0].Code)
+	if len(welcome.Badges) != 7 {
+		t.Errorf("Expected 7 badges in the welcome series. Got %d", len(welcome.Badges))
 	}
-	if len(series[0].Badges) != 7 {
-		t.Errorf("Expected 7 badges in the welcome series. Got %d", len(series[0].Badges))
+
+	events := findBadgeSeries(series, "events")
+	if events == nil {
+		t.Fatal("Expected an 'events' badge series")
+	}
+	if len(events.Badges) != 1 {
+		t.Errorf("Expected 1 badge in the events series. Got %d", len(events.Badges))
+	}
+	if events.Badges[0].Code != "mcc2026" {
+		t.Errorf("Expected events badge code 'mcc2026'. Got '%s'", events.Badges[0].Code)
 	}
 }
 
