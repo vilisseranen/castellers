@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.22.1] - 2026-07-06
+
+### Changed
+
+- CI: migrated the GitHub Actions workflows off the deprecated Node 20 actions. `job_check_version` now uses `actions/checkout@v5`, detects a `VERSION` change with native git (replacing the archived `technote-space/get-diff-action`), and cancels the run via the GitHub CLI (`gh run cancel`) plus fails the job when `VERSION` was not bumped (replacing `andymckay/cancel-action`). Bumped `actions/checkout` to `v5` in the test, docker and deploy workflows.
+
 ## [0.22.0] - 2026-07-06
 
 ### Added
