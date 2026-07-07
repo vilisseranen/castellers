@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.22.0] - 2026-07-06
+
+### Added
+
+- New badge series `events` (Évènements) seeded via migration `sql/0.22.0.sql`, with its first badge `mcc2026` (Montréal Complètement Cirque 2026), awarded for taking part in the castells workshops during the 2026 festival.
+
 ## [0.21.0] - 2026-07-04
 
 ### Added
