@@ -60,6 +60,12 @@ func SendReminderEmail(ctx context.Context, payload EmailReminderPayload) error 
 		mainSection.Text = common.Translate("reminder_please_answer", payload.Member.Language)
 	}
 	email.MainSections = []emailMain{mainSection}
+	if payload.Event.UniformRequired == 1 {
+		email.MainSections = append(email.MainSections, emailMain{
+			Title: common.Translate("reminder_uniform_title", payload.Member.Language),
+			Text:  common.Translate("reminder_uniform_text", payload.Member.Language),
+		})
+	}
 	email.Actions = []emailAction{{
 		Title: common.Translate("reminder_availability", payload.Member.Language),
 		Text:  common.Translate("reminder_confirm", payload.Member.Language),

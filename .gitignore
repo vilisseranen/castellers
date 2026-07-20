@@ -42,4 +42,7 @@ docker-compose.dev.yml
 Dockerfile.dev
 scripts/seed-local-creds.py
 
+# Vendored modules for offline/local Docker builds (not committed)
+/vendor/
+
 frontend/package-lock\.json

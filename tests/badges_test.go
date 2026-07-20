@@ -185,6 +185,68 @@ func TestRemoveBadge(t *testing.T) {
 	}
 }
 
+func TestAssignBadgeNotifyByEmail(t *testing.T) {
+	h.clearTables()
+	h.clearMemberBadges()
+	adminToken := h.addAnAdmin()
+	h.addAMember()
+	h.setMemberSubscribed("deadbeef", 1)
+
+	payload := []byte(`{"memberUuids":["deadbeef"],"notifyByEmail":true}`)
+	req, _ := http.NewRequest("POST", "/api/v1/badges/"+casalBadgeUUID+"/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+adminToken)
+	response := h.executeRequest(req)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	nType, err := h.getLatestNotificationType()
+	if err != nil {
+		t.Fatalf("Expected a badgeAwarded notification: %v", err)
+	}
+	if nType != model.TypeBadgeAwarded {
+		t.Errorf("Expected notification type %s. Got %s", model.TypeBadgeAwarded, nType)
+	}
+
+	// Re-assigning the same badge must not queue another notification.
+	req, _ = http.NewRequest("POST", "/api/v1/badges/"+casalBadgeUUID+"/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+adminToken)
+	if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+		t.Error(err)
+	}
+	db, err := sql.Open("sqlite3", testDbName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM notifications WHERE notificationType = ?", model.TypeBadgeAwarded).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Errorf("Expected exactly 1 badgeAwarded notification. Got %d", count)
+	}
+}
+
+func TestAssignBadgeWithoutNotifyCreatesNoNotification(t *testing.T) {
+	h.clearTables()
+	h.clearMemberBadges()
+	adminToken := h.addAnAdmin()
+	h.addAMember()
+
+	payload := []byte(`{"memberUuids":["deadbeef"]}`)
+	req, _ := http.NewRequest("POST", "/api/v1/badges/"+casalBadgeUUID+"/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+adminToken)
+	if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+		t.Error(err)
+	}
+
+	_, err := h.getLatestNotificationType()
+	if err != sql.ErrNoRows {
+		t.Errorf("Expected no notification. Got err=%v", err)
+	}
+}
+
 func TestAssignBadgeForbiddenForMember(t *testing.T) {
 	h.clearTables()
 	h.clearMemberBadges()

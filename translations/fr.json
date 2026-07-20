@@ -71,5 +71,22 @@
     "practice": "Entraînement",
     "registeredForEvent": "Nous attendons %d castellers pour cet évènement.",
     "presentation": "Présentation",
-    "social": "Social"
+    "social": "Social",
+    "badge_awarded_subject": "Tu as reçu un nouveau badge !",
+    "badge_awarded_intro": "Bonne nouvelle : un nouveau badge a été ajouté à ton tableau.",
+    "badge_awarded_title": "Félicitations !",
+    "badge_awarded_text": "Tu as reçu le badge « %s ». Continue comme ça !",
+    "badge_awarded_action_title": "Tes badges",
+    "badge_awarded_action_text": "Tu peux consulter tous tes badges sur ton tableau.",
+    "badge_awarded_action_button": "Voir mes badges",
+    "badge_name_casal": "Casal Català",
+    "badge_name_camisa": "La camisa",
+    "badge_name_uniformeCasteller": "Uniforme casteller",
+    "badge_name_motxilla": "Le sac à dos",
+    "badge_name_amunt": "Amunt!",
+    "badge_name_primeraDiada": "Première diada",
+    "badge_name_primerCastell": "Premier castell",
+    "badge_name_mcc2026": "Montréal Complètement Cirque 2026",
+    "reminder_uniform_title": "Uniforme de mise",
+    "reminder_uniform_text": "Pour cet évènement, le port de l'uniforme est de mise : chemise officielle et pantalons blancs. Si tu n'as pas encore la chemise officielle, porte des couleurs semblables aux nôtres. Nous avons quelques chemises de seconde main que l'on peut te prêter, au besoin."
 }
