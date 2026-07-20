@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.23.0] - 2026-07-19
+
+### Added
+
+- Admin option `notifyByEmail` on `POST /api/v1/badges/{badge_uuid}/members` to queue a `badgeAwarded` notification for newly awarded members who are subscribed to emails. The email congratulates them and links to `/myBadges`.
+- Event field `uniformRequired` (migration `sql/0.23.0.sql`). When set, automatic and manual reminder emails include uniform guidance (official shirt and white trousers, similar colours if needed, second-hand shirts available to borrow).
+
 ## [0.22.1] - 2026-07-06
 
 ### Changed

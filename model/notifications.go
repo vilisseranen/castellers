@@ -19,6 +19,13 @@ const TypeEventDeleted = "eventDeleted"
 const TypeEventModified = "eventModified"
 const TypeEventCreated = "eventCreated"
 const TypeManualEventReminder = "manualEventReminder"
+const TypeBadgeAwarded = "badgeAwarded"
+
+// BadgeAwardedPayload is stored on badgeAwarded notifications.
+type BadgeAwardedPayload struct {
+	BadgeCode   string   `json:"badgeCode"`
+	MemberUUIDs []string `json:"memberUuids"`
+}
 
 const ManualReminderAudienceDefault = "default"
 const ManualReminderAudienceNoAnswerActive = "no_answer_active"

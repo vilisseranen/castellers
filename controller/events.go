@@ -217,6 +217,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				anEvent.Type = event.Type
 				anEvent.Location = event.Location
 				anEvent.LocationName = event.LocationName
+				anEvent.UniformRequired = event.UniformRequired
 				events = append(events, anEvent)
 
 				// Adjust for Daylight Saving Time

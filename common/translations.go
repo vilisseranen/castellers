@@ -18,6 +18,10 @@ func InitializeTranslations() {
 }
 
 func Translate(word, language string) string {
+	// Members store Catalan as "cat"; message files use the BCP 47 tag "ca".
+	if language == "cat" {
+		language = "ca"
+	}
 	loc := i18n.NewLocalizer(bundle, language)
 	translated, err := loc.Localize(&i18n.LocalizeConfig{
 		MessageID: word,

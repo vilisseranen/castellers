@@ -194,29 +194,43 @@ func GetBadgeMembers(ctx context.Context, badgeUUID string) ([]string, error) {
 
 // AssignBadge grants a badge to several members. Idempotent: assigning an
 // already unlocked badge is a no-op (INSERT OR IGNORE on the unique pair).
-func AssignBadge(ctx context.Context, badgeUUID string, memberUUIDs []string, awardedBy string) error {
+// Returns the member UUIDs that were newly assigned (RowsAffected > 0).
+func AssignBadge(ctx context.Context, badgeUUID string, memberUUIDs []string, awardedBy string) ([]string, error) {
 	ctx, span := tracer.Start(ctx, "AssignBadge")
 	defer span.End()
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
 		"INSERT OR IGNORE INTO %s (member_uuid, badge_uuid, awarded_at, awarded_by) VALUES (?, ?, ?, ?)", MEMBER_BADGES_TABLE))
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	defer stmt.Close()
 	now := time.Now().Unix()
+	assigned := make([]string, 0, len(memberUUIDs))
 	for _, memberUUID := range memberUUIDs {
-		if _, err := stmt.ExecContext(ctx, memberUUID, badgeUUID, now, stringOrNull(awardedBy)); err != nil {
+		result, err := stmt.ExecContext(ctx, memberUUID, badgeUUID, now, stringOrNull(awardedBy))
+		if err != nil {
 			tx.Rollback()
 			common.Error("Error assigning badge %s to %s: %v", badgeUUID, memberUUID, err)
-			return err
+			return nil, err
+		}
+		n, err := result.RowsAffected()
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		if n > 0 {
+			assigned = append(assigned, memberUUID)
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return assigned, nil
 }
 
 // RemoveBadge revokes a badge from several members (fixes mistaken awards).

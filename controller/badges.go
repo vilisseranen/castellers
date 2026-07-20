@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -22,7 +24,8 @@ const (
 )
 
 type badgeMembersRequest struct {
-	MemberUUIDs []string `json:"memberUuids"`
+	MemberUUIDs   []string `json:"memberUuids"`
+	NotifyByEmail bool     `json:"notifyByEmail"`
 }
 
 // GetBadges returns all badge series with their badges (definitions only).
@@ -111,11 +114,34 @@ func AssignBadge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := model.AssignBadge(ctx, badgeUUID, body.MemberUUIDs, tokenAuth.UserId); err != nil {
+	assigned, err := model.AssignBadge(ctx, badgeUUID, body.MemberUUIDs, tokenAuth.UserId)
+	if err != nil {
 		common.Warn("Error assigning badge: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORASSIGNBADGE)
 		return
 	}
+
+	if body.NotifyByEmail && len(assigned) > 0 {
+		payload := model.BadgeAwardedPayload{BadgeCode: badge.Code, MemberUUIDs: assigned}
+		payloadBytes := new(bytes.Buffer)
+		if err := json.NewEncoder(payloadBytes).Encode(payload); err != nil {
+			common.Warn("Error encoding badge awarded notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
+			return
+		}
+		n := model.Notification{
+			NotificationType: model.TypeBadgeAwarded,
+			ObjectUUID:       badgeUUID,
+			SendDate:         int(time.Now().Unix()),
+			Payload:          payloadBytes.Bytes(),
+		}
+		if err := n.CreateNotification(ctx); err != nil {
+			common.Warn("Error creating badge awarded notification: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
+			return
+		}
+	}
+
 	RespondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
@@ -133,7 +159,7 @@ func awardBadgeByCode(ctx context.Context, code, memberUUID string) {
 		}
 		return
 	}
-	if err := model.AssignBadge(ctx, badge.UUID, []string{memberUUID}, ""); err != nil {
+	if _, err := model.AssignBadge(ctx, badge.UUID, []string{memberUUID}, ""); err != nil {
 		common.Warn("Error auto-awarding badge %q to %s: %s", code, memberUUID, err.Error())
 	}
 }

@@ -338,7 +338,45 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus(ctx)
-
+		case model.TypeBadgeAwarded:
+			var payload model.BadgeAwardedPayload
+			if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
+			failures := 0
+			attempted := 0
+			for _, memberUUID := range payload.MemberUUIDs {
+				member := model.Member{UUID: memberUUID}
+				if err := member.Get(ctx); err != nil {
+					common.Error("%v\n", err)
+					failures++
+					attempted++
+					continue
+				}
+				if member.Subscribed != 1 {
+					continue
+				}
+				attempted++
+				emailPayload := mail.EmailBadgeAwardedPayload{
+					Member:    member,
+					BadgeCode: payload.BadgeCode,
+				}
+				if err := mail.SendBadgeAwardedEmail(ctx, emailPayload); err != nil {
+					common.Error("%v\n", err)
+					failures++
+				}
+			}
+			if failures == 0 {
+				notification.Delivered = model.NotificationDeliverySuccess
+			} else if attempted > 0 && failures == attempted {
+				notification.Delivered = model.NotificationDeliveryFailure
+			} else {
+				notification.Delivered = model.NotificationDeliveryPartialFailure
+			}
+			notification.UpdateNotificationStatus(ctx)
 		}
 	}
 }

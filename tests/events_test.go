@@ -466,3 +466,53 @@ func TestCreateEventWithLocationAndDescription(t *testing.T) {
 	}
 
 }
+
+func TestCreateAndUpdateEventUniformRequired(t *testing.T) {
+	h.clearTables()
+	accessToken := h.addAnAdmin()
+
+	payload := []byte(`{"name":"diada", "type":"presentation", "uniformRequired":1}`)
+	req, _ := http.NewRequest("POST", "/api/v1/events", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+	response := h.executeRequest(req)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	var event model.Event
+	json.Unmarshal(response.Body.Bytes(), &event)
+	if event.UniformRequired != 1 {
+		t.Errorf("Expected uniformRequired to be 1. Got '%v'", event.UniformRequired)
+	}
+
+	req, _ = http.NewRequest("GET", "/api/v1/events/"+event.UUID, nil)
+	response = h.executeRequest(req)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+	json.Unmarshal(response.Body.Bytes(), &event)
+	if event.UniformRequired != 1 {
+		t.Errorf("Expected uniformRequired to be 1 on GET. Got '%v'", event.UniformRequired)
+	}
+
+	updatePayload, _ := json.Marshal(map[string]interface{}{
+		"name":            "diada",
+		"type":            "presentation",
+		"startDate":       event.StartDate,
+		"endDate":         event.EndDate,
+		"uniformRequired": 0,
+	})
+	req, _ = http.NewRequest("PUT", "/api/v1/events/"+event.UUID, bytes.NewBuffer(updatePayload))
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+	response = h.executeRequest(req)
+	if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+		t.Error(err)
+	}
+
+	req, _ = http.NewRequest("GET", "/api/v1/events/"+event.UUID, nil)
+	response = h.executeRequest(req)
+	json.Unmarshal(response.Body.Bytes(), &event)
+	if event.UniformRequired != 0 {
+		t.Errorf("Expected uniformRequired to be 0 after update. Got '%v'", event.UniformRequired)
+	}
+}
