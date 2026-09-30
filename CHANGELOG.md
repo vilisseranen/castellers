@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.0] - 2026-09-30
+
+### Added
+
+- New badge `castanyada2026` (Castanyada 2026) in the `events` series, seeded via migration `sql/0.24.0.sql`, awarded for taking part in the 2026 Castanyada.
+
 ## [0.23.0] - 2026-07-19
 
 ### Added

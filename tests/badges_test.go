@@ -83,11 +83,14 @@ func TestGetBadges(t *testing.T) {
 	if events == nil {
 		t.Fatal("Expected an 'events' badge series")
 	}
-	if len(events.Badges) != 1 {
-		t.Errorf("Expected 1 badge in the events series. Got %d", len(events.Badges))
+	if len(events.Badges) != 2 {
+		t.Fatalf("Expected 2 badges in the events series. Got %d", len(events.Badges))
 	}
 	if events.Badges[0].Code != "mcc2026" {
-		t.Errorf("Expected events badge code 'mcc2026'. Got '%s'", events.Badges[0].Code)
+		t.Errorf("Expected first events badge code 'mcc2026'. Got '%s'", events.Badges[0].Code)
+	}
+	if events.Badges[1].Code != "castanyada2026" {
+		t.Errorf("Expected second events badge code 'castanyada2026'. Got '%s'", events.Badges[1].Code)
 	}
 }
 
