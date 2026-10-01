@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.1] - 2026-09-30
+
+### Security
+
+- Bump Go to 1.26 (`go.mod`, `Dockerfile`, `Dockerfile.dev`).
+- Bump `golang.org/x/net` 0.19.0 → 0.59.0, `golang.org/x/crypto` 0.17.0 → 0.57.0, `golang.org/x/text` 0.14.0 → 0.42.0, `golang.org/x/sys` 0.15.0 → 0.48.0.
+- Bump `google.golang.org/grpc` 1.60.1 → 1.84.0, `google.golang.org/protobuf` 1.31.0 → 1.36.12 and `genproto`; this pulls OpenTelemetry core (`otel`, `otel/sdk`, `otel/trace`, `otel/metric`) from 1.21.0 to 1.44.0.
+
 ## [0.24.0] - 2026-09-30
 
 ### Added
