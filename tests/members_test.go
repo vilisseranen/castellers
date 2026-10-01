@@ -194,7 +194,7 @@ func TestUpdateMember(t *testing.T) {
 	m["contact"] = "514-111-1111"
 	payload, error := json.Marshal(m)
 	if error != nil {
-		t.Errorf(error.Error())
+		t.Error(error.Error())
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
@@ -239,7 +239,7 @@ func TestPromoteSelf(t *testing.T) {
 	m["type"] = "admin"
 	payload, error := json.Marshal(m)
 	if error != nil {
-		t.Errorf(error.Error())
+		t.Error(error.Error())
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
@@ -269,7 +269,7 @@ func TestPromoteByAdmin(t *testing.T) {
 	m["type"] = "admin"
 	payload, error := json.Marshal(m)
 	if error != nil {
-		t.Errorf(error.Error())
+		t.Error(error.Error())
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
@@ -482,7 +482,7 @@ func TestUpdateSelf(t *testing.T) {
 	m["height"] = "180"
 	payload, error := json.Marshal(m)
 	if error != nil {
-		t.Errorf(error.Error())
+		t.Error(error.Error())
 	}
 
 	req, _ = http.NewRequest("PUT", "/api/v1/members/deadbeef", bytes.NewBuffer(payload))
