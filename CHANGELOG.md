@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.2] - 2026-11-06
+
+### Security
+
+- Bump Go to 1.26.10 (`go.mod`), fixing standard library vulnerabilities in `net/http`, `net/url`, `crypto/x509`, `crypto/tls` and others reported by `govulncheck`.
+- Replace `github.com/golang-jwt/jwt` v3 (unmaintained, GO-2025-3553: excessive memory allocation while parsing headers) with `github.com/golang-jwt/jwt/v5` 5.3.1. Token verification now only accepts `HS256` and rejects tokens without an `exp` claim.
+- Bump `github.com/redis/go-redis/v9` and `redisotel` 9.3.1 → 9.23.0 (GO-2025-3540).
+- Bump OpenTelemetry (`otel`, `otel/sdk`, `otlptracegrpc`) to 1.47.0 (GO-2026-6505) and `otelmux` 0.46.1 → 0.72.0.
+- Bump `golang.org/x/net` 0.59.0 → 0.62.0, `golang.org/x/crypto` 0.57.0 → 0.58.0, `golang.org/x/text` 0.42.0 → 0.43.0.
+
+### Added
+
+- Tests for `/api/v1/refresh` and access token validation, including expired, unsigned (`alg: none`), wrongly signed and `exp`-less tokens.
+
 ## [0.24.1] - 2026-09-30
 
 ### Security
