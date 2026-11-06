@@ -208,6 +208,12 @@ func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token
 	return token, nil
 }
 
+// IsTokenExpired reports whether err, as returned by ExtractToken, means the token has expired.
+// Clients rely on this to know when to call /refresh.
+func IsTokenExpired(err error) bool {
+	return errors.Is(err, jwt.ErrTokenExpired)
+}
+
 func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, error) {
 	ctx, span := tracer.Start(ctx, "ExtractToken")
 	defer span.End()

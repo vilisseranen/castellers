@@ -21,7 +21,12 @@ func loginAsMember(t *testing.T) (string, string) {
 		t.Fatal(err)
 	}
 	var tokens map[string]string
-	json.Unmarshal(response.Body.Bytes(), &tokens)
+	if err := json.Unmarshal(response.Body.Bytes(), &tokens); err != nil {
+		t.Fatal(err)
+	}
+	if tokens["access_token"] == "" || tokens["refresh_token"] == "" {
+		t.Fatalf("login did not return tokens: %s", response.Body.String())
+	}
 	return tokens["access_token"], tokens["refresh_token"]
 }
 
@@ -50,8 +55,8 @@ func refresh(refreshToken string) int {
 	return h.executeRequest(req).Code
 }
 
-func getWithAccessToken(accessToken string) int {
-	req, _ := http.NewRequest("GET", "/api/v1/castells/models", nil)
+func getWithAccessToken(path, accessToken string) int {
+	req, _ := http.NewRequest("GET", path, nil)
 	req.Header.Add("Authorization", "Bearer "+accessToken)
 	return h.executeRequest(req).Code
 }
@@ -69,7 +74,7 @@ func TestAccessTokenAccepted(t *testing.T) {
 	h.clearTables()
 	accessToken, _ := loginAsMember(t)
 
-	if err := h.checkResponseCode(http.StatusOK, getWithAccessToken(accessToken)); err != nil {
+	if err := h.checkResponseCode(http.StatusOK, getWithAccessToken("/api/v1/castells/models", accessToken)); err != nil {
 		t.Error(err)
 	}
 }
@@ -105,17 +110,35 @@ func TestForgedAccessTokensRejected(t *testing.T) {
 	accessToken, refreshToken := loginAsMember(t)
 	secret := []byte(os.Getenv("APP_ACCESS_SECRET"))
 
-	expired := claimsOf(t, accessToken)
-	expired["exp"] = time.Now().Add(-time.Minute).Unix()
+	noExp := claimsOf(t, accessToken)
+	delete(noExp, "exp")
 
 	cases := map[string]string{
-		"expired":       sign(t, jwt.SigningMethodHS256, expired, secret),
+		"missing exp":   sign(t, jwt.SigningMethodHS256, noExp, secret),
+		"wrong secret":  sign(t, jwt.SigningMethodHS256, claimsOf(t, accessToken), []byte("not-the-secret")),
 		"alg none":      sign(t, jwt.SigningMethodNone, claimsOf(t, accessToken), jwt.UnsafeAllowNoneSignatureType),
+		"alg HS512":     sign(t, jwt.SigningMethodHS512, claimsOf(t, accessToken), secret),
 		"refresh token": refreshToken,
 	}
 	for name, token := range cases {
-		if code := getWithAccessToken(token); code == http.StatusOK {
-			t.Errorf("%s: forged access token was accepted", name)
+		if err := h.checkResponseCode(http.StatusUnauthorized, getWithAccessToken("/api/v1/castells/models", token)); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+// The UI calls /refresh when it gets a 403, so an expired access token must give exactly 403.
+func TestExpiredAccessTokenReturnsForbidden(t *testing.T) {
+	h.clearTables()
+	accessToken, _ := loginAsMember(t)
+
+	expired := claimsOf(t, accessToken)
+	expired["exp"] = time.Now().Add(-time.Minute).Unix()
+	token := sign(t, jwt.SigningMethodHS256, expired, []byte(os.Getenv("APP_ACCESS_SECRET")))
+
+	for _, path := range []string{"/api/v1/castells/models", "/api/v1/events"} {
+		if err := h.checkResponseCode(http.StatusForbidden, getWithAccessToken(path, token)); err != nil {
+			t.Errorf("%s: %v", path, err)
 		}
 	}
 }

@@ -11,14 +11,18 @@ The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/v
 ### Security
 
 - Bump Go to 1.26.10 (`go.mod`), fixing standard library vulnerabilities in `net/http`, `net/url`, `crypto/x509`, `crypto/tls` and others reported by `govulncheck`.
-- Replace `github.com/golang-jwt/jwt` v3 (unmaintained, GO-2025-3553: excessive memory allocation while parsing headers) with `github.com/golang-jwt/jwt/v5` 5.3.1. Token verification now only accepts `HS256` and rejects tokens without an `exp` claim.
+- Replace `github.com/golang-jwt/jwt` v3 (unmaintained, GO-2025-3553: excessive memory allocation while parsing headers) with `github.com/golang-jwt/jwt/v5` 5.3.1. Token verification now only accepts `HS256` and rejects tokens without an `exp` claim; HS384/HS512 tokens and tokens without `exp` used to be accepted (this API never issued such tokens).
 - Bump `github.com/redis/go-redis/v9` and `redisotel` 9.3.1 → 9.23.0 (GO-2025-3540).
-- Bump OpenTelemetry (`otel`, `otel/sdk`, `otlptracegrpc`) to 1.47.0 (GO-2026-6505) and `otelmux` 0.46.1 → 0.72.0.
+- Bump OpenTelemetry (`otel`, `otel/sdk`, `otlptracegrpc`) to 1.47.0 (GO-2026-6505) and `otelmux` 0.46.1 → 0.72.0. Span names are kept as the route template; HTTP span attributes now follow the stable semantic conventions (e.g. `http.request.method` instead of `http.method`).
 - Bump `golang.org/x/net` 0.59.0 → 0.62.0, `golang.org/x/crypto` 0.57.0 → 0.58.0, `golang.org/x/text` 0.42.0 → 0.43.0.
+
+### Fixed
+
+- Detect expired access tokens with `errors.Is(err, jwt.ErrTokenExpired)` (new `controller.IsTokenExpired`) instead of comparing the error text, which changed in jwt v5. Expired tokens keep returning 403, which the UI uses to trigger `/refresh`.
 
 ### Added
 
-- Tests for `/api/v1/refresh` and access token validation, including expired, unsigned (`alg: none`), wrongly signed and `exp`-less tokens.
+- Tests for `/api/v1/refresh` and access token validation, including expired, unsigned (`alg: none`), wrongly signed and `exp`-less tokens, and a regression test that an expired access token returns 403.
 
 ## [0.24.1] - 2026-09-30
 

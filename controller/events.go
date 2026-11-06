@@ -112,7 +112,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	// if request is authenticated
 	if requestHasAuthorizationToken(ctx, r) {
 		tokenAuth, err := ExtractToken(ctx, r)
-		if err != nil && err.Error() == "Token is expired" {
+		if err != nil && IsTokenExpired(err) {
 			common.Debug("Token expired, cannot get participation: %s", err.Error())
 			RespondWithError(w, http.StatusForbidden, ERRORTOKENEXPIRED)
 			return
