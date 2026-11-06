@@ -113,12 +113,17 @@ func TestForgedAccessTokensRejected(t *testing.T) {
 	noExp := claimsOf(t, accessToken)
 	delete(noExp, "exp")
 
+	expired := claimsOf(t, accessToken)
+	expired["exp"] = time.Now().Add(-time.Minute).Unix()
+
 	cases := map[string]string{
-		"missing exp":   sign(t, jwt.SigningMethodHS256, noExp, secret),
-		"wrong secret":  sign(t, jwt.SigningMethodHS256, claimsOf(t, accessToken), []byte("not-the-secret")),
-		"alg none":      sign(t, jwt.SigningMethodNone, claimsOf(t, accessToken), jwt.UnsafeAllowNoneSignatureType),
-		"alg HS512":     sign(t, jwt.SigningMethodHS512, claimsOf(t, accessToken), secret),
-		"refresh token": refreshToken,
+		"missing exp": sign(t, jwt.SigningMethodHS256, noExp, secret),
+		// A forged token must never get the 403 that means "expired, please refresh".
+		"expired and wrong secret": sign(t, jwt.SigningMethodHS256, expired, []byte("not-the-secret")),
+		"wrong secret":             sign(t, jwt.SigningMethodHS256, claimsOf(t, accessToken), []byte("not-the-secret")),
+		"alg none":                 sign(t, jwt.SigningMethodNone, claimsOf(t, accessToken), jwt.UnsafeAllowNoneSignatureType),
+		"alg HS512":                sign(t, jwt.SigningMethodHS512, claimsOf(t, accessToken), secret),
+		"refresh token":            refreshToken,
 	}
 	for name, token := range cases {
 		if err := h.checkResponseCode(http.StatusUnauthorized, getWithAccessToken("/api/v1/castells/models", token)); err != nil {
