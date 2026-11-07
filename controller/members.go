@@ -262,12 +262,12 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-			common.Info("Error validating Height: " + m.Height)
+			common.Info("Error validating height of member %s", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERHEIGHT)
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-			common.Info("Error validating Weight: " + m.Weight)
+			common.Info("Error validating weight of member %s", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERWEIGHT)
 			return
 		}

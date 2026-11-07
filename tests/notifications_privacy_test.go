@@ -86,6 +86,42 @@ func TestRegistrationEmailPayloadLoadsMembers(t *testing.T) {
 	}
 }
 
+// If the author was deleted since, the email is still sent, without their name.
+func TestRegistrationEmailPayloadDeletedAuthor(t *testing.T) {
+	h.clearTables()
+	h.addMember("deadbeef", "Ramon", "Gerard", "", "", "", "segon", "member", "ramon@gerard.ca", "")
+	h.addMember("deadfeed", "Romà", "Èric", "", "", "", "baix", "admin", "roma@eric.ca", "")
+	db, err := sql.Open("sqlite3", testDbName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec("UPDATE members SET status = ? WHERE uuid = ?", model.MEMBERSSTATUSDELETED, "deadfeed"); err != nil {
+		t.Fatal(err)
+	}
+
+	n, _ := model.NewMemberRegistrationNotification("deadbeef", "deadfeed")
+	payload, err := controller.RegistrationEmailPayload(context.Background(), n)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if payload.Member.Email != "ramon@gerard.ca" || payload.Author.FirstName != "" {
+		t.Errorf("unexpected payload: member=%s author=%q", payload.Member.Email, payload.Author.FirstName)
+	}
+}
+
+// A member without email (e.g. turned into a guest) does not get the email.
+func TestRegistrationEmailPayloadMemberWithoutEmail(t *testing.T) {
+	h.clearTables()
+	h.addAnAdmin()
+	h.addMember("deadbeef", "Ramon", "Gerard", "", "", "", "segon", "guest", "", "")
+
+	n, _ := model.NewMemberRegistrationNotification("deadbeef", "deadfeed")
+	if _, err := controller.RegistrationEmailPayload(context.Background(), n); err == nil {
+		t.Error("expected an error for a member without email")
+	}
+}
+
 // Migration 0.24.3 rewrites existing registration notifications to keep only UUIDs.
 func TestMigrationStripsPersonalDataFromNotifications(t *testing.T) {
 	h.clearTables()
@@ -97,9 +133,19 @@ func TestMigrationStripsPersonalDataFromNotifications(t *testing.T) {
 
 	legacy := `{"member":{"uuid":"m1","firstName":"Ramon","email":"ramon@gerard.ca","contact":"514"},"author":{"uuid":"a1","firstName":"Romà"},"token":""}`
 	insert := "INSERT INTO notifications (notificationType, objectUUID, sendDate, delivered, payload) VALUES (?, ?, 0, ?, ?)"
-	db.Exec(insert, model.TypeMemberRegistration, "m1", model.NotificationDeliverySuccess, []byte(legacy))
-	db.Exec(insert, model.TypeMemberRegistration, "m2", model.NotificationNotDelivered, []byte("not json"))
-	db.Exec(insert, model.TypeBadgeAwarded, "b1", model.NotificationNotDelivered, []byte(`{"badgeCode":"x","memberUuids":["m1"]}`))
+	for _, row := range []struct {
+		notificationType, objectUUID string
+		delivered                    int
+		payload                      string
+	}{
+		{model.TypeMemberRegistration, "m1", model.NotificationDeliverySuccess, legacy},
+		{model.TypeMemberRegistration, "m2", model.NotificationNotDelivered, "not json"},
+		{model.TypeBadgeAwarded, "b1", model.NotificationNotDelivered, `{"badgeCode":"x","memberUuids":["m1"]}`},
+	} {
+		if _, err := db.Exec(insert, row.notificationType, row.objectUUID, row.delivered, []byte(row.payload)); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	migration, err := os.ReadFile("sql/0.24.3.sql")
 	if err != nil {
@@ -120,6 +166,9 @@ func TestMigrationStripsPersonalDataFromNotifications(t *testing.T) {
 		var payload []byte
 		rows.Scan(&uuid, &payload)
 		got[uuid] = string(payload)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 notifications, got %d", len(got))
 	}
 	want := map[string]string{
 		"m1": `{"memberUuid":"m1","authorUuid":"a1"}`,

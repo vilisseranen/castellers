@@ -477,9 +477,17 @@ func RegistrationEmailPayload(ctx context.Context, notification model.Notificati
 	if err := member.Get(ctx); err != nil {
 		return mail.EmailRegisterPayload{}, fmt.Errorf("getting member %s: %w", stored.MemberUUID, err)
 	}
+	if member.Email == "" {
+		// e.g. the member was turned into a guest after the email was queued.
+		return mail.EmailRegisterPayload{}, fmt.Errorf("member %s has no email", stored.MemberUUID)
+	}
 	author := model.Member{UUID: stored.AuthorUUID}
 	if err := author.Get(ctx); err != nil {
-		return mail.EmailRegisterPayload{}, fmt.Errorf("getting author %s: %w", stored.AuthorUUID, err)
+		if err != sql.ErrNoRows {
+			return mail.EmailRegisterPayload{}, fmt.Errorf("getting author %s: %w", stored.AuthorUUID, err)
+		}
+		// The author was deleted since: send the email without their name.
+		author = model.Member{UUID: stored.AuthorUUID}
 	}
 	return mail.EmailRegisterPayload{Member: member, Author: author}, nil
 }
