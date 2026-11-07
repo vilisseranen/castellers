@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
 )
@@ -201,14 +201,17 @@ func verifyToken(ctx context.Context, tokenString, tokenType string) (*jwt.Token
 			return []byte(common.GetConfigString("jwt.refresh_secret")), nil
 		}
 		return nil, errors.New("unsupported token type")
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithExpirationRequired())
 	if err != nil {
-		// if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorExpired {
-
-		// }
 		return nil, err
 	}
 	return token, nil
+}
+
+// IsTokenExpired reports whether err, as returned by ExtractToken, means the token has expired.
+// Clients rely on this to know when to call /refresh.
+func IsTokenExpired(err error) bool {
+	return errors.Is(err, jwt.ErrTokenExpired)
 }
 
 func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, error) {
