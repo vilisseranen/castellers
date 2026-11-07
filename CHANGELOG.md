@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.3] - 2026-11-07
+
+### Security
+
+- `memberRegistration` notifications no longer store the member and the author (names, email, phone, height, weight, roles…) in clear text in `notifications.payload`. They now store only `{"memberUuid", "authorUuid"}`, and the scheduler loads both members when it sends the email.
+- Migration `sql/0.24.3.sql` rewrites existing `memberRegistration` notifications to keep only these UUIDs. The database is then `VACUUM`ed so the old content is removed from the database file. **Older copies remain in Litestream backups until their retention expires (90 days)**, unless the replica is purged or recreated.
+- Logs no longer contain personal data or tokens:
+  - member and notification log lines show UUIDs instead of the whole record. `Member` and `Notification` now implement `String()` so formatting them with `%v` never prints personal data or payloads;
+  - emails (including the one typed on "forgot password"), height and weight values are no longer logged;
+  - the `Authorization` header (access token) is no longer logged at debug level.
+- Production log level is now `info` instead of `debug` (`deployment/fly.io/fly.toml`).
+
 ## [0.24.2] - 2026-11-06
 
 ### Security

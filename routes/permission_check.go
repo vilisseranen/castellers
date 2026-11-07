@@ -13,7 +13,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := tracer.Start(r.Context(), "checkTokenType")
 		defer span.End()
-		common.Debug("Validating token in Authorization Header: %s", r.Header.Get("Authorization"))
+		common.Debug("Validating token in Authorization header")
 		tokenAuth, err := controller.ExtractToken(ctx, r)
 		if err != nil {
 			if controller.IsTokenExpired(err) {

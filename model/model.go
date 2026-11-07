@@ -63,6 +63,11 @@ func InitializeDB(dbname string) {
 	// Sort update files
 	semver.Sort(vs)
 
+	// Migrations that remove sensitive data: VACUUM afterwards so the old
+	// content is also removed from the database file, not only marked as free.
+	vacuumAfter := map[string]bool{"0.24.3": true}
+	needVacuum := false
+
 	// For each, check if it was applied
 	for _, v := range vs {
 		version := fmt.Sprintf("%s", v)
@@ -99,8 +104,18 @@ func InitializeDB(dbname string) {
 				common.Fatal(err.Error())
 			}
 			common.Info("Update schema to %s completed\n", version)
+			if vacuumAfter[version] {
+				needVacuum = true
+			}
 		} else {
 			common.Info("Schema %s already installed.\n", version)
+		}
+	}
+
+	if needVacuum {
+		common.Info("Vacuuming database\n")
+		if _, err := db.Exec("VACUUM"); err != nil {
+			common.Fatal(err.Error())
 		}
 	}
 

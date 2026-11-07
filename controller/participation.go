@@ -125,7 +125,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		event.StartDate >= inactive_delay_past && event.StartDate <= inactive_delay_future {
 		err = member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
 		if err != nil {
-			common.Warn("Error activating member: %v", member)
+			common.Warn("Error activating member %s: %v", member.UUID, err)
 			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
 			return
 		}
@@ -193,7 +193,7 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 		event.StartDate >= inactive_delay_past && event.StartDate <= inactive_delay_future {
 		err := member.SetStatus(ctx, model.MEMBERSSTATUSACTIVATED)
 		if err != nil {
-			common.Warn("Error activating member: %v", member)
+			common.Warn("Error activating member %s: %v", member.UUID, err)
 			RespondWithError(w, http.StatusInternalServerError, ERRORACTIVATINGMEMBER)
 			return
 		}

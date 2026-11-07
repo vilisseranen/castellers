@@ -47,6 +47,12 @@ type Member struct {
 	Presence      string   `json:"presence"`
 }
 
+// String keeps personal data out of logs and error messages: formatting a
+// Member with %v or %s only shows its UUID.
+func (m Member) String() string {
+	return "Member{" + m.UUID + "}"
+}
+
 type Credentials struct {
 	UUID           string `json:"-"`
 	Username       string `json:"username"`
@@ -66,7 +72,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
+		common.Error("Error: %v on member %s", err.Error(), m.UUID)
 		return err
 	}
 	defer stmt.Close()
@@ -85,7 +91,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		stringOrNull(m.Language))
 	if err != nil {
 		tx.Rollback()
-		common.Error("Error: %v on member: %v", err.Error(), m)
+		common.Error("Error: %v on member %s", err.Error(), m.UUID)
 		return err
 	}
 	err = tx.Commit()
@@ -108,7 +114,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
-		common.Error("%v\n")
+		common.Error("Error editing member %s: %v", m.UUID, err)
 		return err
 	}
 	defer stmt.Close()
@@ -127,7 +133,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		stringOrNull(m.UUID))
 	if err != nil {
 		tx.Rollback()
-		common.Error("%v\n", m)
+		common.Error("Error on member %s: %v", m.UUID, err)
 		return err
 	}
 	err = tx.Commit()
@@ -379,13 +385,13 @@ func (m *Member) GetByEmail(ctx context.Context) error {
 	}
 	for _, member := range members {
 		if strings.EqualFold(member.Email, m.Email) {
-			common.Debug("Found a member with email %s", m.Email)
+			common.Debug("Found member %s by email", member.UUID)
 			*m = member
 			found = true
 		}
 	}
 	if !found {
-		common.Debug("Email %s not found.", m.Email)
+		common.Debug("Email not found")
 		return errors.New(MEMBERSEMAILNOTFOUNDMESSAGE)
 	}
 	return nil

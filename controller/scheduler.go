@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"time"
 
@@ -65,9 +66,9 @@ func checkAndSendNotification() {
 		case model.TypeMemberRegistration:
 			// Send the email
 			if common.GetConfigBool("smtp.enabled") {
-				var payload mail.EmailRegisterPayload
-				if err := json.Unmarshal(notification.Payload, &payload); err != nil {
-					common.Error("%v\n", err)
+				payload, err := RegistrationEmailPayload(ctx, notification)
+				if err != nil {
+					common.Warn("Cannot prepare registration email for notification %d: %s", notification.ID, err.Error())
 					notification.Delivered = model.NotificationDeliveryFailure
 					notification.UpdateNotificationStatus(ctx)
 					continue
@@ -463,4 +464,22 @@ func pauseAbsentMembers() {
 			member.SetStatus(ctx, model.MEMBERSSTATUSPAUSED)
 		}
 	}
+}
+
+// RegistrationEmailPayload loads the member and the author referenced by a
+// memberRegistration notification.
+func RegistrationEmailPayload(ctx context.Context, notification model.Notification) (mail.EmailRegisterPayload, error) {
+	var stored model.MemberRegistrationPayload
+	if err := json.Unmarshal(notification.Payload, &stored); err != nil {
+		return mail.EmailRegisterPayload{}, err
+	}
+	member := model.Member{UUID: stored.MemberUUID}
+	if err := member.Get(ctx); err != nil {
+		return mail.EmailRegisterPayload{}, fmt.Errorf("getting member %s: %w", stored.MemberUUID, err)
+	}
+	author := model.Member{UUID: stored.AuthorUUID}
+	if err := author.Get(ctx); err != nil {
+		return mail.EmailRegisterPayload{}, fmt.Errorf("getting author %s: %w", stored.AuthorUUID, err)
+	}
+	return mail.EmailRegisterPayload{Member: member, Author: author}, nil
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -20,6 +21,29 @@ const TypeEventModified = "eventModified"
 const TypeEventCreated = "eventCreated"
 const TypeManualEventReminder = "manualEventReminder"
 const TypeBadgeAwarded = "badgeAwarded"
+
+// MemberRegistrationPayload is stored on memberRegistration notifications.
+// It only holds UUIDs: the members are loaded when the email is sent, so no
+// personal data is stored in clear text in the notifications table.
+type MemberRegistrationPayload struct {
+	MemberUUID string `json:"memberUuid"`
+	AuthorUUID string `json:"authorUuid"`
+}
+
+// NewMemberRegistrationNotification returns a notification, ready to be created,
+// that sends the registration email to memberUUID on behalf of authorUUID.
+func NewMemberRegistrationNotification(memberUUID, authorUUID string) (Notification, error) {
+	payload, err := json.Marshal(MemberRegistrationPayload{MemberUUID: memberUUID, AuthorUUID: authorUUID})
+	if err != nil {
+		return Notification{}, err
+	}
+	return Notification{
+		NotificationType: TypeMemberRegistration,
+		ObjectUUID:       memberUUID,
+		SendDate:         int(time.Now().Unix()),
+		Payload:          payload,
+	}, nil
+}
 
 // BadgeAwardedPayload is stored on badgeAwarded notifications.
 type BadgeAwardedPayload struct {
@@ -54,6 +78,11 @@ type Notification struct {
 	Payload          []byte
 }
 
+// String keeps the payload, which may hold personal data, out of logs.
+func (n Notification) String() string {
+	return fmt.Sprintf("Notification{%d %s %s}", n.ID, n.NotificationType, n.ObjectUUID)
+}
+
 func (n *Notification) CreateNotification(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Notification.CreateNotification")
 	defer span.End()
@@ -64,7 +93,7 @@ func (n *Notification) CreateNotification(ctx context.Context) error {
 	defer stmt.Close()
 	if err != nil {
 		common.Error(err.Error())
-		common.Error("%v\n", n)
+		common.Error("Notification %d (%s, object %s)", n.ID, n.NotificationType, n.ObjectUUID)
 		return err
 	}
 	result, err := stmt.ExecContext(ctx,
@@ -74,7 +103,7 @@ func (n *Notification) CreateNotification(ctx context.Context) error {
 		n.Payload)
 	if err != nil {
 		common.Error(err.Error())
-		common.Error("%v\n", n)
+		common.Error("Notification %d (%s, object %s)", n.ID, n.NotificationType, n.ObjectUUID)
 		return err
 	}
 	id, err := result.LastInsertId()
@@ -124,7 +153,7 @@ func (n *Notification) UpdateNotificationStatus(ctx context.Context) error {
 	defer stmt.Close()
 	if err != nil {
 		common.Error(err.Error())
-		common.Error("%v\n", n)
+		common.Error("Notification %d (%s, object %s)", n.ID, n.NotificationType, n.ObjectUUID)
 		return err
 	}
 	_, err = stmt.ExecContext(ctx,
@@ -132,7 +161,7 @@ func (n *Notification) UpdateNotificationStatus(ctx context.Context) error {
 		n.ID)
 	if err != nil {
 		common.Error(err.Error())
-		common.Error("%v\n", n)
+		common.Error("Notification %d (%s, object %s)", n.ID, n.NotificationType, n.ObjectUUID)
 		return err
 	}
 	return err
