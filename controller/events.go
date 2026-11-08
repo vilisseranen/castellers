@@ -114,7 +114,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		tokenAuth, err := ExtractToken(ctx, r)
 		if err != nil && IsTokenExpired(err) {
 			common.Debug("Token expired, cannot get participation: %s", err.Error())
-			RespondWithError(w, http.StatusForbidden, ERRORTOKENEXPIRED)
+			RespondWithTokenExpired(w, ERRORTOKENEXPIRED)
 			return
 		} else if err != nil {
 			common.Warn("Error reading token: %s", err.Error())

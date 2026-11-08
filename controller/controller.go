@@ -29,6 +29,15 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 	RespondWithJSON(w, code, map[string]string{"error": message})
 }
 
+// ERRORCODETOKENEXPIRED is the "code" of the error returned when the access
+// token has expired: clients call /refresh when they get it.
+const ERRORCODETOKENEXPIRED = "token_expired"
+
+// RespondWithTokenExpired tells the client that its access token has expired.
+func RespondWithTokenExpired(w http.ResponseWriter, message string) {
+	RespondWithJSON(w, http.StatusForbidden, map[string]string{"error": message, "code": ERRORCODETOKENEXPIRED})
+}
+
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, _ := json.Marshal(payload)
 

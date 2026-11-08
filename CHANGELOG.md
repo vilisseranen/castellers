@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.4] - 2026-11-08
+
+First step of the JWT hardening. No API change is required from the UI.
+
+### Security
+
+- Registration and "forgot password" links (`reset_credentials` tokens) can now be used only once. Before, the "single use" check deleted a Redis key that never existed, so a registration link (valid 7 days) could reset the password and username any number of times. Each link token now has a Redis key with the link's TTL, consumed atomically before the password is changed. Links sent before this version are also accepted once.
+- Link tokens (registration, password reset, participation) no longer create a refresh token. Each one used to leave a Redis key with no expiry.
+- `createToken` returned `(nil, nil)` when Redis failed, which crashed the request, or the whole process when called from the scheduler. It now returns the error.
+- The `Authorization` header must use the `Bearer` scheme (case-insensitive). `Bearer: <token>`, which the UI currently sends, is still accepted. Other schemes such as `Basic <token>` used to be accepted and are now rejected.
+
+### Fixed
+
+- `POST /logout` crashed (nil error dereference) and never succeeded. It now revokes the session's refresh token and returns 202. It also works with an expired access token and when the session was already revoked, and returns 401 for a missing or invalid token.
+
+### Added
+
+- Responses for an expired access token (403) now include `"code": "token_expired"`, so the UI can tell them apart from other 403 responses before the status codes are fixed.
+
 ## [0.24.3] - 2026-11-07
 
 ### Security

@@ -100,29 +100,35 @@ func createMemberToken(ctx context.Context, uuid string) (map[string]string, err
 	return tokens, nil
 }
 
+// Logout revokes the session (refresh token) of the access token. It also
+// works with an expired access token, and succeeds if the session was already
+// revoked, so clients can always call it.
 func Logout(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(r.Context(), "Logout")
 	defer span.End()
 
-	au, err := ExtractToken(ctx, r)
+	token, err := parseTokenIgnoringExpiry(extractTokenString(ctx, r), common.GetConfigString("jwt.access_secret"))
 	if err != nil {
-		common.Warn("Invalid token: %s", err.Error())
-		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
+		common.Debug("Invalid token on logout: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
 		return
 	}
-	deleted, delErr := deleteTokenInCache(ctx, au.RefreshUuid)
-	if delErr != nil || deleted == 0 {
-		common.Warn("Cannot delete refresh token in cache: %s", err.Error())
-		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
-		return
-	}
-	deleted, delErr = deleteTokenInCache(ctx, au.TokenUuid)
-	if delErr != nil || deleted == 0 {
-		common.Warn("Cannot delete access token in cache: %s", err.Error())
-		RespondWithError(w, http.StatusBadRequest, ERRORUNAUTHORIZED)
-		return
+	claims, _ := token.Claims.(jwt.MapClaims)
+	if refreshUuid, ok := claims["refresh_uuid"].(string); ok && refreshUuid != "" {
+		if _, err := deleteTokenInCache(ctx, refreshUuid); err != nil {
+			common.Warn("Cannot delete refresh token in cache: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+			return
+		}
 	}
 	RespondWithJSON(w, http.StatusAccepted, "Successfully logged out")
+}
+
+// parseTokenIgnoringExpiry checks the signature of an HS256 token but accepts it even if expired.
+func parseTokenIgnoringExpiry(tokenString, secret string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithoutClaimsValidation())
 }
 
 func createToken(ctx context.Context, uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
@@ -163,20 +169,26 @@ func createToken(ctx context.Context, uuid string, email string, permissions []s
 		return nil, err
 	}
 	// save in cache
-	saveErr := saveTokenInCache(ctx, uuid, td)
-	if saveErr != nil {
+	if err := saveTokenInCache(ctx, uuid, td); err != nil {
 		return nil, err
 	}
 	return td, nil
 }
 
+// extractTokenString returns the token of a "Bearer <token>" Authorization
+// header. "Bearer: <token>", which the UI used to send, is also accepted.
+// Any other scheme is rejected.
 func extractTokenString(ctx context.Context, r *http.Request) string {
-	bearToken := r.Header.Get("Authorization")
-	strArr := strings.Split(bearToken, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
+	scheme, token, found := strings.Cut(strings.TrimSpace(r.Header.Get("Authorization")), " ")
+	if !found {
+		return ""
 	}
-	return ""
+	scheme = strings.TrimSuffix(scheme, ":")
+	token = strings.TrimSpace(token)
+	if !strings.EqualFold(scheme, "Bearer") || token == "" || strings.Contains(token, " ") {
+		return ""
+	}
+	return token
 }
 
 func requestHasAuthorizationToken(ctx context.Context, r *http.Request) bool {
@@ -373,18 +385,64 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// linkTokenKeyPrefix prefixes the Redis keys of single-use link tokens.
+const linkTokenKeyPrefix = "link:"
+
+// createLinkToken creates an access token for a link sent by email. Unlike a
+// login, it has no refresh token and no session in Redis.
+func createLinkToken(uuid, email, permission string, ttlMinutes int) (token string, tokenUuid string, err error) {
+	tokenUuid = common.GenerateUUID()
+	claims := jwt.MapClaims{
+		"token_uuid":   tokenUuid,
+		"refresh_uuid": "",
+		"user_uuid":    uuid,
+		"permissions":  []string{permission},
+		"exp":          time.Now().Add(time.Minute * time.Duration(ttlMinutes)).Unix(),
+	}
+	if email != "" {
+		claims["email"] = email
+	}
+	token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(common.GetConfigString("jwt.access_secret")))
+	return token, tokenUuid, err
+}
+
+// ResetCredentialsToken creates the token of a registration or password reset
+// link. It can be used only once (see consumeResetCredentialsToken).
 func ResetCredentialsToken(ctx context.Context, uuid string, email string, ttl int) (string, error) {
 	ctx, span := tracer.Start(ctx, "ResetCredentialsToken")
 	defer span.End()
-	token, err := createToken(ctx, uuid, email, []string{ResetCredentialsPermission}, ttl, 0)
-	return token.AccessToken, err
+	token, tokenUuid, err := createLinkToken(uuid, email, ResetCredentialsPermission, ttl)
+	if err != nil {
+		return "", err
+	}
+	if err := RedisClient.Set(ctx, linkTokenKeyPrefix+tokenUuid, uuid, time.Minute*time.Duration(ttl)).Err(); err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
+// consumeResetCredentialsToken marks a reset credentials token as used. It
+// returns false if the token was already used.
+func consumeResetCredentialsToken(ctx context.Context, tokenAuth *AccessTokenDetails) (bool, error) {
+	deleted, err := RedisClient.Del(ctx, linkTokenKeyPrefix+tokenAuth.TokenUuid).Result()
+	if err != nil || deleted == 1 {
+		return deleted == 1, err
+	}
+	// Tokens created before version 0.24.4 came with a refresh token stored in
+	// Redis: consume that key instead.
+	if tokenAuth.RefreshUuid == "" {
+		return false, nil
+	}
+	deleted, err = RedisClient.Del(ctx, tokenAuth.RefreshUuid).Result()
+	return deleted == 1, err
+}
+
+// ParticipateEventToken creates the token of the participation links sent in reminders.
 func ParticipateEventToken(ctx context.Context, uuid string, ttl int) (string, error) {
-	ctx, span := tracer.Start(ctx, "ParticipateEventToken")
+	_, span := tracer.Start(ctx, "ParticipateEventToken")
 	defer span.End()
-	token, err := createToken(ctx, uuid, "", []string{ParticipateEventPermission}, ttl, 0)
-	return token.AccessToken, err
+	token, _, err := createLinkToken(uuid, "", ParticipateEventPermission, ttl)
+	return token, err
 }
 
 func getMemberPermissions(ctx context.Context, uuid string) ([]string, error) {

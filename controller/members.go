@@ -526,20 +526,25 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// A reset credentials token (registration or "forgot password" link) can only be used once.
+	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
+		consumed, err := consumeResetCredentialsToken(ctx, tokenAuth)
+		if err != nil {
+			common.Warn("Error consuming reset credentials token: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+			return
+		}
+		if !consumed {
+			common.Info("Reset credentials token of member %s was already used", tokenAuth.UserId)
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+			return
+		}
+	}
 	err = c.ResetCredentials(ctx, c.Username, password)
 	if err != nil {
 		common.Debug("Invalid request payload: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
-	}
-	// resetCredentialsToken should only be used once
-	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
-		_, err = deleteTokenInCache(r.Context(), tokenAuth.TokenUuid)
-		if err != nil {
-			common.Warn("Error deleting token in cache: %s", err.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
-			return
-		}
 	}
 	RespondWithJSON(w, http.StatusOK, "")
 }
