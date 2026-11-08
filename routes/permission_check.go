@@ -17,7 +17,7 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		tokenAuth, err := controller.ExtractToken(ctx, r)
 		if err != nil {
 			if controller.IsTokenExpired(err) {
-				controller.RespondWithError(w, http.StatusForbidden, controller.ERRORUNAUTHORIZED)
+				controller.RespondWithTokenExpired(w, controller.ERRORUNAUTHORIZED)
 			} else {
 				controller.RespondWithError(w, http.StatusUnauthorized, controller.ERRORUNAUTHORIZED)
 			}

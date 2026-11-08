@@ -142,8 +142,16 @@ func TestExpiredAccessTokenReturnsForbidden(t *testing.T) {
 	token := sign(t, jwt.SigningMethodHS256, expired, []byte(os.Getenv("APP_ACCESS_SECRET")))
 
 	for _, path := range []string{"/api/v1/castells/models", "/api/v1/events"} {
-		if err := h.checkResponseCode(http.StatusForbidden, getWithAccessToken(path, token)); err != nil {
+		req, _ := http.NewRequest("GET", path, nil)
+		req.Header.Add("Authorization", "Bearer "+token)
+		response := h.executeRequest(req)
+		if err := h.checkResponseCode(http.StatusForbidden, response.Code); err != nil {
 			t.Errorf("%s: %v", path, err)
+		}
+		var body map[string]string
+		json.Unmarshal(response.Body.Bytes(), &body)
+		if body["code"] != "token_expired" {
+			t.Errorf("%s: expected code token_expired, got %v", path, body)
 		}
 	}
 }
