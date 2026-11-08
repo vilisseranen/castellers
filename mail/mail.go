@@ -5,6 +5,7 @@ import (
 	"context"
 	"html/template"
 	"net/smtp"
+	"regexp"
 
 	"github.com/vilisseranen/castellers/common"
 	"go.opentelemetry.io/otel"
@@ -100,8 +101,18 @@ func sendMail(ctx context.Context, email emailInfo) error {
 	auth := smtp.PlainAuth("", common.GetConfigString("smtp.username"), common.GetConfigString("smtp.password"), common.GetConfigString("smtp.server"))
 	addr := common.GetConfigString("smtp.server") + ":" + common.GetConfigString("smtp.port")
 	if err := smtp.SendMail(addr, auth, common.GetConfigString("smtp.username"), []string{email.Top.To}, []byte(body)); err != nil {
-		common.Error(err.Error())
+		// SMTP errors often quote the recipient address: keep it out of the logs.
+		common.Error("Error sending email: %s", redactAddresses(err.Error()))
 		return err
 	}
 	return nil
+}
+
+var angleBracketAddress = regexp.MustCompile(`<[^>]*@[^>]*>`)
+var bareAddress = regexp.MustCompile(`[^\s<>"']+@[^\s<>"']+`)
+
+// redactAddresses removes email addresses from a message before it is logged.
+func redactAddresses(message string) string {
+	message = angleBracketAddress.ReplaceAllString(message, "<redacted>")
+	return bareAddress.ReplaceAllString(message, "redacted")
 }

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.3] - 2026-11-07
+
+### Security
+
+- `memberRegistration` notifications no longer store the member and the author (names, email, phone, height, weight, roles…) in clear text in `notifications.payload`. They now store only `{"memberUuid", "authorUuid"}`, and the scheduler loads both members when it sends the email. A member who was deleted, or who no longer has an email, is not emailed. If the author was deleted, the email is sent without their name.
+- Migration `sql/0.24.3.sql` rewrites existing `memberRegistration` notifications to keep only these UUIDs. Migrations now run with SQLite `secure_delete`, so the old content is zeroed in the database file, and the database is `VACUUM`ed afterwards (best effort).
+- Logs no longer contain personal data or tokens:
+  - member and notification log lines show UUIDs instead of the whole record. `Member` and `Notification` now implement `String()` so formatting them with `%v` never prints personal data or payloads;
+  - emails (including the one typed on "forgot password"), height and weight values are no longer logged;
+  - email addresses are redacted from SMTP errors;
+  - the `Authorization` header (access token) is no longer logged at debug level.
+- Production log level is now `info` instead of `debug` (`deployment/fly.io/fly.toml`).
+
+### Operator actions
+
+- Litestream backups (90-day retention) still hold the old clear-text notifications. To remove them now, delete the old generations from the replica bucket or recreate the replica.
+- Logs already collected by Fly (and any log drain or export) may contain personal data and access tokens. Access tokens expire after 15 minutes. Rotate `APP_ACCESS_SECRET` and `APP_REFRESH_SECRET` if a log export may exist.
+- Do not roll back to 0.24.2 once this version has run: 0.24.2 cannot read the new notification payload and would fail to send pending registration emails.
+
 ## [0.24.2] - 2026-11-06
 
 ### Security

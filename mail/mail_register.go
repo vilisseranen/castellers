@@ -2,6 +2,7 @@ package mail
 
 import (
 	"context"
+	"strings"
 
 	"github.com/vilisseranen/castellers/common"
 	"github.com/vilisseranen/castellers/model"
@@ -32,7 +33,7 @@ func SendRegistrationEmail(ctx context.Context, payload EmailRegisterPayload) er
 		Title:    common.Translate("registration_new_title", payload.Member.Language),
 		Subtitle: common.Translate("registration_new_text", payload.Member.Language),
 		Text:     common.Translate("registration_instructions", payload.Member.Language) + "<br/><br/>" + common.Translate("registration_thanks", payload.Member.Language),
-		Author:   payload.Author.FirstName + " " + payload.Author.LastName,
+		Author:   strings.TrimSpace(payload.Author.FirstName + " " + payload.Author.LastName),
 	}}
 	email.Actions = []emailAction{{
 		Title: common.Translate("registration_confirmation_title", payload.Member.Language),

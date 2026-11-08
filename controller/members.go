@@ -1,19 +1,16 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 
 	"github.com/vilisseranen/castellers/common"
-	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -139,7 +136,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	}
 	if m.Type != model.MEMBERSTYPEGUEST && m.Type != model.MEMBERSTYPECANALLA {
 		if !emailAvailable(ctx, m) {
-			common.Info("Email not available: %s", m.Email)
+			common.Info("Email not available")
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
@@ -152,12 +149,12 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-		common.Info("Error validating Height: " + m.Height)
+		common.Info("Error validating height")
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERHEIGHT)
 		return
 	}
 	if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-		common.Info("Error validating Weight: " + m.Weight)
+		common.Info("Error validating weight")
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERWEIGHT)
 		return
 	}
@@ -200,11 +197,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		payload := mail.EmailRegisterPayload{Member: m, Author: a}
-		payloadBytes := new(bytes.Buffer)
-		json.NewEncoder(payloadBytes).Encode(payload)
-		n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-		if err := n.CreateNotification(ctx); err != nil {
+		n, err := model.NewMemberRegistrationNotification(m.UUID, a.UUID)
+		if err == nil {
+			err = n.CreateNotification(ctx)
+		}
+		if err != nil {
 			common.Warn("Error creating notification: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 			return
@@ -250,12 +247,12 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 		}
 		// A regular cannot be converted to a guest
 		if currentMember.Type != model.MEMBERSTYPEGUEST && m.Type == model.MEMBERSTYPEGUEST {
-			common.Info("Cannot change a regular member into a guest. Current: %s, requested: %s", currentMember.Email, m.Email)
+			common.Info("Cannot change regular member %s into a guest", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERRORUPDATEMEMBERTYPE)
 			return
 		}
 		if currentMember.Email != m.Email && !emailAvailable(ctx, m) {
-			common.Info("Email not available. Current: %s, requested: %s, emailAvailable: %s", currentMember.Email, m.Email, emailAvailable(ctx, m))
+			common.Info("New email for member %s is not available", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERROREMAILUNAVAILABLE)
 			return
 		}
@@ -265,12 +262,12 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Height); err != nil {
-			common.Info("Error validating Height: " + m.Height)
+			common.Info("Error validating height of member %s", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERHEIGHT)
 			return
 		}
 		if err := model.ValidNumberOrEmpty(m.Weight); err != nil {
-			common.Info("Error validating Weight: " + m.Weight)
+			common.Info("Error validating weight of member %s", currentMember.UUID)
 			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERWEIGHT)
 			return
 		}
@@ -462,11 +459,11 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORREGISTRATIONEMAIL)
 		return
 	}
-	payload := mail.EmailRegisterPayload{Member: m, Author: a}
-	payloadBytes := new(bytes.Buffer)
-	json.NewEncoder(payloadBytes).Encode(payload)
-	n := model.Notification{NotificationType: model.TypeMemberRegistration, ObjectUUID: m.UUID, SendDate: int(time.Now().Unix()), Payload: payloadBytes.Bytes()}
-	if err := n.CreateNotification(ctx); err != nil {
+	n, err := model.NewMemberRegistrationNotification(m.UUID, a.UUID)
+	if err == nil {
+		err = n.CreateNotification(ctx)
+	}
+	if err != nil {
 		common.Warn("Error creating notification: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORNOTIFICATION)
 		return
@@ -492,7 +489,7 @@ func emailAvailable(ctx context.Context, m model.Member) bool {
 		common.Debug("Error getting by email: %s", err.Error())
 		return true
 	}
-	common.Debug("Email %s is available", m.Email)
+	common.Debug("Email is available")
 	return false
 }
 

@@ -17,7 +17,7 @@ kill_timeout = "5s"
 [env]
   APP_DB_NAME = "/data/castellers.db"
   APP_DOMAIN = "https://amunt.castellersdemontreal.info"
-  APP_LOG_LEVEL = "debug"
+  APP_LOG_LEVEL = "info"
   APP_OTEL_ENABLE = "true"
   APP_REDIS_DSN = "yyz.castellers-redis.internal:6379"
   APP_SMTP_PORT = "587"

@@ -35,7 +35,9 @@ func InitializeDB(dbname string) {
 	}
 	// This connection does not enforce the foreign_keys constraints
 	// to make update easier
-	db, err = sql.Open(driverName, dbname)
+	// secure_delete zeroes the content of deleted or rewritten rows, so migrations
+	// that remove sensitive data do not leave it in free pages.
+	db, err = sql.Open(driverName, dbname+"?_secure_delete=on")
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -62,6 +64,11 @@ func InitializeDB(dbname string) {
 
 	// Sort update files
 	semver.Sort(vs)
+
+	// Migrations that remove sensitive data: VACUUM afterwards to also compact
+	// the file and drop the old content from the rollback journal / WAL pages.
+	vacuumAfter := map[string]bool{"0.24.3": true}
+	needVacuum := false
 
 	// For each, check if it was applied
 	for _, v := range vs {
@@ -99,8 +106,19 @@ func InitializeDB(dbname string) {
 				common.Fatal(err.Error())
 			}
 			common.Info("Update schema to %s completed\n", version)
+			if vacuumAfter[version] {
+				needVacuum = true
+			}
 		} else {
 			common.Info("Schema %s already installed.\n", version)
+		}
+	}
+
+	if needVacuum {
+		common.Info("Vacuuming database\n")
+		// Best effort: secure_delete already cleared the old content.
+		if _, err := db.Exec("VACUUM"); err != nil {
+			common.Error("VACUUM failed: %s", err.Error())
 		}
 	}
 
