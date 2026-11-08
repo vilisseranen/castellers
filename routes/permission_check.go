@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/vilisseranen/castellers/common"
@@ -16,12 +17,16 @@ func checkTokenType(h handler, requestedType ...string) handler {
 		common.Debug("Validating token in Authorization header")
 		tokenAuth, err := controller.ExtractToken(ctx, r)
 		if err != nil {
-			if controller.IsTokenExpired(err) {
+			switch {
+			case errors.Is(err, controller.ErrSessionCheck):
+				common.Warn("Cannot check session: %s", err.Error())
+				controller.RespondWithError(w, http.StatusServiceUnavailable, controller.ERRORINTERNAL)
+			case controller.IsTokenExpired(err):
 				controller.RespondWithTokenExpired(w, controller.ERRORUNAUTHORIZED)
-			} else {
+			default:
+				common.Debug("Token invalid: %s", err.Error())
 				controller.RespondWithError(w, http.StatusUnauthorized, controller.ERRORUNAUTHORIZED)
 			}
-			common.Debug("Token invalid: %s", err.Error())
 			return
 		}
 		if !common.StringInBothSlices(requestedType, tokenAuth.Permissions) {

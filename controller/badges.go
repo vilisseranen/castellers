@@ -109,8 +109,7 @@ func AssignBadge(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 

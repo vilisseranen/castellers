@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -58,9 +59,14 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 	if requestHasAuthorizationToken(ctx, r) {
 		common.Debug("Request has authorization token")
 		tokenAuth, err := ExtractToken(ctx, r)
+		if errors.Is(err, ErrSessionCheck) {
+			// The session store is unavailable: answer as for an anonymous request.
+			common.Warn("Cannot check session, answering without participation: %s", err.Error())
+			RespondWithJSON(w, http.StatusOK, e)
+			return
+		}
 		if err != nil {
-			common.Warn("Error reading token: %s", err.Error())
-			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
+			RespondWithTokenError(w, err)
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
@@ -112,7 +118,12 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 	// if request is authenticated
 	if requestHasAuthorizationToken(ctx, r) {
 		tokenAuth, err := ExtractToken(ctx, r)
-		if err != nil && IsTokenExpired(err) {
+		if errors.Is(err, ErrSessionCheck) {
+			// The session store is unavailable: answer as for an anonymous request.
+			common.Warn("Cannot check session, answering without participation: %s", err.Error())
+			RespondWithJSON(w, http.StatusOK, events)
+			return
+		} else if err != nil && IsTokenExpired(err) {
 			common.Debug("Token expired, cannot get participation: %s", err.Error())
 			RespondWithTokenExpired(w, ERRORTOKENEXPIRED)
 			return

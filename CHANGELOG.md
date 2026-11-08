@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.24.5] - 2026-11-08
+
+JWT hardening: server-side sessions, so tokens can actually be revoked. No UI change is required.
+
+### Security
+
+- Each login now creates a session in Redis (`session:<id>`, plus an index `user_sessions:<member>`). Access and refresh tokens carry its id (`session_id` claim) and are accepted only while the session exists. The session expires after `jwt.refresh_ttl_days` without refresh.
+- `POST /logout` ends the whole session. Every access and refresh token of that session stops working at once, including those issued by earlier refreshes. Other sessions of the member (other devices) are not affected.
+- Changing the password (`/change_password`) ends the member's other sessions and keeps the current one. A reset through a registration or "forgot password" link ends all of them.
+- Deleting a member ends their sessions. A refresh by a deleted member now gets 401 instead of 500.
+- A revoked session gets the same response as an expired access token (403 with `code: "token_expired"`): the UI tries to refresh, the refresh fails with 401 and it goes back to the login page (or, on public pages, continues anonymously).
+- If Redis cannot be reached, authenticated requests get 503 instead of a misleading 401/500, and `GET /events` and `GET /events/{uuid}` answer as for an anonymous request.
+
+### Fixed
+
+- `GET /events/{uuid}` with an expired access token returned 401 without `code: "token_expired"`, so the UI never refreshed the token on that page. It now returns 403 with the code. Other invalid tokens still get 401.
+
+### Upgrade notes
+
+- Refresh tokens issued before this version keep working: their first refresh moves them to a new session, and their Redis key then points to it, so logging out of that session also revokes them and refreshing them again reuses the same session. Once a member's sessions are revoked (password change, reset link, deletion), their pre-upgrade refresh tokens are refused.
+- Refresh tokens are not rotated yet: a refresh token stays valid until it expires or its session ends. Rotation needs the UI to share tokens between tabs first.
+- Every authenticated request now checks its session in Redis (`EXISTS`; twice for handlers that read the token again).
+
 ## [0.24.4] - 2026-11-08
 
 First step of the JWT hardening. No API change is required from the UI.

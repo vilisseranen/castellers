@@ -23,8 +23,7 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 

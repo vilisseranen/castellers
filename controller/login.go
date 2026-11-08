@@ -38,6 +38,9 @@ type AccessTokenDetails struct {
 	UserId      string
 	Permissions []string
 	ExpiresAt   time.Time
+	// SessionID is empty for email link tokens and for tokens issued before
+	// version 0.24.5.
+	SessionID string
 }
 
 const ResetCredentialsPermission = "reset_credentials"
@@ -90,7 +93,11 @@ func createMemberToken(ctx context.Context, uuid string) (map[string]string, err
 	if err != nil {
 		return nil, err
 	}
-	token, err := createToken(ctx, uuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	sessionID, err := createSession(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+	token, err := createToken(ctx, uuid, sessionID, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +122,14 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	claims, _ := token.Claims.(jwt.MapClaims)
-	if refreshUuid, ok := claims["refresh_uuid"].(string); ok && refreshUuid != "" {
+	if sessionID, ok := claims["session_id"].(string); ok && sessionID != "" {
+		if err := revokeSession(ctx, sessionID); err != nil {
+			common.Warn("Cannot revoke session: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+			return
+		}
+	} else if refreshUuid, ok := claims["refresh_uuid"].(string); ok && refreshUuid != "" {
+		// Tokens issued before version 0.24.5 have no session.
 		if _, err := deleteTokenInCache(ctx, refreshUuid); err != nil {
 			common.Warn("Cannot delete refresh token in cache: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
@@ -132,7 +146,8 @@ func parseTokenIgnoringExpiry(tokenString, secret string) (*jwt.Token, error) {
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithoutClaimsValidation())
 }
 
-func createToken(ctx context.Context, uuid string, email string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
+// createToken creates the access and refresh tokens of a session.
+func createToken(ctx context.Context, uuid string, sessionID string, permissions []string, access_ttl_minutes, refresh_ttl_days int) (*TokenDetails, error) {
 	ctx, span := tracer.Start(ctx, "createToken")
 	defer span.End()
 
@@ -151,9 +166,7 @@ func createToken(ctx context.Context, uuid string, email string, permissions []s
 	atClaims["user_uuid"] = uuid
 	atClaims["permissions"] = permissions
 	atClaims["exp"] = td.AtExpires
-	if email != "" {
-		atClaims["email"] = email
-	}
+	atClaims["session_id"] = sessionID
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(common.GetConfigString("jwt.access_secret")))
 	if err != nil {
@@ -164,15 +177,13 @@ func createToken(ctx context.Context, uuid string, email string, permissions []s
 	rtClaims["token_uuid"] = td.RefreshUuid
 	rtClaims["user_uuid"] = uuid
 	rtClaims["exp"] = td.RtExpires
+	rtClaims["session_id"] = sessionID
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	td.RefreshToken, err = rt.SignedString([]byte(common.GetConfigString("jwt.refresh_secret")))
 	if err != nil {
 		return nil, err
 	}
 	// save in cache
-	if err := saveTokenInCache(ctx, uuid, td); err != nil {
-		return nil, err
-	}
 	return td, nil
 }
 
@@ -260,6 +271,12 @@ func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, er
 		if !ok {
 			return nil, err
 		}
+		sessionID, _ := claims["session_id"].(string)
+		if sessionID != "" {
+			if err := checkSession(ctx, sessionID); err != nil {
+				return nil, err
+			}
+		}
 		var expiresAt time.Time
 		if exp, err := claims.GetExpirationTime(); err == nil && exp != nil {
 			expiresAt = exp.Time
@@ -270,23 +287,10 @@ func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, er
 			UserId:      userUuid,
 			Permissions: tokenPermissions,
 			ExpiresAt:   expiresAt,
+			SessionID:   sessionID,
 		}, nil
 	}
 	return nil, err
-}
-
-func saveTokenInCache(ctx context.Context, uuid string, td *TokenDetails) error {
-	ctx, span := tracer.Start(ctx, "saveTokenInCache")
-	defer span.End()
-
-	rt := time.Unix(td.RtExpires, 0)
-	now := time.Now()
-
-	errRefresh := RedisClient.Set(ctx, td.RefreshUuid, uuid, rt.Sub(now)).Err()
-	if errRefresh != nil {
-		return errRefresh
-	}
-	return nil
 }
 
 func deleteTokenInCache(ctx context.Context, uuid string) (int64, error) {
@@ -320,8 +324,12 @@ func checkTokenInCache(ctx context.Context, token *jwt.Token) (string, error) {
 	return "", err
 }
 
+// RefreshToken issues a new access/refresh token pair for the session of a
+// refresh token, as long as the session exists. Refresh tokens issued before
+// version 0.24.5 have no session: they are checked against their Redis key and
+// moved to a new session.
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracer.Start(r.Context(), "ExtractToken")
+	ctx, span := tracer.Start(r.Context(), "RefreshToken")
 	defer span.End()
 	mapToken := map[string]string{}
 	decoder := json.NewDecoder(r.Body)
@@ -330,65 +338,62 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusUnprocessableEntity, ERRORREFRESHTOKEN)
 		return
 	}
-	refreshToken := mapToken["refresh_token"]
 
-	token, err := verifyToken(ctx, refreshToken, "refresh")
-	//if there is an error, the token must have expired
+	token, err := verifyToken(ctx, mapToken["refresh_token"], "refresh")
 	if err != nil {
 		common.Debug("Token verification failed: %s", err.Error())
 		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
 		return
 	}
-	_, err = checkTokenInCache(ctx, token)
+	claims, _ := token.Claims.(jwt.MapClaims)
+	userUuid, ok := claims["user_uuid"].(string)
+	if !ok || userUuid == "" {
+		common.Info("Token claim 'user_uuid' is invalid")
+		RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
+		return
+	}
+
+	// Before touching the session: a deleted member (or a guest) cannot refresh.
+	permissions, err := getMemberPermissions(ctx, userUuid)
 	if err != nil {
-		common.Debug("Cannot find token in cache: %s", err.Error())
-		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+		if err == sql.ErrNoRows {
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+			return
+		}
+		common.Warn("Error getting permissions: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 		return
 	}
-	if !token.Valid {
-		common.Debug("Token invalid: %s", err.Error())
-		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
-		return
-	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if ok && token.Valid {
-		userUuid, ok := claims["user_uuid"].(string)
-		if !ok {
-			common.Info("Token claim 'user_uuid' is invalid")
-			RespondWithError(w, http.StatusUnprocessableEntity, ERRORTOKENINVALID)
-			return
-		}
-		// TODO: Link refresh token to a parent DEVICE ID.
-		//       After that, we only delete the refresh tokens
-		//       from this device ID when the device is logged out.
-		// deleted, delErr := deleteTokenInCache(ctx, refreshUuid)
-		// if delErr != nil || deleted == 0 { //if any goes wrong
-		// 	common.Warn("Error deleting token in cache: %s", delErr.Error())
-		// 	RespondWithError(w, http.StatusUnauthorized, ERRORUNAUTHORIZED)
-		// 	return
-		// }
-		permissions, err := getMemberPermissions(ctx, userUuid)
-		if err != nil {
-			common.Warn("Error getting permissions: %s", err.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
-			return
-		}
-		//Create new pairs of refresh and access tokens
-		ts, createErr := createToken(ctx, userUuid, "", permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
-		if createErr != nil {
-			common.Warn("Error creating a new token pair: %s", createErr.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
-			return
-		}
-		tokens := map[string]string{
-			"access_token":  ts.AccessToken,
-			"refresh_token": ts.RefreshToken,
-		}
-		RespondWithJSON(w, http.StatusCreated, tokens)
+
+	sessionID, _ := claims["session_id"].(string)
+	if sessionID != "" {
+		err = extendSession(ctx, sessionID, userUuid)
 	} else {
-		common.Debug("Refresh token has expired")
-		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
+		// Refresh token issued before version 0.24.5.
+		tokenUuid, _ := claims["token_uuid"].(string)
+		sessionID, err = legacySession(ctx, tokenUuid, userUuid)
 	}
+	if err != nil {
+		if errors.Is(err, ErrSessionRevoked) {
+			common.Debug("Session of member %s was revoked", userUuid)
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+		} else {
+			common.Warn("Error checking session: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+		}
+		return
+	}
+
+	ts, err := createToken(ctx, userUuid, sessionID, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
+	if err != nil {
+		common.Warn("Error creating a new token pair: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+		return
+	}
+	RespondWithJSON(w, http.StatusCreated, map[string]string{
+		"access_token":  ts.AccessToken,
+		"refresh_token": ts.RefreshToken,
+	})
 }
 
 // linkTokenKeyPrefix prefixes the Redis keys of single-use link tokens.
