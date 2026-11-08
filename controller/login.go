@@ -353,36 +353,10 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, _ := claims["session_id"].(string)
-	if sessionID != "" {
-		if err := extendSession(ctx, sessionID, userUuid); err != nil {
-			if errors.Is(err, ErrSessionRevoked) {
-				common.Debug("Session of member %s was revoked", userUuid)
-				RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
-			} else {
-				common.Warn("Error extending session: %s", err.Error())
-				RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
-			}
-			return
-		}
-	} else {
-		if _, err := checkTokenInCache(ctx, token); err != nil {
-			common.Debug("Cannot find token in cache: %s", err.Error())
-			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
-			return
-		}
-		sessionID, err = createSession(ctx, userUuid)
-		if err != nil {
-			common.Warn("Error creating session: %s", err.Error())
-			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
-			return
-		}
-	}
-
+	// Before touching the session: a deleted member (or a guest) cannot refresh.
 	permissions, err := getMemberPermissions(ctx, userUuid)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// The member was deleted.
 			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
 			return
 		}
@@ -390,6 +364,26 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
 		return
 	}
+
+	sessionID, _ := claims["session_id"].(string)
+	if sessionID != "" {
+		err = extendSession(ctx, sessionID, userUuid)
+	} else {
+		// Refresh token issued before version 0.24.5.
+		tokenUuid, _ := claims["token_uuid"].(string)
+		sessionID, err = legacySession(ctx, tokenUuid, userUuid)
+	}
+	if err != nil {
+		if errors.Is(err, ErrSessionRevoked) {
+			common.Debug("Session of member %s was revoked", userUuid)
+			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+		} else {
+			common.Warn("Error checking session: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
+		}
+		return
+	}
+
 	ts, err := createToken(ctx, userUuid, sessionID, permissions, common.GetConfigInt("jwt.access_ttl_minutes"), common.GetConfigInt("jwt.refresh_ttl_days"))
 	if err != nil {
 		common.Warn("Error creating a new token pair: %s", err.Error())

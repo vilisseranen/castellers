@@ -52,8 +52,7 @@ func GetMember(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 
@@ -103,8 +102,7 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	// names: strip every other (potentially sensitive) field.
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) {
@@ -172,8 +170,7 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	a := model.Member{UUID: tokenAuth.UserId}
@@ -222,8 +219,7 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	if common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) || UUID == tokenAuth.UserId {
@@ -401,8 +397,7 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 	}
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	// TODO: admin should be allowed to delete their profile
@@ -452,8 +447,7 @@ func SendRegistrationEmail(w http.ResponseWriter, r *http.Request) {
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	a := model.Member{UUID: tokenAuth.UserId}
@@ -501,8 +495,7 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 	defer span.End()
 	tokenAuth, err := ExtractToken(r.Context(), r)
 	if err != nil {
-		common.Warn("Error reading token: %s", err.Error())
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 	// This function always use the UUID from the token
@@ -553,8 +546,9 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
-	// The password changed: end the member's other sessions. With a reset link
-	// (tokenAuth.SessionID is empty) all of them end.
+	// The password changed: end the member's other sessions. With a reset link,
+	// or an access token issued before version 0.24.5, tokenAuth.SessionID is
+	// empty and all of them end.
 	if err := revokeMemberSessions(ctx, tokenAuth.UserId, tokenAuth.SessionID); err != nil {
 		common.Error("Cannot revoke the sessions of member %s: %s", tokenAuth.UserId, err.Error())
 	}

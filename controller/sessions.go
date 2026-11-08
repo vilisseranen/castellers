@@ -2,7 +2,10 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,9 +20,12 @@ import (
 //
 //	session:<session_id>      -> member UUID, expires after refresh_ttl_days without refresh
 //	user_sessions:<member>    -> set of the member's session ids
+//	legacy_revoked:<member>   -> set when the member's sessions are revoked: refresh
+//	                             tokens issued before sessions existed are refused
 const (
-	sessionKeyPrefix      = "session:"
-	userSessionsKeyPrefix = "user_sessions:"
+	sessionKeyPrefix       = "session:"
+	userSessionsKeyPrefix  = "user_sessions:"
+	legacyRevokedKeyPrefix = "legacy_revoked:"
 )
 
 // ErrSessionRevoked is returned for a token whose session was revoked (logout,
@@ -27,6 +33,10 @@ const (
 // clients then try to refresh, the refresh fails and they go back to the login
 // page, which is what should happen.
 var ErrSessionRevoked = fmt.Errorf("session revoked: %w", jwt.ErrTokenExpired)
+
+// ErrSessionCheck is returned when the session store (Redis) cannot be reached.
+// It is a server error, not an authentication failure.
+var ErrSessionCheck = errors.New("cannot check the session")
 
 func sessionTTL() time.Duration {
 	return 24 * time.Hour * time.Duration(common.GetConfigInt("jwt.refresh_ttl_days"))
@@ -40,6 +50,7 @@ func createSession(ctx context.Context, memberUUID string) (string, error) {
 		return "", err
 	}
 	userKey := userSessionsKeyPrefix + memberUUID
+	pruneMemberSessions(ctx, userKey)
 	if err := RedisClient.SAdd(ctx, userKey, sessionID).Err(); err != nil {
 		return "", err
 	}
@@ -63,8 +74,13 @@ func extendSession(ctx context.Context, sessionID, memberUUID string) error {
 		return ErrSessionRevoked
 	}
 	ttl := sessionTTL()
-	if err := RedisClient.Expire(ctx, sessionKeyPrefix+sessionID, ttl).Err(); err != nil {
+	extended, err := RedisClient.Expire(ctx, sessionKeyPrefix+sessionID, ttl).Result()
+	if err != nil {
 		return err
+	}
+	if !extended {
+		// Revoked between the GET and the EXPIRE.
+		return ErrSessionRevoked
 	}
 	return RedisClient.Expire(ctx, userSessionsKeyPrefix+memberUUID, ttl).Err()
 }
@@ -73,7 +89,7 @@ func extendSession(ctx context.Context, sessionID, memberUUID string) error {
 func checkSession(ctx context.Context, sessionID string) error {
 	exists, err := RedisClient.Exists(ctx, sessionKeyPrefix+sessionID).Result()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrSessionCheck, err)
 	}
 	if exists == 0 {
 		return ErrSessionRevoked
@@ -97,23 +113,99 @@ func revokeSession(ctx context.Context, sessionID string) error {
 }
 
 // revokeMemberSessions deletes all the sessions of a member, except keepSessionID
-// (empty to revoke them all).
+// (empty to revoke them all). Refresh tokens issued before sessions existed are
+// refused from then on.
 func revokeMemberSessions(ctx context.Context, memberUUID, keepSessionID string) error {
+	if err := RedisClient.Set(ctx, legacyRevokedKeyPrefix+memberUUID, "1", sessionTTL()).Err(); err != nil {
+		return err
+	}
 	userKey := userSessionsKeyPrefix + memberUUID
 	sessionIDs, err := RedisClient.SMembers(ctx, userKey).Result()
 	if err != nil {
 		return err
 	}
+	var keys []string
+	var ids []interface{}
 	for _, sessionID := range sessionIDs {
-		if sessionID == keepSessionID {
-			continue
-		}
-		if err := RedisClient.Del(ctx, sessionKeyPrefix+sessionID).Err(); err != nil {
-			return err
-		}
-		if err := RedisClient.SRem(ctx, userKey, sessionID).Err(); err != nil {
-			return err
+		if sessionID != keepSessionID {
+			keys = append(keys, sessionKeyPrefix+sessionID)
+			ids = append(ids, sessionID)
 		}
 	}
-	return nil
+	if len(keys) == 0 {
+		return nil
+	}
+	if err := RedisClient.Del(ctx, keys...).Err(); err != nil {
+		return err
+	}
+	return RedisClient.SRem(ctx, userKey, ids...).Err()
+}
+
+// pruneMemberSessions removes from the member's index the sessions that expired.
+func pruneMemberSessions(ctx context.Context, userKey string) {
+	sessionIDs, err := RedisClient.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return
+	}
+	for _, sessionID := range sessionIDs {
+		if exists, err := RedisClient.Exists(ctx, sessionKeyPrefix+sessionID).Result(); err == nil && exists == 0 {
+			RedisClient.SRem(ctx, userKey, sessionID)
+		}
+	}
+}
+
+// legacySession returns the session that a refresh token issued before
+// sessions existed was moved to, creating it the first time. The legacy Redis
+// key then points to the session, so revoking the session also revokes the
+// legacy token, and refreshing it again reuses the same session.
+func legacySession(ctx context.Context, legacyKey, memberUUID string) (string, error) {
+	revoked, err := RedisClient.Exists(ctx, legacyRevokedKeyPrefix+memberUUID).Result()
+	if err != nil {
+		return "", err
+	}
+	if revoked > 0 {
+		return "", ErrSessionRevoked
+	}
+	value, err := RedisClient.Get(ctx, legacyKey).Result()
+	if err == redis.Nil {
+		return "", ErrSessionRevoked
+	}
+	if err != nil {
+		return "", err
+	}
+	if sessionID, ok := strings.CutPrefix(value, sessionKeyPrefix); ok {
+		return sessionID, extendSession(ctx, sessionID, memberUUID)
+	}
+	if value != memberUUID {
+		return "", ErrSessionRevoked
+	}
+	ttl, err := RedisClient.TTL(ctx, legacyKey).Result()
+	if err != nil {
+		return "", err
+	}
+	sessionID, err := createSession(ctx, memberUUID)
+	if err != nil {
+		return "", err
+	}
+	if ttl <= 0 {
+		ttl = sessionTTL()
+	}
+	if err := RedisClient.Set(ctx, legacyKey, sessionKeyPrefix+sessionID, ttl).Err(); err != nil {
+		return "", err
+	}
+	return sessionID, nil
+}
+
+// RespondWithTokenError answers a request whose access token was rejected by ExtractToken.
+func RespondWithTokenError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, ErrSessionCheck):
+		common.Warn("Cannot check session: %s", err.Error())
+		RespondWithError(w, http.StatusServiceUnavailable, ERRORINTERNAL)
+	case IsTokenExpired(err):
+		RespondWithTokenExpired(w, ERRORTOKENEXPIRED)
+	default:
+		common.Debug("Invalid token: %s", err.Error())
+		RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+	}
 }

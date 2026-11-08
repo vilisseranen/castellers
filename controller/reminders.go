@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	ERRORQUEUEEVENTREMINDER   = "error queueing event reminders"
-	ERROREVENTALREADYSTARTED  = "event has already started"
+	ERRORQUEUEEVENTREMINDER      = "error queueing event reminders"
+	ERROREVENTALREADYSTARTED     = "event has already started"
 	ERRORINVALIDREMINDERAUDIENCE = "invalid reminder audience"
 	ERRORREMINDERMEMBERSREQUIRED = "memberUuids required for members audience"
 )
@@ -71,7 +71,7 @@ func SendEventReminders(w http.ResponseWriter, r *http.Request) {
 
 	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, ERRORAUTHENTICATION)
+		RespondWithTokenError(w, err)
 		return
 	}
 

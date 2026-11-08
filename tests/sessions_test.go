@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/vilisseranen/castellers/controller"
 )
 
@@ -153,6 +154,8 @@ func TestLegacyRefreshTokenMovesToSession(t *testing.T) {
 	h.clearTables()
 	loginAsMember(t)
 	ctx := context.Background()
+	// Redis is shared between tests: forget revocations done by other tests.
+	controller.RedisClient.Del(ctx, "legacy_revoked:deadbeef")
 	if err := controller.RedisClient.Set(ctx, "legacyrefresh", "deadbeef", time.Hour).Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -168,8 +171,41 @@ func TestLegacyRefreshTokenMovesToSession(t *testing.T) {
 		t.Fatalf("tokens not attached to a session: %v", claimsOf(t, access))
 	}
 	expectAccepted(t, "migrated session", access)
+
+	// Refreshing the legacy token again reuses the same session.
+	again, _ := refreshTokens(t, legacy)
+	if claimsOf(t, again)["session_id"] != sessionID {
+		t.Errorf("second legacy refresh created another session")
+	}
+
 	logout("Bearer " + access)
 	expectRevoked(t, "migrated session after logout", access)
+	if err := h.checkResponseCode(http.StatusUnauthorized, refresh(legacy)); err != nil {
+		t.Error("legacy refresh token after logout:", err)
+	}
+}
+
+// After a password change, refresh tokens issued before sessions existed are refused.
+func TestPasswordChangeRevokesLegacyRefreshTokens(t *testing.T) {
+	h.clearTables()
+	current, _ := loginAsMember(t)
+	ctx := context.Background()
+	controller.RedisClient.Del(ctx, "legacy_revoked:deadbeef")
+	controller.RedisClient.Set(ctx, "legacyrefresh2", "deadbeef", time.Hour)
+	legacy := sign(t, jwt.SigningMethodHS256, jwt.MapClaims{
+		"token_uuid": "legacyrefresh2",
+		"user_uuid":  "deadbeef",
+		"exp":        time.Now().Add(time.Hour).Unix(),
+	}, []byte(os.Getenv("APP_REFRESH_SECRET")))
+
+	req, _ := http.NewRequest("POST", "/api/v1/change_password", bytes.NewBufferString(`{"password":"changed"}`))
+	req.Header.Add("Authorization", "Bearer "+current)
+	if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.checkResponseCode(http.StatusUnauthorized, refresh(legacy)); err != nil {
+		t.Error("legacy refresh token after password change:", err)
+	}
 }
 
 // Sessions expire in Redis after refresh_ttl_days without refresh.
@@ -205,5 +241,26 @@ func TestGetEventWithExpiredToken(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &body)
 	if response.Code != http.StatusForbidden || body["code"] != "token_expired" {
 		t.Errorf("expected 403 token_expired, got %d %v", response.Code, body)
+	}
+}
+
+// When Redis is down, authenticated requests fail with 503, not as if the
+// token was invalid, and the public events list still answers.
+func TestSessionStoreUnavailable(t *testing.T) {
+	h.clearTables()
+	h.addEvent("deadbeef", "Diada", int(time.Now().Unix())+3600, int(time.Now().Unix())+7200)
+	accessToken, _ := loginAsMember(t)
+
+	working := controller.RedisClient
+	controller.RedisClient = redis.NewClient(&redis.Options{Addr: "127.0.0.1:1", MaxRetries: -1})
+	defer func() { controller.RedisClient = working }()
+
+	if err := h.checkResponseCode(http.StatusServiceUnavailable, getWithAccessToken("/api/v1/castells/models", accessToken)); err != nil {
+		t.Error("protected endpoint:", err)
+	}
+	for _, path := range []string{"/api/v1/events", "/api/v1/events/deadbeef"} {
+		if err := h.checkResponseCode(http.StatusOK, getWithAccessToken(path, accessToken)); err != nil {
+			t.Errorf("%s: %v", path, err)
+		}
 	}
 }

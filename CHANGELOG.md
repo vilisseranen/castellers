@@ -16,7 +16,8 @@ JWT hardening: server-side sessions, so tokens can actually be revoked. No UI ch
 - `POST /logout` ends the whole session. Every access and refresh token of that session stops working at once, including those issued by earlier refreshes. Other sessions of the member (other devices) are not affected.
 - Changing the password (`/change_password`) ends the member's other sessions and keeps the current one. A reset through a registration or "forgot password" link ends all of them.
 - Deleting a member ends their sessions. A refresh by a deleted member now gets 401 instead of 500.
-- A revoked session gets the same response as an expired access token (403 with `code: "token_expired"`): the UI tries to refresh, the refresh fails with 401 and it goes back to the login page.
+- A revoked session gets the same response as an expired access token (403 with `code: "token_expired"`): the UI tries to refresh, the refresh fails with 401 and it goes back to the login page (or, on public pages, continues anonymously).
+- If Redis cannot be reached, authenticated requests get 503 instead of a misleading 401/500, and `GET /events` and `GET /events/{uuid}` answer as for an anonymous request.
 
 ### Fixed
 
@@ -24,9 +25,9 @@ JWT hardening: server-side sessions, so tokens can actually be revoked. No UI ch
 
 ### Upgrade notes
 
-- Refresh tokens issued before this version keep working: their next refresh moves them to a new session. Until then, they are not covered by logout or by revocation, so a pre-upgrade refresh token stays valid until it expires (15 days at most), as before.
+- Refresh tokens issued before this version keep working: their first refresh moves them to a new session, and their Redis key then points to it, so logging out of that session also revokes them and refreshing them again reuses the same session. Once a member's sessions are revoked (password change, reset link, deletion), their pre-upgrade refresh tokens are refused.
 - Refresh tokens are not rotated yet: a refresh token stays valid until it expires or its session ends. Rotation needs the UI to share tokens between tabs first.
-- Every authenticated request now does one Redis `EXISTS`.
+- Every authenticated request now checks its session in Redis (`EXISTS`; twice for handlers that read the token again).
 
 ## [0.24.4] - 2026-11-08
 
