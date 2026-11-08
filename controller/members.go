@@ -416,6 +416,9 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEMEMBER)
 		return
 	}
+	if err := revokeMemberSessions(ctx, UUID, ""); err != nil {
+		common.Error("Cannot revoke the sessions of member %s: %s", UUID, err.Error())
+	}
 	RespondWithJSON(w, http.StatusOK, nil)
 }
 
@@ -549,6 +552,11 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 		common.Debug("Invalid request payload: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
+	}
+	// The password changed: end the member's other sessions. With a reset link
+	// (tokenAuth.SessionID is empty) all of them end.
+	if err := revokeMemberSessions(ctx, tokenAuth.UserId, tokenAuth.SessionID); err != nil {
+		common.Error("Cannot revoke the sessions of member %s: %s", tokenAuth.UserId, err.Error())
 	}
 	RespondWithJSON(w, http.StatusOK, "")
 }

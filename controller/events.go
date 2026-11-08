@@ -59,8 +59,12 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 		common.Debug("Request has authorization token")
 		tokenAuth, err := ExtractToken(ctx, r)
 		if err != nil {
-			common.Warn("Error reading token: %s", err.Error())
-			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENEXPIRED)
+			if IsTokenExpired(err) {
+				RespondWithTokenExpired(w, ERRORTOKENEXPIRED)
+			} else {
+				common.Debug("Error reading token: %s", err.Error())
+				RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
+			}
 			return
 		}
 		p := model.Participation{EventUUID: e.UUID, MemberUUID: tokenAuth.UserId}
