@@ -12,14 +12,18 @@ First step of the JWT hardening. No API change is required from the UI.
 
 ### Security
 
-- Registration and "forgot password" links (`reset_credentials` tokens) can now be used only once. Before, the "single use" check deleted a Redis key that never existed, so a registration link (valid 7 days) could reset the password and username any number of times. Each link token now has a Redis key with the link's TTL, consumed atomically before the password is changed. Links sent before this version are also accepted once.
+- Registration and "forgot password" links (`reset_credentials` tokens) can now be used only once. Before, the "single use" check deleted a Redis key that never existed, so a registration link (valid 7 days) could reset the password and username any number of times. Each link token now has a Redis key with the link's TTL, consumed atomically before the password is changed, and restored if the change fails (e.g. the chosen username is taken) so the member can try again. Links sent before this version are accepted once more after the upgrade, even if they were already used (at most until they expire: 7 days for registration links).
 - Link tokens (registration, password reset, participation) no longer create a refresh token. Each one used to leave a Redis key with no expiry.
 - `createToken` returned `(nil, nil)` when Redis failed, which crashed the request, or the whole process when called from the scheduler. It now returns the error.
-- The `Authorization` header must use the `Bearer` scheme (case-insensitive). `Bearer: <token>`, which the UI currently sends, is still accepted. Other schemes such as `Basic <token>` used to be accepted and are now rejected.
+- The `Authorization` header must use the `Bearer` scheme (case-insensitive). `Bearer: <token>`, which the UI currently sends, is still accepted, as are extra spaces after the scheme. Other schemes such as `Basic <token>` used to be accepted and are now rejected.
 
 ### Fixed
 
-- `POST /logout` crashed (nil error dereference) and never succeeded. It now revokes the session's refresh token and returns 202. It also works with an expired access token and when the session was already revoked, and returns 401 for a missing or invalid token.
+- `POST /logout` crashed (nil error dereference) and never succeeded. It now revokes the refresh token linked to the access token it receives and returns 202. It also works with an expired access token and when the session was already revoked, and returns 401 for a missing or invalid token. Access tokens, and refresh tokens issued by earlier `/refresh` calls of the same session, stay valid until they expire: refresh rotation and session revocation are planned next.
+
+### Operator actions
+
+- Link tokens issued before this version left Redis keys with no expiry. Once 7 days have passed after the upgrade (the longest link TTL), they can be removed with a one-off scan for keys whose `TTL` is `-1`; sessions always have a TTL.
 
 ### Added
 

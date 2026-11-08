@@ -163,3 +163,50 @@ func TestAuthorizationHeaderSchemes(t *testing.T) {
 		}
 	}
 }
+
+func resetCredentialsWithUsername(token, username, password string) int {
+	req, _ := http.NewRequest("POST", "/api/v1/reset_credentials", bytes.NewBufferString(`{"username":"`+username+`","password":"`+password+`"}`))
+	req.Header.Add("Authorization", "Bearer "+token)
+	return h.executeRequest(req).Code
+}
+
+// If the reset fails (e.g. the username is taken), the link can be used again.
+func TestResetCredentialsTokenKeptWhenResetFails(t *testing.T) {
+	h.clearTables()
+	h.addMember("deadfeed", "Romà", "Èric", "", "", "", "baix", "admin", "roma@eric.ca", "")
+	h.addCredentials("deadfeed", "taken", "admin")
+	h.addMember("deadbeef", "Ramon", "Gerard", "", "", "", "segon", "member", "ramon@gerard.ca", "")
+	token, err := controller.ResetCredentialsToken(context.Background(), "deadbeef", "ramon@gerard.ca", 60)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.checkResponseCode(http.StatusBadRequest, resetCredentialsWithUsername(token, "taken", "pass")); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.checkResponseCode(http.StatusOK, resetCredentialsWithUsername(token, "ramon", "pass")); err != nil {
+		t.Fatal("retry after a failed reset:", err)
+	}
+	if err := h.checkResponseCode(http.StatusUnauthorized, resetCredentialsWithUsername(token, "ramon2", "pass")); err != nil {
+		t.Error("token reused after success:", err)
+	}
+	if err := h.checkResponseCode(http.StatusOK, login("ramon", "pass")); err != nil {
+		t.Error(err)
+	}
+}
+
+// Logged-in members can change their password as often as they want.
+func TestChangePasswordIsRepeatable(t *testing.T) {
+	h.clearTables()
+	accessToken, _ := loginAsMember(t)
+	for _, password := range []string{"first", "second"} {
+		req, _ := http.NewRequest("POST", "/api/v1/change_password", bytes.NewBufferString(`{"password":"`+password+`"}`))
+		req.Header.Add("Authorization", "Bearer "+accessToken)
+		if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+			t.Fatalf("%s: %v", password, err)
+		}
+	}
+	if err := h.checkResponseCode(http.StatusOK, login("member", "second")); err != nil {
+		t.Error(err)
+	}
+}

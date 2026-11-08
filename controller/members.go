@@ -527,8 +527,9 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// A reset credentials token (registration or "forgot password" link) can only be used once.
+	restoreToken := func() {}
 	if common.StringInSlice(ResetCredentialsPermission, tokenAuth.Permissions) {
-		consumed, err := consumeResetCredentialsToken(ctx, tokenAuth)
+		consumed, restore, err := consumeResetCredentialsToken(ctx, tokenAuth)
 		if err != nil {
 			common.Warn("Error consuming reset credentials token: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORINTERNAL)
@@ -539,9 +540,12 @@ func ResetCredentials(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusUnauthorized, ERRORTOKENINVALID)
 			return
 		}
+		restoreToken = restore
 	}
 	err = c.ResetCredentials(ctx, c.Username, password)
 	if err != nil {
+		// e.g. the username is already taken: let the member try again with the same link.
+		restoreToken()
 		common.Debug("Invalid request payload: %s", err.Error())
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return

@@ -37,6 +37,7 @@ type AccessTokenDetails struct {
 	RefreshUuid string
 	UserId      string
 	Permissions []string
+	ExpiresAt   time.Time
 }
 
 const ResetCredentialsPermission = "reset_credentials"
@@ -259,11 +260,16 @@ func ExtractToken(ctx context.Context, r *http.Request) (*AccessTokenDetails, er
 		if !ok {
 			return nil, err
 		}
+		var expiresAt time.Time
+		if exp, err := claims.GetExpirationTime(); err == nil && exp != nil {
+			expiresAt = exp.Time
+		}
 		return &AccessTokenDetails{
 			TokenUuid:   tokenUuid,
 			RefreshUuid: refreshUuid,
 			UserId:      userUuid,
 			Permissions: tokenPermissions,
+			ExpiresAt:   expiresAt,
 		}, nil
 	}
 	return nil, err
@@ -411,6 +417,9 @@ func createLinkToken(uuid, email, permission string, ttlMinutes int) (token stri
 func ResetCredentialsToken(ctx context.Context, uuid string, email string, ttl int) (string, error) {
 	ctx, span := tracer.Start(ctx, "ResetCredentialsToken")
 	defer span.End()
+	if ttl <= 0 {
+		return "", fmt.Errorf("invalid reset credentials token TTL: %d minutes", ttl)
+	}
 	token, tokenUuid, err := createLinkToken(uuid, email, ResetCredentialsPermission, ttl)
 	if err != nil {
 		return "", err
@@ -422,19 +431,32 @@ func ResetCredentialsToken(ctx context.Context, uuid string, email string, ttl i
 }
 
 // consumeResetCredentialsToken marks a reset credentials token as used. It
-// returns false if the token was already used.
-func consumeResetCredentialsToken(ctx context.Context, tokenAuth *AccessTokenDetails) (bool, error) {
-	deleted, err := RedisClient.Del(ctx, linkTokenKeyPrefix+tokenAuth.TokenUuid).Result()
-	if err != nil || deleted == 1 {
-		return deleted == 1, err
+// returns false if the token was already used. On success, it also returns a
+// function that makes the token usable again, for when the reset fails.
+// Deleting the key first is what makes two concurrent uses safe: DEL returns 1
+// to only one of them.
+func consumeResetCredentialsToken(ctx context.Context, tokenAuth *AccessTokenDetails) (bool, func(), error) {
+	key := linkTokenKeyPrefix + tokenAuth.TokenUuid
+	deleted, err := RedisClient.Del(ctx, key).Result()
+	if err == nil && deleted == 0 && tokenAuth.RefreshUuid != "" {
+		// Tokens created before version 0.24.4 came with a refresh token stored
+		// in Redis: consume that key instead.
+		key = tokenAuth.RefreshUuid
+		deleted, err = RedisClient.Del(ctx, key).Result()
 	}
-	// Tokens created before version 0.24.4 came with a refresh token stored in
-	// Redis: consume that key instead.
-	if tokenAuth.RefreshUuid == "" {
-		return false, nil
+	if err != nil || deleted == 0 {
+		return false, nil, err
 	}
-	deleted, err = RedisClient.Del(ctx, tokenAuth.RefreshUuid).Result()
-	return deleted == 1, err
+	restore := func() {
+		ttl := time.Until(tokenAuth.ExpiresAt)
+		if ttl <= 0 {
+			return
+		}
+		if err := RedisClient.Set(ctx, key, tokenAuth.UserId, ttl).Err(); err != nil {
+			common.Warn("Cannot restore reset credentials token of member %s: %s", tokenAuth.UserId, err.Error())
+		}
+	}
+	return true, restore, nil
 }
 
 // ParticipateEventToken creates the token of the participation links sent in reminders.
