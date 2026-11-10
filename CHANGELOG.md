@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.25.0] - 2026-11-10
+
+First step of pinya planning: the pilar de 4 gets pinya positions. Needs UI 1.8.0 to be drawn; an older UI ignores them.
+
+### Added
+
+- `GET /castells/types/1d4` now also returns 20 positions with `part: "pinya"`: the nucli (`agulla`, `contrafort`, 2 `crossa`, all with `cordon: 0`) and 8 rengles of 2 cordons (2 `mans`, 2 `vent`, 4 `lateral`, with `cordon: 1` and `2`). `column` tells the rengles of the same name apart; the convention is described at the top of `sql/0.25.0.sql`.
+- Members are assigned to these positions through `position_members`, exactly like tronc and pom positions. No endpoint and no payload format changed.
+
+### Upgrade notes
+
+- The other castell types have no pinya positions and are unchanged.
+- The migration only adds rows to `castell_positions` and `castell_positions_in_castells`. Existing castell models are not modified.
+
 ## [0.24.5] - 2026-11-08
 
 JWT hardening: server-side sessions, so tokens can actually be revoked. No UI change is required.
