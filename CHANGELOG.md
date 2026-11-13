@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.27.0] - 2026-11-13
+
+### Added
+
+- Members have a creation date. `GET /members` returns it to admins as `createdAt` (Unix seconds, `0` when it is not known). It is set by the server when a member is added and cannot be sent by the client. The dues page of the UI (1.11.0) uses it to leave out accounts that were created long ago and never activated.
+
+### Upgrade notes
+
+- The migration adds `members.created_at` and fills it, for the members who are already there, with the date of their first registration email. Members added without an email keep `0`.
+
 ## [0.26.0] - 2026-11-12
 
 Dues registry (cotisations), first step. The application does not handle payments: an admin records which dues a member has settled, and every change is kept in a journal. Needs UI 1.10.0 to be used; an older UI ignores it.
