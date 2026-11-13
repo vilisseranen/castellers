@@ -34,5 +34,13 @@
     "reminder_confirm": "Per confirmar o canviar la teva disponibilitat, fes clic en una de les dues opcions:",
     "reminder_confirm_dependent": "Si us plau, indica si %s hi serà:",
     "reminder_uniform_title": "Uniforme requerit",
-    "reminder_uniform_text": "Per a aquest esdeveniment, cal portar l'uniforme: camisa oficial i pantalons blancs. Si encara no tens la camisa oficial, porta colors semblants als nostres. Tenim algunes camises de segona mà que et podem deixar, si cal."
+    "reminder_uniform_text": "Per a aquest esdeveniment, cal portar l'uniforme: camisa oficial i pantalons blancs. Si encara no tens la camisa oficial, porta colors semblants als nostres. Tenim algunes camises de segona mà que et podem deixar, si cal.",
+    "dues_kind_cercle": "Inscripció al Cercle cultural català",
+    "dues_kind_winter": "Quota d'hivern",
+    "dues_kind_spring": "Quota de primavera",
+    "dues_kind_summer": "Quota d'estiu",
+    "dues_reminder_title": "%s: %s",
+    "dues_reminder_text": "Recollirem aquesta quota durant aquest esdeveniment.",
+    "dues_reminder_interac": "També la pots pagar per transferència Interac a %s.",
+    "dues_reminder_already_paid": "Si ja ho has fet, gràcies, i no facis cas d'aquest recordatori."
 }

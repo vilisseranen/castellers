@@ -88,5 +88,13 @@
     "badge_name_primerCastell": "Premier castell",
     "badge_name_mcc2026": "Montréal Complètement Cirque 2026",
     "reminder_uniform_title": "Uniforme de mise",
-    "reminder_uniform_text": "Pour cet évènement, le port de l'uniforme est de mise : chemise officielle et pantalons blancs. Si tu n'as pas encore la chemise officielle, porte des couleurs semblables aux nôtres. Nous avons quelques chemises de seconde main que l'on peut te prêter, au besoin."
+    "reminder_uniform_text": "Pour cet évènement, le port de l'uniforme est de mise : chemise officielle et pantalons blancs. Si tu n'as pas encore la chemise officielle, porte des couleurs semblables aux nôtres. Nous avons quelques chemises de seconde main que l'on peut te prêter, au besoin.",
+    "dues_kind_cercle": "Inscription au Cercle culturel catalan",
+    "dues_kind_winter": "Cotisation d'hiver",
+    "dues_kind_spring": "Cotisation du printemps",
+    "dues_kind_summer": "Cotisation d'été",
+    "dues_reminder_title": "%s : %s",
+    "dues_reminder_text": "Nous ferons la cueillette de cette cotisation lors de cet évènement.",
+    "dues_reminder_interac": "Tu peux aussi la régler par virement Interac à %s.",
+    "dues_reminder_already_paid": "Si c'est déjà fait, merci, et ne tiens pas compte de ce rappel."
 }

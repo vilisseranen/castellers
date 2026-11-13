@@ -183,6 +183,10 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
 		return
 	}
+	if !validDuesCollection(ctx, event.DuesCollectionUUID) {
+		RespondWithError(w, http.StatusBadRequest, ERRORDUESCOLLECTIONNOTFOUND)
+		return
+	}
 
 	// Compute all events
 	var events = make([]model.Event, 0)
@@ -229,6 +233,10 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 				anEvent.Location = event.Location
 				anEvent.LocationName = event.LocationName
 				anEvent.UniformRequired = event.UniformRequired
+				// Dues are collected once: at the first event of the series.
+				if len(events) == 0 {
+					anEvent.DuesCollectionUUID = event.DuesCollectionUUID
+				}
 				events = append(events, anEvent)
 
 				// Adjust for Daylight Saving Time
@@ -307,6 +315,10 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	if !validEventData(ctx, e) {
 		common.Debug("Invalid request payload: %s", e)
 		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
+		return
+	}
+	if !validDuesCollection(ctx, e.DuesCollectionUUID) {
+		RespondWithError(w, http.StatusBadRequest, ERRORDUESCOLLECTIONNOTFOUND)
 		return
 	}
 	e.UUID = UUID

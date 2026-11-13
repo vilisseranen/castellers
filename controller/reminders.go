@@ -202,12 +202,19 @@ func sendReminderEmailsToMembers(ctx context.Context, event model.Event, members
 			failures++
 			continue
 		}
+		// A problem with the dues must not prevent the reminder from leaving.
+		dues, err := DuesReminderFor(ctx, event, member)
+		if err != nil {
+			common.Warn("Error getting the dues to remind: %s", err.Error())
+			dues = nil
+		}
 		emailPayload := mail.EmailReminderPayload{
 			Member:        member,
 			Event:         event,
 			Participation: p,
 			Token:         token,
 			Dependents:    dependents,
+			Dues:          dues,
 		}
 		if err := mail.SendReminderEmail(ctx, emailPayload); err != nil {
 			common.Error("%v\n", err)

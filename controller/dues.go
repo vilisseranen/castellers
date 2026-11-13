@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	netmail "net/mail"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 
 	"github.com/vilisseranen/castellers/common"
+	"github.com/vilisseranen/castellers/mail"
 	"github.com/vilisseranen/castellers/model"
 )
 
@@ -24,6 +28,8 @@ const (
 	ERRORDUESCOLLECTIONNOTFOUND = "collection not found"
 	ERRORDUESNOTETOOLONG        = "note is too long"
 	ERRORDUESMEMBERTYPE         = "dues do not apply to this type of member"
+	ERRORDUESINTERACEMAIL       = "invalid email address"
+	ERRORSETDUESSETTINGS        = "error saving dues settings"
 )
 
 // Seasons accepted by the API: wide enough for any real use, narrow enough to
@@ -313,4 +319,140 @@ func GetDuesLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondWithJSON(w, http.StatusOK, entries)
+}
+
+type duesSettings struct {
+	InteracEmail string `json:"interacEmail"`
+}
+
+// validDuesCollection tells whether an event can point to this collection: no
+// collection at all is fine, an unknown one is not.
+func validDuesCollection(ctx context.Context, collectionUUID string) bool {
+	if collectionUUID == "" {
+		return true
+	}
+	_, err := model.GetDuesCollection(ctx, collectionUUID)
+	return err == nil
+}
+
+// DuesReminderFor returns what the reminder of an event should tell a member
+// about dues, or nil when there is nothing to say: no dues are collected at the
+// event, dues do not apply to the member, or the member has settled them or is
+// exempt.
+func DuesReminderFor(ctx context.Context, event model.Event, member model.Member) (*mail.DuesReminder, error) {
+	if event.DuesCollectionUUID == "" || !duesApplyTo(member) {
+		return nil, nil
+	}
+	collection, err := model.GetDuesCollection(ctx, event.DuesCollectionUUID)
+	if err == model.ErrDuesCollectionNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	status, err := model.GetDuesStatus(ctx, member.UUID, collection.UUID)
+	if err != nil {
+		return nil, err
+	}
+	if status != model.DuesActionUnpaid {
+		return nil, nil
+	}
+	interacEmail, err := model.GetDuesSetting(ctx, model.DuesSettingInteracEmail)
+	if err != nil {
+		return nil, err
+	}
+	return &mail.DuesReminder{
+		Kind:         collection.Kind,
+		Amount:       collection.Amount,
+		InteracEmail: interacEmail,
+	}, nil
+}
+
+// GetDuesSettings returns what members need to know to pay their dues: for
+// now the address for Interac transfers. Any member can read it.
+func GetDuesSettings(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetDuesSettings")
+	defer span.End()
+
+	interacEmail, err := model.GetDuesSetting(ctx, model.DuesSettingInteracEmail)
+	if err != nil {
+		common.Warn("Error getting dues settings: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETDUES)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, duesSettings{InteracEmail: interacEmail})
+}
+
+// SetDuesSettings saves the settings of the dues (admin only). An empty
+// address removes it.
+func SetDuesSettings(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "SetDuesSettings")
+	defer span.End()
+
+	var body duesSettings
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		RespondWithError(w, http.StatusBadRequest, ERRORINVALIDPAYLOAD)
+		return
+	}
+	interacEmail := strings.TrimSpace(body.InteracEmail)
+	if interacEmail != "" {
+		address, err := netmail.ParseAddress(interacEmail)
+		if err != nil || address.Address != interacEmail || len(interacEmail) > 254 {
+			RespondWithError(w, http.StatusBadRequest, ERRORDUESINTERACEMAIL)
+			return
+		}
+	}
+	if err := model.SetDuesSetting(ctx, model.DuesSettingInteracEmail, interacEmail); err != nil {
+		common.Warn("Error saving dues settings: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORSETDUESSETTINGS)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, duesSettings{InteracEmail: interacEmail})
+}
+
+// GetMemberAttendance returns the number of events at which the presence of a
+// member was confirmed, and the date of the first one. A member can only read
+// their own, an admin can read anyone's.
+func GetMemberAttendance(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetMemberAttendance")
+	defer span.End()
+
+	memberUUID := mux.Vars(r)["member_uuid"]
+
+	tokenAuth, err := ExtractToken(ctx, r)
+	if err != nil {
+		RespondWithTokenError(w, err)
+		return
+	}
+	if !common.StringInSlice(model.MEMBERSTYPEADMIN, tokenAuth.Permissions) && memberUUID != tokenAuth.UserId {
+		RespondWithError(w, http.StatusForbidden, ERRORUNAUTHORIZED)
+		return
+	}
+
+	attendance, err := model.GetAttendance(ctx, memberUUID)
+	if err != nil {
+		common.Warn("Error getting attendance: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETDUES)
+		return
+	}
+	result := model.Attendance{MemberUUID: memberUUID}
+	if len(attendance) > 0 {
+		result = attendance[0]
+	}
+	RespondWithJSON(w, http.StatusOK, result)
+}
+
+// GetDuesAttendance returns the attendance of every member who came at least
+// once (admin only).
+func GetDuesAttendance(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "GetDuesAttendance")
+	defer span.End()
+
+	attendance, err := model.GetAttendance(ctx, "")
+	if err != nil {
+		common.Warn("Error getting attendance: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORGETDUES)
+		return
+	}
+	RespondWithJSON(w, http.StatusOK, attendance)
 }
