@@ -14,6 +14,7 @@ import (
 const (
 	DUES_COLLECTIONS_TABLE = "dues_collections"
 	DUES_LOG_TABLE         = "dues_log"
+	DUES_SETTINGS_TABLE    = "dues_settings"
 )
 
 // Kinds of collection. A season holds at most one of each.
@@ -398,4 +399,108 @@ func decryptOrEmpty(data []byte) (plain string) {
 		}
 	}()
 	return common.Decrypt(data)
+}
+
+// GetDuesCollection returns one collection, or ErrDuesCollectionNotFound.
+func GetDuesCollection(ctx context.Context, uuid string) (DuesCollection, error) {
+	ctx, span := tracer.Start(ctx, "GetDuesCollection")
+	defer span.End()
+
+	c := DuesCollection{UUID: uuid}
+	err := db.QueryRowContext(ctx, fmt.Sprintf(
+		"SELECT season, kind, amount, due_date FROM %s WHERE uuid = ?", DUES_COLLECTIONS_TABLE), uuid).
+		Scan(&c.Season, &c.Kind, &c.Amount, &c.DueDate)
+	if err == sql.ErrNoRows {
+		return c, ErrDuesCollectionNotFound
+	}
+	return c, err
+}
+
+// GetDuesStatus returns the current state of a member for a collection:
+// unpaid when nothing was recorded.
+func GetDuesStatus(ctx context.Context, memberUUID, collectionUUID string) (string, error) {
+	ctx, span := tracer.Start(ctx, "GetDuesStatus")
+	defer span.End()
+
+	status := DuesActionUnpaid
+	err := db.QueryRowContext(ctx, fmt.Sprintf(
+		"SELECT action FROM %s WHERE member_uuid = ? AND collection_uuid = ? ORDER BY id DESC LIMIT 1", DUES_LOG_TABLE),
+		memberUUID, collectionUUID).Scan(&status)
+	if err != nil && err != sql.ErrNoRows {
+		return "", err
+	}
+	return status, nil
+}
+
+// Attendance counts the events at which the presence of a member was
+// confirmed. FirstVisit is the start of the first of them (Unix seconds).
+type Attendance struct {
+	MemberUUID string `json:"memberUuid"`
+	FirstVisit int64  `json:"firstVisit"`
+	Count      int    `json:"count"`
+}
+
+// GetAttendance returns the attendance of one member, or of every member who
+// came at least once when memberUUID is empty. Only presences confirmed by an
+// admin count: an answer "yes" without confirmation does not.
+func GetAttendance(ctx context.Context, memberUUID string) ([]Attendance, error) {
+	ctx, span := tracer.Start(ctx, "GetAttendance")
+	defer span.End()
+
+	query := fmt.Sprintf(
+		"SELECT p.member_uuid, MIN(e.startDate), COUNT(*) FROM %s p "+
+			"JOIN %s e ON e.uuid = p.event_uuid "+
+			"WHERE p.presence = ? AND e.deleted = 0",
+		PARTICIPATION_TABLE, EVENTS_TABLE)
+	args := []interface{}{common.AnswerYes}
+	if memberUUID != "" {
+		query += " AND p.member_uuid = ?"
+		args = append(args, memberUUID)
+	}
+	query += " GROUP BY p.member_uuid"
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	attendance := []Attendance{}
+	for rows.Next() {
+		var a Attendance
+		if err := rows.Scan(&a.MemberUUID, &a.FirstVisit, &a.Count); err != nil {
+			return nil, err
+		}
+		attendance = append(attendance, a)
+	}
+	return attendance, rows.Err()
+}
+
+// Keys of the dues settings.
+const (
+	DuesSettingInteracEmail = "interacEmail"
+	DuesSettingCercleURL    = "cercleUrl"
+)
+
+// GetDuesSetting returns a setting, or an empty string when it is not set.
+func GetDuesSetting(ctx context.Context, key string) (string, error) {
+	ctx, span := tracer.Start(ctx, "GetDuesSetting")
+	defer span.End()
+
+	var value string
+	err := db.QueryRowContext(ctx, fmt.Sprintf("SELECT value FROM %s WHERE key = ?", DUES_SETTINGS_TABLE), key).Scan(&value)
+	if err != nil && err != sql.ErrNoRows {
+		return "", err
+	}
+	return value, nil
+}
+
+// SetDuesSetting creates or replaces a setting.
+func SetDuesSetting(ctx context.Context, key, value string) error {
+	ctx, span := tracer.Start(ctx, "SetDuesSetting")
+	defer span.End()
+
+	_, err := db.ExecContext(ctx, fmt.Sprintf(
+		"INSERT INTO %s (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", DUES_SETTINGS_TABLE),
+		key, value)
+	return err
 }

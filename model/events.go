@@ -36,21 +36,24 @@ type Event struct {
 	Location        LatLng    `json:"location"`
 	LocationName    string    `json:"locationName"`
 	UniformRequired int       `json:"uniformRequired"`
-	RecurringEvent  string
+	// DuesCollectionUUID is set when dues are collected at this event.
+	DuesCollectionUUID string `json:"duesCollectionUuid"`
+	RecurringEvent     string
 }
 
 func (e *Event) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.Get")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng, uniformRequired FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng, uniformRequired, dues_collection_uuid FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
-	var description, locationName sql.NullString // to manage possible NULL fields
-	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng, &e.UniformRequired)
+	var description, locationName, duesCollectionUUID sql.NullString // to manage possible NULL fields
+	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng, &e.UniformRequired, &duesCollectionUUID)
 	e.Description = nullToEmptyString(description)
 	e.LocationName = nullToEmptyString(locationName)
+	e.DuesCollectionUUID = nullToEmptyString(duesCollectionUUID)
 	return err
 }
 
@@ -73,9 +76,9 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([
 	offset := page * limit
 	queryString := ""
 	if pastEvents {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired FROM %s WHERE endDate < ? AND deleted=0 ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate < ? AND deleted=0 ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE)
 	} else {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
 	}
 	rows, err := db.QueryContext(ctx, queryString, now, limit, offset)
 	if err != nil {
@@ -87,9 +90,11 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([
 
 	for rows.Next() {
 		var e Event
-		if err = rows.Scan(&e.UUID, &e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.UniformRequired); err != nil {
+		var duesCollectionUUID sql.NullString
+		if err = rows.Scan(&e.UUID, &e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.UniformRequired, &duesCollectionUUID); err != nil {
 			return nil, err
 		}
+		e.DuesCollectionUUID = nullToEmptyString(duesCollectionUUID)
 		Events = append(Events, e)
 	}
 	if err = rows.Err(); err != nil {
@@ -101,7 +106,7 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([
 func (e *Event) UpdateEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.UpdateEvent")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ?, uniformRequired = ? WHERE uuid= ?", EVENTS_TABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("Update %s SET name = ?, startDate = ?, endDate = ?, type = ?, description = ?, locationName = ?, lat = ?, lng = ?, uniformRequired = ?, dues_collection_uuid = ? WHERE uuid= ?", EVENTS_TABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
@@ -117,6 +122,7 @@ func (e *Event) UpdateEvent(ctx context.Context) error {
 		e.Location.Lat,
 		e.Location.Lng,
 		e.UniformRequired,
+		stringOrNull(e.DuesCollectionUUID),
 		e.UUID)
 	return err
 }
@@ -136,7 +142,7 @@ func (e *Event) DeleteEvent(ctx context.Context) error {
 func (e *Event) CreateEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.CreateEvent")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng, uniformRequired) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("INSERT INTO %s (uuid, name, startDate, endDate, recurringEvent, description, type, locationName, lat, lng, uniformRequired, dues_collection_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", EVENTS_TABLE))
 	if err != nil {
 		common.Error(err.Error())
 		common.Error("%v\n", e)
@@ -155,7 +161,8 @@ func (e *Event) CreateEvent(ctx context.Context) error {
 		stringOrNull(e.LocationName),
 		e.Location.Lat,
 		e.Location.Lng,
-		e.UniformRequired)
+		e.UniformRequired,
+		stringOrNull(e.DuesCollectionUUID))
 	if err != nil {
 		stmt.Close()
 		common.Error(err.Error())

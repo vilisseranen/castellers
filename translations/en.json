@@ -88,5 +88,13 @@
     "badge_name_primerCastell": "First castell",
     "badge_name_mcc2026": "Montréal Complètement Cirque 2026",
     "reminder_uniform_title": "Uniform required",
-    "reminder_uniform_text": "For this event, the uniform is expected: official shirt and white trousers. If you do not have the official shirt yet, wear similar colours to ours. We have a few second-hand shirts we can lend if needed."
+    "reminder_uniform_text": "For this event, the uniform is expected: official shirt and white trousers. If you do not have the official shirt yet, wear similar colours to ours. We have a few second-hand shirts we can lend if needed.",
+    "dues_kind_cercle": "Cercle culturel catalan membership",
+    "dues_kind_winter": "Winter dues",
+    "dues_kind_spring": "Spring dues",
+    "dues_kind_summer": "Summer dues",
+    "dues_reminder_title": "%s: %s",
+    "dues_reminder_text": "We will collect these dues at this event.",
+    "dues_reminder_interac": "You can also pay by Interac transfer to %s.",
+    "dues_reminder_already_paid": "If you have already paid, thank you, and please ignore this reminder."
 }

@@ -15,6 +15,50 @@ type EmailReminderPayload struct {
 	Participation model.Participation
 	Token         string
 	Dependents    []model.Member
+	// Dues is set when dues are collected at the event and the member has not
+	// settled them yet.
+	Dues *DuesReminder
+}
+
+// DuesReminder is what the reminder of an event says about the dues collected
+// at that event. Amount is in cents; InteracEmail may be empty.
+type DuesReminder struct {
+	Kind         string
+	Amount       int
+	InteracEmail string
+}
+
+// formatDuesAmount writes an amount in cents the way each language does:
+// "20 $" in French and Catalan, "$20" in English. Cents only show when there
+// are some.
+func formatDuesAmount(cents int, language string) string {
+	amount := fmt.Sprintf("%d", cents/100)
+	if cents%100 != 0 {
+		separator := ","
+		if language == "en" {
+			separator = "."
+		}
+		amount = fmt.Sprintf("%d%s%02d", cents/100, separator, cents%100)
+	}
+	if language == "en" {
+		return "$" + amount
+	}
+	return amount + " $"
+}
+
+// duesSection builds the paragraph about the dues.
+func duesSection(dues DuesReminder, language string) emailMain {
+	text := common.Translate("dues_reminder_text", language)
+	if dues.InteracEmail != "" {
+		text += " " + fmt.Sprintf(common.Translate("dues_reminder_interac", language), dues.InteracEmail)
+	}
+	text += " " + common.Translate("dues_reminder_already_paid", language)
+	return emailMain{
+		Title: fmt.Sprintf(common.Translate("dues_reminder_title", language),
+			common.Translate("dues_kind_"+dues.Kind, language),
+			formatDuesAmount(dues.Amount, language)),
+		Text: text,
+	}
 }
 
 // Will send an email reminding members to register for an event
@@ -65,6 +109,9 @@ func SendReminderEmail(ctx context.Context, payload EmailReminderPayload) error 
 			Title: common.Translate("reminder_uniform_title", payload.Member.Language),
 			Text:  common.Translate("reminder_uniform_text", payload.Member.Language),
 		})
+	}
+	if payload.Dues != nil {
+		email.MainSections = append(email.MainSections, duesSection(*payload.Dues, payload.Member.Language))
 	}
 	email.Actions = []emailAction{{
 		Title: common.Translate("reminder_availability", payload.Member.Language),
