@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.26.0] - 2026-11-12
+
+Dues registry (cotisations), first step. The application does not handle payments: an admin records which dues a member has settled, and every change is kept in a journal. Needs UI 1.10.0 to be used; an older UI ignores it.
+
+### Added
+
+- Collections (cueillettes). A season follows the membership year of the Cercle culturel catalan: season `2026` runs from October 1st 2026 to September 30th 2027. It holds at most four collections, one of each `kind`: `cercle` (annual membership of the Cercle, collected in the autumn), `winter`, `spring` and `summer`. Each has an `amount` in cents and a `dueDate`.
+  - `GET /dues/collections?season=2026` (any member): the collections of a season, or of all seasons without `season`.
+  - `PUT /dues/collections/{season}` (admin): creates or updates the collections given in `{"collections": [{"kind", "amount", "dueDate"}]}`. A kind that is not given is left as it is. Collections cannot be removed.
+- Recording (admin). `POST /dues/entries` with `{"memberUuid", "collectionUuids": [...], "action", "note"}` sets one or several collections to `paid`, `unpaid` or `exempt` for a member, all or nothing. A collection that is already in that state is skipped, so repeating a request changes nothing. Returns `{"entries": n}`, the number of journal entries written.
+- `GET /members/{uuid}/dues`: every collection with the member's `status` (`paid`, `unpaid` or `exempt`) and the date of the last change. A member can only read their own (403 otherwise), an admin can read anyone's. It does not say who recorded the change.
+- `GET /dues/states?season=2026` (admin): the current state of every member, for the pairs member/collection recorded at least once. A missing pair is unpaid.
+- Journal. `GET /dues/log` (admin) lists who set what, for whom and when, most recent first, with the names of the member and of the author. Filters: `member`, `collection`, `actor`, `season`; paging with `limit` (100 by default, 500 at most) and `offset`. There is no endpoint to modify or remove an entry: a mistake is fixed by a new entry.
+
+### Notes
+
+- Dues only apply to regular members and admins: recording for a member of the canalla or a guest is refused (400).
+- The current state is not stored: it is the last journal entry of the member for the collection.
+- The note of an entry is encrypted in the database, like the personal data of the members. The journal keeps naming an admin whose account was deleted.
+
+### Upgrade notes
+
+- The migration adds two empty tables, `dues_collections` and `dues_log`. Nothing else changes.
+
 ## [0.25.0] - 2026-11-10
 
 First step of pinya planning: the pilar de 4 gets pinya positions. Needs UI 1.8.0 to be drawn; an older UI ignores them.

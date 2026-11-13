@@ -212,6 +212,8 @@ func (test *TestHelper) removeExistingTables() {
 	db.Exec("DROP TABLE IF EXISTS castell_positions_in_castells")
 	db.Exec("DROP TABLE IF EXISTS castell_models")
 	db.Exec("DROP TABLE IF EXISTS castell_members_positions")
+	db.Exec("DROP TABLE IF EXISTS dues_log")
+	db.Exec("DROP TABLE IF EXISTS dues_collections")
 	db.Exec("DROP TABLE IF EXISTS member_badges")
 	db.Exec("DROP TABLE IF EXISTS badges")
 	db.Exec("DROP TABLE IF EXISTS badge_series")
@@ -234,4 +236,6 @@ func (test *TestHelper) clearTables() {
 	db.Exec("DELETE FROM members_dependent")
 	db.Exec("DELETE FROM notifications")
 	db.Exec("DELETE FROM member_badges")
+	db.Exec("DELETE FROM dues_log")
+	db.Exec("DELETE FROM dues_collections")
 }
