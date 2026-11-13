@@ -45,6 +45,9 @@ type Member struct {
 	Language      string   `json:"language"`
 	Participation string   `json:"participation"`
 	Presence      string   `json:"presence"`
+	// CreatedAt is when the member was added (Unix seconds). It is 0 when it is
+	// not known, and it is only filled in the list of members.
+	CreatedAt int64 `json:"createdAt"`
 }
 
 // String keeps personal data out of logs and error messages: formatting a
@@ -68,7 +71,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
-		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
@@ -76,6 +79,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		return err
 	}
 	defer stmt.Close()
+	createdAt := time.Now().Unix()
 	_, err = stmt.ExecContext(
 		ctx,
 		stringOrNull(m.UUID),
@@ -88,7 +92,8 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		m.Type,
 		common.Encrypt(m.Email),
 		common.Encrypt(m.Contact),
-		stringOrNull(m.Language))
+		stringOrNull(m.Language),
+		createdAt)
 	if err != nil {
 		tx.Rollback()
 		common.Error("Error: %v on member %s", err.Error(), m.UUID)
@@ -174,7 +179,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, created_at FROM %s",
 		MEMBERSTABLE)}
 	filters := []string{}
 	statusFilters := []string{}
@@ -222,7 +227,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		m.FirstName = common.Decrypt([]byte(m.FirstName))

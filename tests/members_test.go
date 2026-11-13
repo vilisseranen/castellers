@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/vilisseranen/castellers/model"
 )
@@ -592,5 +593,58 @@ func TestRemoveNonExistingDependant(t *testing.T) {
 
 	if err := h.checkResponseCode(http.StatusBadRequest, response.Code); err != nil {
 		t.Error(err)
+	}
+}
+
+// The list of members tells admins when each member was added.
+func TestMemberCreatedAt(t *testing.T) {
+	h.clearTables()
+	adminToken := h.addAnAdmin()
+	memberToken := h.addAMember()
+
+	before := time.Now().Unix()
+	payload := []byte(`{
+		"firstName":"Clément",
+		"lastName": "Contini",
+		"roles": [],
+		"type": "member",
+		"email": "clement@contini.ca",
+		"language": "fr",
+		"createdAt": 12345}`)
+	req, _ := http.NewRequest("POST", "/api/v1/members", bytes.NewBuffer(payload))
+	req.Header.Add("Authorization", "Bearer "+adminToken)
+	response := h.executeRequest(req)
+	if err := h.checkResponseCode(http.StatusCreated, response.Code); err != nil {
+		t.Fatal(err)
+	}
+
+	list := func(token string) map[string]float64 {
+		req, _ := http.NewRequest("GET", "/api/v1/members", nil)
+		req.Header.Add("Authorization", "Bearer "+token)
+		response := h.executeRequest(req)
+		if err := h.checkResponseCode(http.StatusOK, response.Code); err != nil {
+			t.Fatal(err)
+		}
+		var members []map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &members)
+		createdAt := map[string]float64{}
+		for _, m := range members {
+			createdAt[m["firstName"].(string)], _ = m["createdAt"].(float64)
+		}
+		return createdAt
+	}
+
+	// The date is set by the server, whatever the client sends.
+	adminView := list(adminToken)
+	if int64(adminView["Clément"]) < before {
+		t.Errorf("Expected Clément to have a creation date. Got %v", adminView["Clément"])
+	}
+	// Members who were there before the date existed have none.
+	if adminView["Ramon"] != 0 {
+		t.Errorf("Expected Ramon to have no creation date. Got %v", adminView["Ramon"])
+	}
+	// A regular member only gets names.
+	if memberView := list(memberToken); memberView["Clément"] != 0 {
+		t.Errorf("Expected a regular member not to see the creation date. Got %v", memberView["Clément"])
 	}
 }
