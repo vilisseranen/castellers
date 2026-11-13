@@ -181,13 +181,56 @@ func TestDuesSettings(t *testing.T) {
 		t.Errorf("Expected the address to be kept. Got '%s'", email)
 	}
 
-	// An empty address removes it.
+	// The page where one joins the Cercle is saved on its own: the Interac
+	// address is left as it is.
+	readURL := func() string {
+		_, body := h.duesRequest("GET", "/dues/settings", memberToken, nil)
+		var settings map[string]string
+		json.Unmarshal(body, &settings)
+		return settings["cercleUrl"]
+	}
+	if cercleURL := readURL(); cercleURL != "" {
+		t.Errorf("Expected no page at first. Got '%s'", cercleURL)
+	}
+	code, _ = h.duesRequest("PUT", "/dues/settings", adminToken, []byte(`{"cercleUrl":" https://cercle.example/inscription "}`))
+	if err := h.checkResponseCode(http.StatusOK, code); err != nil {
+		t.Fatal(err)
+	}
+	if cercleURL := readURL(); cercleURL != "https://cercle.example/inscription" {
+		t.Errorf("Expected 'https://cercle.example/inscription'. Got '%s'", cercleURL)
+	}
+	if email := read(memberToken); email != "tresorerie@colla.ca" {
+		t.Errorf("Expected the Interac address to be untouched. Got '%s'", email)
+	}
+	for _, invalid := range []string{"cercle.example/inscription", "javascript:alert(1)", "https://", "https://cercle.example/a b"} {
+		payload, _ := json.Marshal(map[string]string{"cercleUrl": invalid})
+		code, _ := h.duesRequest("PUT", "/dues/settings", adminToken, payload)
+		if err := h.checkResponseCode(http.StatusBadRequest, code); err != nil {
+			t.Errorf("'%s': %v", invalid, err)
+		}
+	}
+	// One invalid value: nothing is saved, not even the valid one.
+	code, _ = h.duesRequest("PUT", "/dues/settings", adminToken, []byte(`{"interacEmail":"autre@colla.ca","cercleUrl":"nope"}`))
+	if err := h.checkResponseCode(http.StatusBadRequest, code); err != nil {
+		t.Error(err)
+	}
+	if email := read(memberToken); email != "tresorerie@colla.ca" {
+		t.Errorf("Expected the Interac address to be kept. Got '%s'", email)
+	}
+	if cercleURL := readURL(); cercleURL != "https://cercle.example/inscription" {
+		t.Errorf("Expected the page to be kept. Got '%s'", cercleURL)
+	}
+
+	// An empty value removes a setting, and only that one.
 	code, _ = h.duesRequest("PUT", "/dues/settings", adminToken, []byte(`{"interacEmail":""}`))
 	if err := h.checkResponseCode(http.StatusOK, code); err != nil {
 		t.Fatal(err)
 	}
 	if email := read(memberToken); email != "" {
 		t.Errorf("Expected the address to be removed. Got '%s'", email)
+	}
+	if cercleURL := readURL(); cercleURL != "https://cercle.example/inscription" {
+		t.Errorf("Expected the page to be kept. Got '%s'", cercleURL)
 	}
 }
 

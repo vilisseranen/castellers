@@ -14,7 +14,7 @@ Dues, second step: collections tied to events, the reminder of those events, the
 
 - An event can point to the collection of dues that takes place at it: `duesCollectionUuid` in the payload of `POST /events` and `PUT /events/{uuid}`, and in the answers of `GET /events` and `GET /events/{uuid}`. An unknown collection is refused (400). In a series of recurring events, only the first one keeps the collection.
 - Reminder of an event. When dues are collected at the event, the reminder email (automatic or sent by an admin) gets one more paragraph for the regular members and admins who have not settled them: the name of the dues, the amount and, when it is set, the address for Interac transfers. Members who paid or are exempt, the canalla and guests do not get it.
-- `GET /dues/settings` (any member) and `PUT /dues/settings` (admin): `{"interacEmail": "..."}`, the address to which Interac transfers are sent. An empty value removes it.
+- `GET /dues/settings` (any member) and `PUT /dues/settings` (admin): `{"interacEmail": "...", "cercleUrl": "..."}`, the address to which Interac transfers are sent and the page where one joins the Cercle culturel catalan. `PUT` only changes the settings that are given; an empty value removes one. Nothing is saved when a value is not valid.
 - Attendance. `GET /members/{uuid}/attendance` returns `{"memberUuid", "firstVisit", "count"}`: the number of events at which the presence of the member was confirmed, and the start of the first one. A member can only read their own (403 otherwise), an admin can read anyone's. `GET /dues/attendance` (admin) returns it for every member who came at least once. An answer "yes" without confirmed presence does not count.
 
 ### Upgrade notes

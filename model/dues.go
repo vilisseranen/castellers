@@ -476,7 +476,10 @@ func GetAttendance(ctx context.Context, memberUUID string) ([]Attendance, error)
 }
 
 // Keys of the dues settings.
-const DuesSettingInteracEmail = "interacEmail"
+const (
+	DuesSettingInteracEmail = "interacEmail"
+	DuesSettingCercleURL    = "cercleUrl"
+)
 
 // GetDuesSetting returns a setting, or an empty string when it is not set.
 func GetDuesSetting(ctx context.Context, key string) (string, error) {
