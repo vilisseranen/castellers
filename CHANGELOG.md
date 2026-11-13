@@ -19,7 +19,7 @@ Dues, second step: collections tied to events, the reminder of those events, the
 
 ### Upgrade notes
 
-- The migration adds `events.dues_collection_uuid` (empty for existing events) and the table `dues_settings`.
+- The migration adds `events.dues_collection_uuid` (empty for existing events) and the table `dues_settings`. The sign-up page of the Cercle culturel catalan is set to `https://www.ccquebec.cat/web/index.php/fr/devenir-membre`; admins can change it on the dues page.
 - An older UI does not send `duesCollectionUuid`: saving an event with it removes the collection of that event.
 
 ## [0.27.1] - 2026-11-13
