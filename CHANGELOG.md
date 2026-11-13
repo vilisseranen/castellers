@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.27.1] - 2026-11-13
+
+No change in the application. The merge of 0.27.0 reached `master` without starting the deploy workflow; this release starts it, so that 0.27.0 (creation date of the members) gets tested and deployed.
+
 ## [0.27.0] - 2026-11-13
 
 ### Added
