@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.30.0] - 2026-11-14
+
+### Added
+
+- `DELETE /events/{uuid}?notify=false` deletes an event without telling the members. Without the parameter, or with any other value, nothing changes: the members are told when the event is still to come. Used by UI 1.14.0.
+
 ## [0.29.0] - 2026-11-14
 
 Event templates: values proposed when an admin creates an event. Needs UI 1.13.0 to be used; an older UI ignores it.

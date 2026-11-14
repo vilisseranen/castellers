@@ -366,7 +366,11 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORDELETEEVENT)
 		return
 	}
-	if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
+	// The admin can ask not to tell the members: ?notify=false. Anything else,
+	// or nothing, keeps the notification.
+	if r.FormValue("notify") == "false" {
+		common.Debug("Event %s deleted without notification, as requested", e.UUID)
+	} else if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
 		payload := mail.EmailDeletedEventPayload{EventDeleted: e}
 		payloadBytes := new(bytes.Buffer)
 		json.NewEncoder(payloadBytes).Encode(payload)
