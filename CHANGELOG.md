@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.29.0] - 2026-11-14
+
+Event templates: values proposed when an admin creates an event. Needs UI 1.13.0 to be used; an older UI ignores it.
+
+### Added
+
+- `GET /event-templates`, `POST /event-templates`, `PUT /event-templates/{uuid}` and `DELETE /event-templates/{uuid}`, for admins only. A template has a `title` (its own name, unique whatever the case, 100 characters at most) and the fields of an event: `name`, `type`, `description`, `locationName`, `location`, `startDate`, `endDate`, `uniformRequired`. `startDate` and `endDate` are those of a sample event: only the time of day and the duration are meant to be used. A `location` of 0,0 means "none".
+- A template only pre-fills the form: events keep no link to it, so changing or removing a template never touches an event.
+
+### Upgrade notes
+
+- The migration adds the table `event_templates` and creates a first template, "Entraînement hebdomadaire", copied from an existing practice: one of a recurring series if there is any, and the closest to today. Nothing is created when there is no practice. Admins can edit or remove it.
+
 ## [0.28.0] - 2026-11-13
 
 Dues, second step: collections tied to events, the reminder of those events, the address for Interac transfers and the attendance of the members. Needs UI 1.12.0 to be used; an older UI ignores it.
