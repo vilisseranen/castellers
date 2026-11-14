@@ -68,6 +68,12 @@ func AttachV1API(r *mux.Router) {
 	s.HandleFunc("/badges/{badge_uuid:[0-9a-f]+}/members", checkTokenType(controller.AssignBadge, model.MEMBERSTYPEADMIN)).Methods("POST")
 	s.HandleFunc("/badges/{badge_uuid:[0-9a-f]+}/members", checkTokenType(controller.RemoveBadge, model.MEMBERSTYPEADMIN)).Methods("DELETE")
 
+	// Event templates
+	s.HandleFunc("/event-templates", checkTokenType(controller.GetEventTemplates, model.MEMBERSTYPEADMIN)).Methods("GET")
+	s.HandleFunc("/event-templates", checkTokenType(controller.CreateEventTemplate, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/event-templates/{uuid:[0-9a-f]+}", checkTokenType(controller.UpdateEventTemplate, model.MEMBERSTYPEADMIN)).Methods("PUT")
+	s.HandleFunc("/event-templates/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteEventTemplate, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+
 	// Dues
 	s.HandleFunc("/dues/collections", checkTokenType(controller.GetDuesCollections, model.MEMBERSTYPEREGULAR)).Methods("GET")
 	s.HandleFunc("/dues/collections/{season:[0-9]{4}}", checkTokenType(controller.SetDuesCollections, model.MEMBERSTYPEADMIN)).Methods("PUT")
