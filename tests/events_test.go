@@ -2,9 +2,11 @@ package tests
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -514,5 +516,59 @@ func TestCreateAndUpdateEventUniformRequired(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &event)
 	if event.UniformRequired != 0 {
 		t.Errorf("Expected uniformRequired to be 0 after update. Got '%v'", event.UniformRequired)
+	}
+}
+
+// Deleting an upcoming event tells the members, unless the admin asks not to.
+func TestDeleteEventNotification(t *testing.T) {
+	h.clearTables()
+	accessToken := h.addAnAdmin()
+	start := futureEventStart()
+	h.addEvent("e1", "Told", start, start+7200)
+	h.addEvent("e2", "Silent", start, start+7200)
+	h.addEvent("e3", "Told again", start, start+7200)
+	h.addEvent("e4", "Past", 1528048800, 1528059600)
+
+	db, err := sql.Open("sqlite3", testDbName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	notifications := func() int {
+		var count int
+		if err := db.QueryRow("SELECT COUNT(*) FROM notifications WHERE notificationType = ?", model.TypeEventDeleted).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	remove := func(url string) {
+		req, _ := http.NewRequest("DELETE", "/api/v1"+url, nil)
+		req.Header.Add("Authorization", "Bearer "+accessToken)
+		if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+			t.Fatal(err)
+		}
+		// The event is gone in every case.
+		req, _ = http.NewRequest("GET", "/api/v1"+strings.Split(url, "?")[0], nil)
+		if err := h.checkResponseCode(http.StatusNotFound, h.executeRequest(req).Code); err != nil {
+			t.Errorf("%s: %v", url, err)
+		}
+	}
+
+	remove("/events/e1")
+	if count := notifications(); count != 1 {
+		t.Errorf("Expected 1 notification after a plain delete. Got %d", count)
+	}
+	remove("/events/e2?notify=false")
+	if count := notifications(); count != 1 {
+		t.Errorf("Expected no new notification with notify=false. Got %d", count)
+	}
+	remove("/events/e3?notify=true")
+	if count := notifications(); count != 2 {
+		t.Errorf("Expected 2 notifications after notify=true. Got %d", count)
+	}
+	// A past event never sends one.
+	remove("/events/e4")
+	if count := notifications(); count != 2 {
+		t.Errorf("Expected no notification for a past event. Got %d", count)
 	}
 }
