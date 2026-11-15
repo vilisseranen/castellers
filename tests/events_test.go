@@ -572,3 +572,58 @@ func TestDeleteEventNotification(t *testing.T) {
 		t.Errorf("Expected no notification for a past event. Got %d", count)
 	}
 }
+
+// Updating an upcoming event tells the members, unless the admin asks not to.
+func TestUpdateEventNotification(t *testing.T) {
+	h.clearTables()
+	accessToken := h.addAnAdmin()
+	start := futureEventStart()
+	h.addEvent("e1", "Upcoming", start, start+7200)
+	h.addEvent("e2", "Past", 1528048800, 1528059600)
+
+	db, err := sql.Open("sqlite3", testDbName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	notifications := func() int {
+		var count int
+		if err := db.QueryRow("SELECT COUNT(*) FROM notifications WHERE notificationType = ?", model.TypeEventModified).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	update := func(url, name string, startDate int) {
+		payload := []byte(fmt.Sprintf(`{"name":%q,"startDate":%d,"endDate":%d,"type":"practice"}`, name, startDate, startDate+7200))
+		req, _ := http.NewRequest("PUT", "/api/v1"+url, bytes.NewBuffer(payload))
+		req.Header.Add("Authorization", "Bearer "+accessToken)
+		if err := h.checkResponseCode(http.StatusOK, h.executeRequest(req).Code); err != nil {
+			t.Fatal(err)
+		}
+		// The event is updated in every case.
+		req, _ = http.NewRequest("GET", "/api/v1"+strings.Split(url, "?")[0], nil)
+		var e model.Event
+		json.Unmarshal(h.executeRequest(req).Body.Bytes(), &e)
+		if e.Name != name {
+			t.Errorf("%s: expected the name '%s'. Got '%s'", url, name, e.Name)
+		}
+	}
+
+	update("/events/e1", "Told", start)
+	if count := notifications(); count != 1 {
+		t.Errorf("Expected 1 notification after a plain update. Got %d", count)
+	}
+	update("/events/e1?notify=false", "Silent", start)
+	if count := notifications(); count != 1 {
+		t.Errorf("Expected no new notification with notify=false. Got %d", count)
+	}
+	update("/events/e1?notify=true", "Told again", start)
+	if count := notifications(); count != 2 {
+		t.Errorf("Expected 2 notifications after notify=true. Got %d", count)
+	}
+	// A past event never sends one.
+	update("/events/e2", "Still past", 1528048800)
+	if count := notifications(); count != 2 {
+		t.Errorf("Expected no notification for a past event. Got %d", count)
+	}
+}

@@ -329,8 +329,11 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send notification
-	if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
+	// Send notification. As for a deletion, the admin can ask not to tell the
+	// members: ?notify=false. Anything else, or nothing, keeps the notification.
+	if r.FormValue("notify") == "false" {
+		common.Debug("Event %s updated without notification, as requested", e.UUID)
+	} else if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
 
 		// Encode payload
 		payload := mail.EmailModifiedPayload{EventBeforeUpdate: eventBeforeUpdate, EventAfterUpdate: e}
