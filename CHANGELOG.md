@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.31.0] - 2026-11-15
+
+### Upgrade notes
+
+- The migration creates an event template "Entraînement d'été" for the outdoor summer practices, copied from the practice of June 25th 2026 at parc La Fontaine: name, description, location, position, times and uniform. Nothing is created when that practice is not found or when a template already has this title. Admins can edit or remove the template. No change in the application itself.
+
 ## [0.30.0] - 2026-11-14
 
 ### Added
