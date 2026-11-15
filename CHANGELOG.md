@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.31.0] - 2026-11-15
+
+### Added
+
+- `PUT /events/{uuid}?notify=false` updates an event without telling the members, as for a deletion. Without the parameter, or with any other value, nothing changes: the members are told when the event is still to come. Used by UI 1.15.0.
+
 ## [0.30.0] - 2026-11-14
 
 ### Added
