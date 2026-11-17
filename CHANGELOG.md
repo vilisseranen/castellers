@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.32.0] - 2026-11-17
+
+The email sent when an event is modified is rewritten, so that a member reads what changed at a glance and can rely on what the email shows.
+
+### Changed
+
+- The email now has two parts: a short list of what changed, then the event as it is now (name, type, day and time, place, uniform, dues, description).
+- A short value shows as old value, struck through, then new value. The description is never quoted twice: the list only says it was updated, and the new one is in the event.
+- The subject names the change that matters most and ends with the name and the start of the event as they are now: "Changement d'horaire : …", "Changement de lieu : …", "Changement d'horaire et de lieu : …", or "Évènement mis à jour : …" for anything else. The date or time and the place win over the other changes.
+- When the date, the time or the place changes, the email recalls the answer of the member and offers the yes and no buttons of the reminder, for the member and their dependents.
+- Dates are written the way each language does ("ven. 20 nov. à 19 h", "Fri, Nov 20 at 7 PM", "dv. 20 nov. a les 19:00"). The email is now translated in Catalan.
+
+### Fixed
+
+- A change of type, uniform, dues or map location was not compared: the email left with an empty list of changes. All the fields a member can see are now compared.
+- Saving an event without changing anything no longer sends an email.
+- The description is escaped in the email, and keeps its line breaks.
+
 ## [0.31.0] - 2026-11-15
 
 ### Added

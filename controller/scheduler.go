@@ -266,6 +266,19 @@ func checkAndSendNotification() {
 			}
 			notification.UpdateNotificationStatus(ctx)
 		case model.TypeEventModified:
+			// The payload is the same for everyone: read it once.
+			var payload mail.EmailModifiedPayload
+			if err := json.Unmarshal(notification.Payload, &payload); err != nil {
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
+			payload.DuesBefore = duesOfModifiedEvent(ctx, payload.EventBeforeUpdate)
+			payload.DuesAfter = duesOfModifiedEvent(ctx, payload.EventAfterUpdate)
+			// When the date, the time or the place changed, each member is asked
+			// to confirm their answer.
+			needsAnswer := mail.ModifiedEventNeedsAnswer(payload.EventBeforeUpdate, payload.EventAfterUpdate)
 			// Get All members
 			m := model.Member{}
 			members, err := m.GetAll(ctx, []string{model.MEMBERSSTATUSACTIVATED, model.MEMBERSSTATUSPAUSED}, []string{})
@@ -280,14 +293,12 @@ func checkAndSendNotification() {
 			for _, member := range members {
 				// Send the email
 				if member.Subscribed == 1 {
-					var payload mail.EmailModifiedPayload
-					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
+					memberPayload := payload
+					memberPayload.Member = member
+					if needsAnswer {
+						addAnswerToModifiedPayload(ctx, &memberPayload)
 					}
-					payload.Member = member
-					if err := mail.SendModifiedEventEmail(ctx, payload); err != nil {
+					if err := mail.SendModifiedEventEmail(ctx, memberPayload); err != nil {
 						common.Error("%v\n", err)
 						failures += 1
 						continue
@@ -490,4 +501,44 @@ func RegistrationEmailPayload(ctx context.Context, notification model.Notificati
 		author = model.Member{UUID: stored.AuthorUUID}
 	}
 	return mail.EmailRegisterPayload{Member: member, Author: author}, nil
+}
+
+// duesOfModifiedEvent gives the dues collected at one version of a modified
+// event, or nil when there are none. A problem with the dues must not prevent
+// the email from leaving: it is then sent without them.
+func duesOfModifiedEvent(ctx context.Context, event model.Event) *mail.DuesReminder {
+	if event.DuesCollectionUUID == "" {
+		return nil
+	}
+	collection, err := model.GetDuesCollection(ctx, event.DuesCollectionUUID)
+	if err != nil {
+		common.Warn("Error getting the dues of a modified event: %s", err.Error())
+		return nil
+	}
+	return &mail.DuesReminder{Kind: collection.Kind, Amount: collection.Amount}
+}
+
+// addAnswerToModifiedPayload adds what the email needs to ask a member to
+// confirm their answer: the answer they gave, a token for the answer buttons
+// and their dependents. If any of it is missing, the email still leaves, only
+// without the buttons.
+func addAnswerToModifiedPayload(ctx context.Context, payload *mail.EmailModifiedPayload) {
+	participation := model.Participation{EventUUID: payload.EventAfterUpdate.UUID, MemberUUID: payload.Member.UUID}
+	if err := participation.GetParticipation(ctx); err != nil && err != sql.ErrNoRows {
+		common.Warn("Error getting the answer of a member for a modified event: %s", err.Error())
+		return
+	}
+	dependents, err := payload.Member.GetDependents(ctx)
+	if err != nil {
+		common.Warn("Error getting the dependents of a member for a modified event: %s", err.Error())
+		return
+	}
+	token, err := ParticipateEventToken(ctx, payload.Member.UUID, common.GetConfigInt("jwt.participation_ttl_minutes"))
+	if err != nil {
+		common.Warn("Error creating the token to answer a modified event: %s", err.Error())
+		return
+	}
+	payload.Participation = participation
+	payload.Dependents = dependents
+	payload.Token = token
 }

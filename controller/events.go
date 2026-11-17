@@ -333,6 +333,9 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	// members: ?notify=false. Anything else, or nothing, keeps the notification.
 	if r.FormValue("notify") == "false" {
 		common.Debug("Event %s updated without notification, as requested", e.UUID)
+	} else if !mail.ModifiedEventHasChanges(eventBeforeUpdate, e) {
+		// Saved as it was: there is nothing to tell the members.
+		common.Debug("Event %s updated without visible change, not sending the notification", e.UUID)
 	} else if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
 
 		// Encode payload
