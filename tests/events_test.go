@@ -621,6 +621,11 @@ func TestUpdateEventNotification(t *testing.T) {
 	if count := notifications(); count != 2 {
 		t.Errorf("Expected 2 notifications after notify=true. Got %d", count)
 	}
+	// Saving the event as it is tells nobody: nothing changed.
+	update("/events/e1", "Told again", start)
+	if count := notifications(); count != 2 {
+		t.Errorf("Expected no notification when nothing changed. Got %d", count)
+	}
 	// A past event never sends one.
 	update("/events/e2", "Still past", 1528048800)
 	if count := notifications(); count != 2 {
