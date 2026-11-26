@@ -31,10 +31,15 @@ var ValidLanguageList = []string{
 	"cat",
 }
 
+// EVENTSTYPEMUSIC is a rehearsal of the musicians of the colla. Its emails
+// only go to the members who are musicians.
+const EVENTSTYPEMUSIC = "music"
+
 var ValidEventTypes = []string{
 	"presentation",
 	"practice",
 	"social",
+	EVENTSTYPEMUSIC,
 }
 
 var ValidMemberTypes = []string{

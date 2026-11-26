@@ -241,6 +241,16 @@ This is useful for understanding the visibility of each status.
 | Event deleted / modified mass email                | `active` + `paused`, `subscribed==1`           | none               | `controller/scheduler.go:215-289`                |
 | Pause scan (`pauseAbsentMembers`)                  | `active` only                                  | none               | `controller/scheduler.go:385-405`                |
 
+### Note on the rehearsals of the musicians
+
+For an event of type `music`, every audience above is narrowed down to the
+members whose `musician` flag is 1 (see `EventAudience` in
+`controller/events.go`): creation, change, deletion, automatic reminder and
+manual reminders. The two exceptions are a manual reminder to explicit UUIDs,
+which goes to all the members picked, and an event that changes type from or
+to `music`, about which everybody is told. In the printed list of the
+summary, `active` becomes `active` and musician.
+
 ### Note on the day-before summary email
 
 The summary email is **sent to** every subscribed admin (regardless of

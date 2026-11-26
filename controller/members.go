@@ -302,6 +302,8 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			}
 			m.Roles = existingMember.Roles
 			m.Extra = existingMember.Extra
+			// Only admins say who is a musician.
+			m.Musician = existingMember.Musician
 
 		}
 		if err := m.EditMember(ctx); err != nil {

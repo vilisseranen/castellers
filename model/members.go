@@ -48,6 +48,10 @@ type Member struct {
 	// CreatedAt is when the member was added (Unix seconds). It is 0 when it is
 	// not known, and it is only filled in the list of members.
 	CreatedAt int64 `json:"createdAt"`
+	// Musician is 1 when the member plays with the musicians of the colla. It
+	// does not depend on the type: a casteller can be a musician too. Only
+	// admins can change it.
+	Musician int `json:"musician"`
 }
 
 // String keeps personal data out of logs and error messages: formatting a
@@ -71,7 +75,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
-		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language, musician, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
@@ -93,6 +97,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Encrypt(m.Email),
 		common.Encrypt(m.Contact),
 		stringOrNull(m.Language),
+		musicianFlag(m.Musician),
 		createdAt)
 	if err != nil {
 		tx.Rollback()
@@ -115,7 +120,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
-		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=? WHERE uuid=?",
+		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=?, musician=? WHERE uuid=?",
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
@@ -135,6 +140,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		common.Encrypt(m.Contact),
 		m.Language,
 		m.Subscribed,
+		musicianFlag(m.Musician),
 		stringOrNull(m.UUID))
 	if err != nil {
 		tx.Rollback()
@@ -153,14 +159,14 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language FROM %s WHERE uuid= ? AND status != ?",
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician FROM %s WHERE uuid= ? AND status != ?",
 		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	var rolesAsString string
-	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language)
+	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician)
 	if err == nil {
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
@@ -179,7 +185,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, created_at FROM %s",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, created_at FROM %s",
 		MEMBERSTABLE)}
 	filters := []string{}
 	statusFilters := []string{}
@@ -227,7 +233,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
@@ -471,6 +477,14 @@ func (m *Member) RemoveDependent(ctx context.Context, dependent *Member) error {
 	defer stmt.Close()
 	_, err = stmt.ExecContext(ctx, m.UUID, dependent.UUID)
 	return err
+}
+
+// musicianFlag keeps the musician column to 0 or 1, whatever was sent.
+func musicianFlag(musician int) int {
+	if musician != 0 {
+		return 1
+	}
+	return 0
 }
 
 func compact(s []string) []string {

@@ -98,7 +98,7 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
-			deliverEventReminderNotification(ctx, &notification, members)
+			deliverEventReminderNotification(ctx, &notification, members, true)
 		case model.TypeManualEventReminder:
 			var payload model.ManualReminderPayload
 			if err := json.Unmarshal(notification.Payload, &payload); err != nil {
@@ -115,7 +115,8 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
-			deliverEventReminderNotification(ctx, &notification, members)
+			// Members picked one by one by the admin all get the reminder.
+			deliverEventReminderNotification(ctx, &notification, members, payload.Audience != model.ManualReminderAudienceMembers)
 		case model.TypeSummaryEvent:
 			event := model.Event{UUID: notification.ObjectUUID}
 			err := event.Get(ctx)
@@ -165,8 +166,11 @@ func checkAndSendNotification() {
 			// Only show active members or members who have given a participation answer.
 			// Long-paused members who never answered would otherwise clutter the summary.
 			participantsForEmail := make([]model.Member, 0, len(members))
+			// For a rehearsal of the musicians, the active members listed are the musicians.
 			for _, member := range members {
-				if member.Status == model.MEMBERSSTATUSACTIVATED || member.Participation != "" {
+				expected := member.Status == model.MEMBERSSTATUSACTIVATED &&
+					(event.Type != model.EVENTSTYPEMUSIC || member.Musician == 1)
+				if expected || member.Participation != "" {
 					participantsForEmail = append(participantsForEmail, member)
 				}
 			}
@@ -237,17 +241,20 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
+			// The payload is the same for everyone: read it once.
+			var deletedPayload mail.EmailDeletedEventPayload
+			if err := json.Unmarshal(notification.Payload, &deletedPayload); err != nil {
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
+			members = EventAudience(deletedPayload.EventDeleted, members)
 			failures := 0
 			for _, member := range members {
 				// Send the email
 				if member.Subscribed == 1 {
-
-					var payload mail.EmailDeletedEventPayload
-					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
+					payload := deletedPayload
 					payload.Member = member
 
 					if err := mail.SendDeletedEventEmail(ctx, payload); err != nil {
@@ -289,6 +296,7 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
+			members = ModifiedEventAudience(payload.EventBeforeUpdate, payload.EventAfterUpdate, members)
 			failures := 0
 			for _, member := range members {
 				// Send the email
@@ -324,16 +332,20 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
+			// The payload is the same for everyone: read it once.
+			var createdPayload mail.EmailCreateEventPayload
+			if err := json.Unmarshal(notification.Payload, &createdPayload); err != nil {
+				common.Error("%v\n", err)
+				notification.Delivered = model.NotificationDeliveryFailure
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
+			members = EventAudience(createdPayload.Event, members)
 			failures := 0
 			for _, member := range members {
 				// Send the email
 				if member.Subscribed == 1 {
-					var payload mail.EmailCreateEventPayload
-					if err := json.Unmarshal(notification.Payload, &payload); err != nil {
-						common.Error("%v\n", err)
-						failures += 1
-						continue
-					}
+					payload := createdPayload
 					payload.Member = member
 					if err := mail.SendCreateEventEmail(ctx, payload); err != nil {
 						common.Error("%v\n", err)

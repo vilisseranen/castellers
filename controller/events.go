@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -109,7 +110,7 @@ func GetEvents(w http.ResponseWriter, r *http.Request) {
 		pastEvents = true
 	}
 	e := model.Event{}
-	events, err := e.GetAll(ctx, page, limit, pastEvents)
+	events, err := e.GetAll(ctx, page, limit, pastEvents, eventTypeListFromQuery(r.FormValue("type")))
 	if err != nil {
 		common.Warn("Error getting events: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORGETEVENTS)
@@ -390,6 +391,45 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		common.Debug("Event %s is in the past, not sending the notification", e.UUID)
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
+}
+
+// eventTypeListFromQuery reads the types of events to list: ?type=practice,music.
+// Unknown types are ignored. Without any valid type, all the events are listed.
+func eventTypeListFromQuery(queryParam string) []string {
+	eventTypeList := []string{}
+	for _, eventType := range strings.Split(queryParam, ",") {
+		if eventType != "" && common.StringInSlice(eventType, model.ValidEventTypes) &&
+			!common.StringInSlice(eventType, eventTypeList) {
+			eventTypeList = append(eventTypeList, eventType)
+		}
+	}
+	return eventTypeList
+}
+
+// EventAudience gives, among members, those who are told about an event by
+// email: everybody, except for a rehearsal of the musicians, which only
+// concerns the musicians.
+func EventAudience(event model.Event, members []model.Member) []model.Member {
+	if event.Type != model.EVENTSTYPEMUSIC {
+		return members
+	}
+	audience := []model.Member{}
+	for _, member := range members {
+		if member.Musician == 1 {
+			audience = append(audience, member)
+		}
+	}
+	return audience
+}
+
+// ModifiedEventAudience is EventAudience for a modified event. An event that
+// was, or becomes, something else than a rehearsal of the musicians concerns
+// everybody: all the members are told about the change.
+func ModifiedEventAudience(before, after model.Event, members []model.Member) []model.Member {
+	if before.Type != model.EVENTSTYPEMUSIC {
+		return members
+	}
+	return EventAudience(after, members)
 }
 
 func validEventData(ctx context.Context, event model.Event) bool {

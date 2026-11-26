@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vilisseranen/castellers/common"
@@ -69,18 +70,29 @@ func (e *Event) GetAttendance(ctx context.Context) error {
 	return err
 }
 
-func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool) ([]Event, error) {
+// GetAll lists the events, a page at a time. When eventTypes is not empty,
+// only the events of these types are listed.
+func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool, eventTypes []string) ([]Event, error) {
 	ctx, span := tracer.Start(ctx, "Event.GetAll")
 	defer span.End()
 	now := int(time.Now().Unix())
 	offset := page * limit
+	queryValues := []interface{}{now}
+	typeFilter := ""
+	if len(eventTypes) > 0 {
+		typeFilter = fmt.Sprintf(" AND type IN (?%s)", strings.Repeat(", ?", len(eventTypes)-1))
+		for _, eventType := range eventTypes {
+			queryValues = append(queryValues, eventType)
+		}
+	}
+	queryValues = append(queryValues, limit, offset)
 	queryString := ""
 	if pastEvents {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate < ? AND deleted=0 ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate < ? AND deleted=0%s ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
 	} else {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate >= ? AND deleted=0 ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate >= ? AND deleted=0%s ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
 	}
-	rows, err := db.QueryContext(ctx, queryString, now, limit, offset)
+	rows, err := db.QueryContext(ctx, queryString, queryValues...)
 	if err != nil {
 		common.Fatal(err.Error())
 	}
