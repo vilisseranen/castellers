@@ -83,6 +83,11 @@ func ParticipateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if event.Cancelled == 1 {
+		// Nobody answers for a cancelled event: the answers are kept as they were.
+		RespondWithError(w, http.StatusBadRequest, ERROREVENTCANCELLED)
+		return
+	}
 	if err := member.Get(ctx); err != nil {
 		common.Warn("Error getting Member: %s", err.Error())
 		RespondWithError(w, http.StatusInternalServerError, ERRORPARTICIPATEEVENT)
@@ -149,6 +154,11 @@ func PresenceEvent(w http.ResponseWriter, r *http.Request) {
 			common.Warn("Error getting Event: %s", err.Error())
 			RespondWithError(w, http.StatusInternalServerError, ERRORPRESENCEEVENT)
 		}
+		return
+	}
+	if event.Cancelled == 1 {
+		// Nobody was present at a cancelled event.
+		RespondWithError(w, http.StatusBadRequest, ERROREVENTCANCELLED)
 		return
 	}
 	if err := member.Get(ctx); err != nil {

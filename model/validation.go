@@ -93,3 +93,14 @@ func ValidateType(memberType string) error {
 	}
 	return nil
 }
+
+// Reasons why an event is cancelled.
+const EVENTCANCELREASONWEATHER = "weather"
+const EVENTCANCELREASONTECHNICAL = "technical"
+const EVENTCANCELREASONOTHER = "other"
+
+var ValidCancelReasons = []string{
+	EVENTCANCELREASONWEATHER,
+	EVENTCANCELREASONTECHNICAL,
+	EVENTCANCELREASONOTHER,
+}

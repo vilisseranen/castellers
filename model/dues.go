@@ -450,7 +450,7 @@ func GetAttendance(ctx context.Context, memberUUID string) ([]Attendance, error)
 	query := fmt.Sprintf(
 		"SELECT p.member_uuid, MIN(e.startDate), COUNT(*) FROM %s p "+
 			"JOIN %s e ON e.uuid = p.event_uuid "+
-			"WHERE p.presence = ? AND e.deleted = 0",
+			"WHERE p.presence = ? AND e.deleted = 0 AND e.cancelled = 0",
 		PARTICIPATION_TABLE, EVENTS_TABLE)
 	args := []interface{}{common.AnswerYes}
 	if memberUUID != "" {

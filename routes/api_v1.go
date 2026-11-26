@@ -42,6 +42,8 @@ func AttachV1API(r *mux.Router) {
 	s.HandleFunc("/events", checkTokenType(controller.CreateEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
 	s.HandleFunc("/events/{uuid:[0-9a-f]+}", checkTokenType(controller.UpdateEvent, model.MEMBERSTYPEADMIN)).Methods("PUT")
 	s.HandleFunc("/events/{uuid:[0-9a-f]+}", checkTokenType(controller.DeleteEvent, model.MEMBERSTYPEADMIN)).Methods("DELETE")
+	s.HandleFunc("/events/{uuid:[0-9a-f]+}/cancel", checkTokenType(controller.CancelEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
+	s.HandleFunc("/events/{uuid:[0-9a-f]+}/restore", checkTokenType(controller.RestoreEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
 	s.HandleFunc("/events/{event_uuid:[0-9a-f]+}/members", checkTokenType(controller.GetEventParticipation, model.MEMBERSTYPEADMIN)).Methods("GET")
 	s.HandleFunc("/events/{event_uuid:[0-9a-f]+}/members/{member_uuid:[0-9a-f]+}", checkTokenType(controller.PresenceEvent, model.MEMBERSTYPEADMIN)).Methods("POST")
 	s.HandleFunc("/events/{event_uuid:[0-9a-f]+}/reminders", checkTokenType(controller.SendEventReminders, model.MEMBERSTYPEADMIN)).Methods("POST")

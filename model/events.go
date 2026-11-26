@@ -39,19 +39,28 @@ type Event struct {
 	UniformRequired int       `json:"uniformRequired"`
 	// DuesCollectionUUID is set when dues are collected at this event.
 	DuesCollectionUUID string `json:"duesCollectionUuid"`
-	RecurringEvent     string
+	// Cancelled is 1 when the event is cancelled: it is still listed, but
+	// nobody can answer anymore and no reminder is sent. CancelReason is one
+	// of ValidCancelReasons, CancelNote is free text. Both are empty for an
+	// event that is not cancelled.
+	Cancelled      int    `json:"cancelled"`
+	CancelReason   string `json:"cancelReason"`
+	CancelNote     string `json:"cancelNote"`
+	RecurringEvent string
 }
 
 func (e *Event) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.Get")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng, uniformRequired, dues_collection_uuid FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("SELECT name, startDate, endDate, type, description, locationName, lat, lng, uniformRequired, dues_collection_uuid, cancelled, cancel_reason, cancel_note FROM %s WHERE uuid= ? AND deleted=0", EVENTS_TABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
-	var description, locationName, duesCollectionUUID sql.NullString // to manage possible NULL fields
-	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng, &e.UniformRequired, &duesCollectionUUID)
+	var description, locationName, duesCollectionUUID, cancelReason, cancelNote sql.NullString // to manage possible NULL fields
+	err = stmt.QueryRowContext(ctx, e.UUID).Scan(&e.Name, &e.StartDate, &e.EndDate, &e.Type, &description, &locationName, &e.Location.Lat, &e.Location.Lng, &e.UniformRequired, &duesCollectionUUID, &e.Cancelled, &cancelReason, &cancelNote)
+	e.CancelReason = nullToEmptyString(cancelReason)
+	e.CancelNote = nullToEmptyString(cancelNote)
 	e.Description = nullToEmptyString(description)
 	e.LocationName = nullToEmptyString(locationName)
 	e.DuesCollectionUUID = nullToEmptyString(duesCollectionUUID)
@@ -88,9 +97,9 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool, ev
 	queryValues = append(queryValues, limit, offset)
 	queryString := ""
 	if pastEvents {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate < ? AND deleted=0%s ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid, cancelled, cancel_reason, cancel_note FROM %s WHERE endDate < ? AND deleted=0%s ORDER BY startDate DESC LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
 	} else {
-		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid FROM %s WHERE endDate >= ? AND deleted=0%s ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
+		queryString = fmt.Sprintf("SELECT uuid, name, startDate, endDate, type, uniformRequired, dues_collection_uuid, cancelled, cancel_reason, cancel_note FROM %s WHERE endDate >= ? AND deleted=0%s ORDER BY startDate LIMIT ? OFFSET ?", EVENTS_TABLE, typeFilter)
 	}
 	rows, err := db.QueryContext(ctx, queryString, queryValues...)
 	if err != nil {
@@ -102,10 +111,12 @@ func (e *Event) GetAll(ctx context.Context, page, limit int, pastEvents bool, ev
 
 	for rows.Next() {
 		var e Event
-		var duesCollectionUUID sql.NullString
-		if err = rows.Scan(&e.UUID, &e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.UniformRequired, &duesCollectionUUID); err != nil {
+		var duesCollectionUUID, cancelReason, cancelNote sql.NullString
+		if err = rows.Scan(&e.UUID, &e.Name, &e.StartDate, &e.EndDate, &e.Type, &e.UniformRequired, &duesCollectionUUID, &e.Cancelled, &cancelReason, &cancelNote); err != nil {
 			return nil, err
 		}
+		e.CancelReason = nullToEmptyString(cancelReason)
+		e.CancelNote = nullToEmptyString(cancelNote)
 		e.DuesCollectionUUID = nullToEmptyString(duesCollectionUUID)
 		Events = append(Events, e)
 	}
@@ -151,6 +162,34 @@ func (e *Event) DeleteEvent(ctx context.Context) error {
 	return err
 }
 
+// CancelEvent marks the event as cancelled, with e.CancelReason and e.CancelNote.
+func (e *Event) CancelEvent(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.CancelEvent")
+	defer span.End()
+	_, err := db.ExecContext(ctx,
+		fmt.Sprintf("UPDATE %s SET cancelled=1, cancel_reason = ?, cancel_note = ? WHERE uuid= ? AND deleted=0", EVENTS_TABLE),
+		stringOrNull(e.CancelReason), stringOrNull(e.CancelNote), e.UUID)
+	if err == nil {
+		e.Cancelled = 1
+	}
+	return err
+}
+
+// RestoreEvent puts a cancelled event back: it takes place after all.
+func (e *Event) RestoreEvent(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Event.RestoreEvent")
+	defer span.End()
+	_, err := db.ExecContext(ctx,
+		fmt.Sprintf("UPDATE %s SET cancelled=0, cancel_reason = NULL, cancel_note = NULL WHERE uuid= ? AND deleted=0", EVENTS_TABLE),
+		e.UUID)
+	if err == nil {
+		e.Cancelled = 0
+		e.CancelReason = ""
+		e.CancelNote = ""
+	}
+	return err
+}
+
 func (e *Event) CreateEvent(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Event.CreateEvent")
 	defer span.End()
@@ -184,11 +223,14 @@ func (e *Event) CreateEvent(ctx context.Context) error {
 	return err
 }
 
+// GetUpcomingEventsWithoutNotification lists the upcoming events for which no
+// notification of this type exists yet. Cancelled events are left out: no
+// reminder nor summary is sent for them.
 func (e *Event) GetUpcomingEventsWithoutNotification(ctx context.Context, eventType string) ([]Event, error) {
 	ctx, span := tracer.Start(ctx, "Event.GetUpcomingEventsWithoutNotification")
 	defer span.End()
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(
-		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = ?) AND deleted=0 ORDER BY startDate",
+		"SELECT uuid, startDate FROM %s WHERE startDate > ? AND uuid NOT IN (SELECT objectUUID FROM notifications WHERE notificationType = ?) AND deleted=0 AND cancelled=0 ORDER BY startDate",
 		EVENTS_TABLE), time.Now().Unix(), eventType)
 	if err != nil {
 		common.Fatal(err.Error())
