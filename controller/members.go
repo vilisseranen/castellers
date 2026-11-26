@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -16,6 +17,7 @@ import (
 
 const (
 	ERRORGETMEMBER              = "error getting member"
+	ERRORMEMBERSHIRT            = "shirt size must be an even number from 28 to 44, and its date a day that is not in the future"
 	ERRORGETMEMBERS             = "error getting members"
 	ERRORCREATEMEMBER           = "error creating member"
 	ERRORMEMBERNOTFOUND         = "member not found"
@@ -166,6 +168,11 @@ func CreateMember(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERLANGUAGE)
 		return
 	}
+	if err := model.ValidateShirt(m.ShirtSize, m.ShirtSince, time.Now()); err != nil {
+		common.Info("Error validating shirt: " + err.Error())
+		RespondWithError(w, http.StatusBadRequest, ERRORMEMBERSHIRT)
+		return
+	}
 	m.UUID = common.GenerateUUID()
 	// We will need admin info later for the email
 	tokenAuth, err := ExtractToken(r.Context(), r)
@@ -304,7 +311,13 @@ func EditMember(w http.ResponseWriter, r *http.Request) {
 			m.Extra = existingMember.Extra
 			// Only admins say who is a musician.
 			m.Musician = existingMember.Musician
-
+			// Only admins note who has a shirt.
+			m.ShirtSize = existingMember.ShirtSize
+			m.ShirtSince = existingMember.ShirtSince
+		} else if err := model.ValidateShirt(m.ShirtSize, m.ShirtSince, time.Now()); err != nil {
+			common.Info("Error validating shirt of member %s: %s", UUID, err.Error())
+			RespondWithError(w, http.StatusBadRequest, ERRORMEMBERSHIRT)
+			return
 		}
 		if err := m.EditMember(ctx); err != nil {
 			common.Warn("Error updating member: %s", err.Error())
