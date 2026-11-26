@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.35.0] - 2026-11-26
+
+The admins can note which members have a shirt of the colla.
+
+### Added
+
+- Members have `shirtSize` (an even number from 28 to 44, or 0 when it is not known or they have no shirt) and `shirtSince` (the day they got it, `YYYY-MM-DD`, or empty). Both are optional and independent. Other values are refused with a 400.
+- Only admins can change them, when creating or updating a member; a member who updates their own profile keeps the values they had. A member sees them on their own profile, admins see them for everyone, including in the list of members.
+
 ## [0.34.0] - 2026-11-26
 
 An event can be cancelled rather than deleted: it stays in the list, shown as cancelled, with the reason why.

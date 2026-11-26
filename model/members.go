@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -52,6 +53,12 @@ type Member struct {
 	// does not depend on the type: a casteller can be a musician too. Only
 	// admins can change it.
 	Musician int `json:"musician"`
+	// ShirtSize is the size of the shirt of the colla the member has: an even
+	// number from MINSHIRTSIZE to MAXSHIRTSIZE, or 0 when it is not known or
+	// they have no shirt. ShirtSince is the day they got it (YYYY-MM-DD), or
+	// empty. Only admins can change them.
+	ShirtSize  int    `json:"shirtSize"`
+	ShirtSince string `json:"shirtSince"`
 }
 
 // String keeps personal data out of logs and error messages: formatting a
@@ -75,7 +82,7 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
-		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language, musician, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO %s (uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, language, musician, shirt_size, shirt_since, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
@@ -98,6 +105,8 @@ func (m *Member) CreateMember(ctx context.Context) error {
 		common.Encrypt(m.Contact),
 		stringOrNull(m.Language),
 		musicianFlag(m.Musician),
+		intOrNull(m.ShirtSize),
+		stringOrNull(m.ShirtSince),
 		createdAt)
 	if err != nil {
 		tx.Rollback()
@@ -120,7 +129,7 @@ func (m *Member) EditMember(ctx context.Context) error {
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
-		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=?, musician=? WHERE uuid=?",
+		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, type=?, email=?, contact=?, language=?, subscribed=?, musician=?, shirt_size=?, shirt_since=? WHERE uuid=?",
 		MEMBERSTABLE))
 	if err != nil {
 		tx.Rollback()
@@ -141,6 +150,8 @@ func (m *Member) EditMember(ctx context.Context) error {
 		m.Language,
 		m.Subscribed,
 		musicianFlag(m.Musician),
+		intOrNull(m.ShirtSize),
+		stringOrNull(m.ShirtSince),
 		stringOrNull(m.UUID))
 	if err != nil {
 		tx.Rollback()
@@ -159,15 +170,19 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician FROM %s WHERE uuid= ? AND status != ?",
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since FROM %s WHERE uuid= ? AND status != ?",
 		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
 	}
 	defer stmt.Close()
 	var rolesAsString string
-	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician)
+	var shirtSize sql.NullInt64
+	var shirtSince sql.NullString
+	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince)
 	if err == nil {
+		m.ShirtSize = int(shirtSize.Int64)
+		m.ShirtSince = nullToEmptyString(shirtSince)
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
 		m.Height = common.Decrypt([]byte(m.Height))
@@ -185,7 +200,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, created_at FROM %s",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since, created_at FROM %s",
 		MEMBERSTABLE)}
 	filters := []string{}
 	statusFilters := []string{}
@@ -233,9 +248,13 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	for rows.Next() {
 		var m Member
 		var rolesAsString string
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &m.CreatedAt); err != nil {
+		var shirtSize sql.NullInt64
+		var shirtSince sql.NullString
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince, &m.CreatedAt); err != nil {
 			return nil, err
 		}
+		m.ShirtSize = int(shirtSize.Int64)
+		m.ShirtSince = nullToEmptyString(shirtSince)
 		m.FirstName = common.Decrypt([]byte(m.FirstName))
 		m.LastName = common.Decrypt([]byte(m.LastName))
 		m.Height = common.Decrypt([]byte(m.Height))
@@ -485,6 +504,11 @@ func musicianFlag(musician int) int {
 		return 1
 	}
 	return 0
+}
+
+// intOrNull stores 0 as NULL: the value is not known.
+func intOrNull(i int) sql.NullInt64 {
+	return sql.NullInt64{Int64: int64(i), Valid: i != 0}
 }
 
 func compact(s []string) []string {
