@@ -63,5 +63,6 @@
     "modified_event_dues_changed": "La recollida de quotes d'aquest esdeveniment ha canviat.",
     "modified_event_description_updated": "S'ha actualitzat la descripció.",
     "modified_event_confirm_answered": "Havies respost: «%s» Encara et va bé? Confirma o canvia la teva resposta:",
-    "modified_event_confirm_unanswered": "Si us plau, indica'ns si hi podràs ser:"
+    "modified_event_confirm_unanswered": "Si us plau, indica'ns si hi podràs ser:",
+    "music": "Assaig dels músics"
 }

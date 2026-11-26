@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.33.0] - 2026-11-25
+
+Musicians of the colla: some members are musicians and rehearse every week. Used by UI 1.17.0.
+
+### Added
+
+- Members have a `musician` field (0 or 1), whatever their type: a casteller can be a musician too. Only admins can change it; a member who updates their own profile keeps the value they had. A member sees it on their own profile, admins see it for everyone.
+- New type of event, `music`, for the rehearsals of the musicians.
+- `GET /events?type=practice,music` only lists the events of these types. Unknown types are ignored. Without the parameter, nothing changes: all the events are listed.
+
+### Changed
+
+- The emails about a rehearsal of the musicians (creation, change, deletion, automatic reminder, manual reminder) only go to the musicians. A manual reminder to members picked one by one still goes to all of them. When an event changes type from or to a rehearsal, everybody is told.
+- The summary of a rehearsal sent to the admins lists the active musicians and anyone who answered, rather than all the active members.
+
 ## [0.32.0] - 2026-11-17
 
 The email sent when an event is modified is rewritten, so that a member reads what changed at a glance and can rely on what the email shows.

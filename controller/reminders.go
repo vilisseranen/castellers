@@ -234,7 +234,11 @@ func setReminderDeliveryStatus(notification *model.Notification, failures, membe
 	}
 }
 
-func deliverEventReminderNotification(ctx context.Context, notification *model.Notification, members []model.Member) {
+// deliverEventReminderNotification sends the reminder of an event to members.
+// When wholeAudience is true, members are those who would normally be told
+// about any event: they are narrowed down to those concerned by this one (see
+// EventAudience). It is false when an admin picked the members one by one.
+func deliverEventReminderNotification(ctx context.Context, notification *model.Notification, members []model.Member, wholeAudience bool) {
 	event := model.Event{UUID: notification.ObjectUUID}
 	if err := event.Get(ctx); err != nil {
 		common.Error("%v\n", err)
@@ -247,6 +251,9 @@ func deliverEventReminderNotification(ctx context.Context, notification *model.N
 		notification.Delivered = model.NotificationTooLate
 		notification.UpdateNotificationStatus(ctx)
 		return
+	}
+	if wholeAudience {
+		members = EventAudience(event, members)
 	}
 	failures := sendReminderEmailsToMembers(ctx, event, members)
 	setReminderDeliveryStatus(notification, failures, len(members))
