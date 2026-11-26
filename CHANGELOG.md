@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.34.0] - 2026-11-26
+
+An event can be cancelled rather than deleted: it stays in the list, shown as cancelled, with the reason why.
+
+### Added
+
+- Events have `cancelled` (0 or 1), `cancelReason` (`weather`, `technical` or `other`) and `cancelNote` (free text, 500 characters at most). They are returned by `GET /events` and `GET /events/{uuid}`.
+- `POST /events/{uuid}/cancel` (admins), with `{"reason": "weather", "note": "..."}`, cancels an event. The members concerned by the event are told by email, with the reason and the note, unless `?notify=false` is given or the event is in the past. Cancelling an event that is already cancelled changes the reason and the note, without a new email.
+- `POST /events/{uuid}/restore` (admins) puts a cancelled event back. The members are told by email, unless `?notify=false` is given. The answers given before the cancellation are kept.
+
+### Changed
+
+- No automatic reminder, summary nor manual reminder is sent for a cancelled event.
+- Nobody can answer, nor be marked present, for a cancelled event: the API answers 400 `event is cancelled`.
+- A cancelled event does not count in the attendance of a member (number of events since their first visit), nor as their last participation.
+- Modifying or deleting a cancelled event sends no email: the members were already told it does not take place. `PUT /events/{uuid}` neither cancels nor restores an event.
+- Dues collected at a cancelled event are untouched: the collection stays, only the reminder of the event is not sent.
+
 ## [0.33.0] - 2026-11-25
 
 Musicians of the colla: some members are musicians and rehearse every week. Used by UI 1.17.0.

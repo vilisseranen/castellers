@@ -329,11 +329,18 @@ func UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORUPDATEEVENT)
 		return
 	}
+	// An update does not cancel nor restore an event: see CancelEvent.
+	e.Cancelled = eventBeforeUpdate.Cancelled
+	e.CancelReason = eventBeforeUpdate.CancelReason
+	e.CancelNote = eventBeforeUpdate.CancelNote
 
 	// Send notification. As for a deletion, the admin can ask not to tell the
 	// members: ?notify=false. Anything else, or nothing, keeps the notification.
 	if r.FormValue("notify") == "false" {
 		common.Debug("Event %s updated without notification, as requested", e.UUID)
+	} else if e.Cancelled == 1 {
+		// The members were told it does not take place.
+		common.Debug("Event %s is cancelled, not sending the notification", e.UUID)
 	} else if !mail.ModifiedEventHasChanges(eventBeforeUpdate, e) {
 		// Saved as it was: there is nothing to tell the members.
 		common.Debug("Event %s updated without visible change, not sending the notification", e.UUID)
@@ -377,6 +384,9 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	// or nothing, keeps the notification.
 	if r.FormValue("notify") == "false" {
 		common.Debug("Event %s deleted without notification, as requested", e.UUID)
+	} else if e.Cancelled == 1 {
+		// The members were already told it does not take place.
+		common.Debug("Event %s was cancelled, not sending the notification", e.UUID)
 	} else if e.StartDate > uint(time.Now().Unix()) { // Do not send emails for events in the past
 		payload := mail.EmailDeletedEventPayload{EventDeleted: e}
 		payloadBytes := new(bytes.Buffer)

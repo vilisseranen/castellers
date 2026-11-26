@@ -134,6 +134,13 @@ func checkAndSendNotification() {
 				notification.UpdateNotificationStatus(ctx)
 				continue
 			}
+			if event.Cancelled == 1 {
+				// No summary for a cancelled event
+				common.Info("Event %v is cancelled.\n", event.UUID)
+				notification.Delivered = model.NotificationTooLate
+				notification.UpdateNotificationStatus(ctx)
+				continue
+			}
 			m := model.Member{}
 			members, err := m.GetAll(ctx, []string{}, []string{})
 			if err != nil {
@@ -272,6 +279,8 @@ func checkAndSendNotification() {
 				notification.Delivered = model.NotificationDeliveryPartialFailure
 			}
 			notification.UpdateNotificationStatus(ctx)
+		case model.TypeEventCancelled, model.TypeEventRestored:
+			deliverEventCancellationNotification(ctx, &notification)
 		case model.TypeEventModified:
 			// The payload is the same for everyone: read it once.
 			var payload mail.EmailModifiedPayload

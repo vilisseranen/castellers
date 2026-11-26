@@ -68,6 +68,10 @@ func SendEventReminders(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusBadRequest, ERROREVENTALREADYSTARTED)
 		return
 	}
+	if event.Cancelled == 1 {
+		RespondWithError(w, http.StatusBadRequest, ERROREVENTCANCELLED)
+		return
+	}
 
 	tokenAuth, err := ExtractToken(ctx, r)
 	if err != nil {
@@ -248,6 +252,13 @@ func deliverEventReminderNotification(ctx context.Context, notification *model.N
 	}
 	if event.StartDate < uint(time.Now().Unix()) {
 		common.Info("Event %v has already started.\n", event.UUID)
+		notification.Delivered = model.NotificationTooLate
+		notification.UpdateNotificationStatus(ctx)
+		return
+	}
+	if event.Cancelled == 1 {
+		// The event was cancelled after the reminder was queued.
+		common.Info("Event %v is cancelled, no reminder.\n", event.UUID)
 		notification.Delivered = model.NotificationTooLate
 		notification.UpdateNotificationStatus(ctx)
 		return
