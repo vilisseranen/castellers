@@ -112,8 +112,8 @@ orthogonal to `Type`.
 | `MEMBERSSTATUSCREATED`    | `created` | Créé              | yes                    | SQL default; reset on guest → member promotion                                |
 | `MEMBERSSTATUSACTIVATED`  | `active`  | Actif             | yes                    | `Credentials.ResetCredentials` (first password); direct creation for guest/canalla; reactivation via participation; manual admin reactivation |
 | `MEMBERSSTATUSPAUSED`     | `paused`  | En pause          | yes                    | `pauseAbsentMembers` scheduler task; manual admin pause                       |
-| `MEMBERSSTATUSDELETED`    | `deleted` | Supprimé          | **no** (filtered out)  | `Member.DeleteMember` (soft delete)                                           |
-| `MEMBERSSTATUSPURGED`     | `purged`  | (no UI label)     | **no** (filtered out)  | external operation only (no Go writer)                                       |
+| `MEMBERSSTATUSDELETED`    | `deleted` | Supprimé          | only when asked for (`status=deleted`) | `Member.DeleteMember` (soft delete)                                           |
+| `MEMBERSSTATUSPURGED`     | `purged`  | Ancien membre     | only when asked for (`status=purged`)  | `purgeDeletedMembers` scheduler task, 90 days after the deletion              |
 
 ### `created`
 
@@ -167,26 +167,33 @@ orthogonal to `Type`.
 
 ### `deleted`
 
-- Soft delete only. The row is preserved (history of participations).
-- Set by `Member.DeleteMember`
-  ([`model/members.go:237-250`](../model/members.go)) via
-  `UPDATE … SET status='deleted'`.
-- Filtered out of:
-  - `Member.Get` (line 144: `AND status != 'deleted'`),
-  - `Member.GetAll` (line 199: `status NOT IN ('deleted', 'purged')`),
-  - manual reminder recipients
-    (`controller/reminders.go:137-139`).
+- Soft delete. The row and all its data are kept for `purge_delay_days`
+  (90 days by default), so that an admin can restore the member.
+- Set by `Member.DeleteMember`, which also stamps `deleted_at`.
+- `POST /members/{uuid}/restore` (admins, `controller.RestoreMember`) brings
+  the member back: `active` if they had chosen a password or are a guest or a
+  canalla, `created` otherwise. It is refused with a 409 if their email was
+  given to another member in the meantime.
+- Not visible in `Member.Get`, nor in `Member.GetAll` unless `deleted` is in
+  the list of statuses asked for. The list then gives `deletedAt` and
+  `purgeAt`. The UI asks for them to keep writing the names in the past
+  castells and to let the admins restore somebody.
+- Never a recipient of an email.
 
 ### `purged`
 
-- Equivalent to `deleted` in every read path
-  (`Member.GetAll` filter at line 199; manual reminder filter at
-  `controller/reminders.go:137-139`).
-- Intended for GDPR-style data purges (personal data scrubbed).
-- **No Go code writes this status**: it is reserved for an external
-  operation (admin tool, SQL script, future feature). It is, however,
-  accepted as a valid filter value in
-  `controller/members.go:476-489`.
+- Set by the scheduler task `purgeDeletedMembers`
+  ([`controller/scheduler.go`](../controller/scheduler.go)), every hour, for
+  the members deleted more than `purge_delay_days` ago. There is no way back.
+- `Member.PurgeMember` erases the name, email, contact, height, weight, roles,
+  notes, shirt, musician flag and subscription, and removes the credentials,
+  the links with dependents and the notes written about the dues of the member.
+- The row stays, with its UUID, its type and its dates: participations,
+  positions in castells, dues and badges still point to it, so the past
+  events and castells still count somebody. The UI shows "Ancien membre".
+- Not visible in `Member.Get`, nor in `Member.GetAll` unless `purged` is in
+  the list of statuses asked for; all the personal fields are then empty.
+- The backups keep the data of a purged member until they expire.
 
 ---
 
@@ -208,7 +215,9 @@ orthogonal to `Type`.
                                                            │
                        any state ──DeleteMember──► deleted │
                                                            │
-                       any state ──(external op)──► purged │
+              created / active ◄──admin restore── deleted  │
+                                                           │
+              deleted ──purgeDeletedMembers (90 days)──► purged
 ```
 
 Manual admin transitions go through `PUT /members/{uuid}/status`

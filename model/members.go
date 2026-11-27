@@ -59,6 +59,21 @@ type Member struct {
 	// empty. Only admins can change them.
 	ShirtSize  int    `json:"shirtSize"`
 	ShirtSince string `json:"shirtSince"`
+	// DeletedAt is when the member was deleted (Unix seconds) and PurgeAt when
+	// their personal data will be erased. Both are 0 for a member who is not
+	// deleted, and they are only filled in the list of members.
+	DeletedAt int64 `json:"deletedAt"`
+	PurgeAt   int64 `json:"purgeAt"`
+}
+
+// ErrMemberNotDeleted is returned when restoring a member who is not deleted,
+// or whose personal data is already erased.
+var ErrMemberNotDeleted = errors.New("member is not deleted")
+
+// PurgeDelay is how long a deleted member is kept before their personal data
+// is erased, in seconds. An admin can restore the member during that time.
+func PurgeDelay() int64 {
+	return int64(common.GetConfigInt("purge_delay_days")) * 24 * 3600
 }
 
 // String keeps personal data out of logs and error messages: formatting a
@@ -170,7 +185,7 @@ func (m *Member) Get(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.Get")
 	defer span.End()
 	stmt, err := db.PrepareContext(ctx, fmt.Sprintf(
-		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since FROM %s WHERE uuid= ? AND status != ?",
+		"SELECT firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since FROM %s WHERE uuid= ? AND status NOT IN (?, ?)",
 		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
@@ -179,7 +194,7 @@ func (m *Member) Get(ctx context.Context) error {
 	var rolesAsString string
 	var shirtSize sql.NullInt64
 	var shirtSince sql.NullString
-	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince)
+	err = stmt.QueryRowContext(ctx, m.UUID, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED).Scan(&m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince)
 	if err == nil {
 		m.ShirtSize = int(shirtSize.Int64)
 		m.ShirtSince = nullToEmptyString(shirtSince)
@@ -196,11 +211,15 @@ func (m *Member) Get(ctx context.Context) error {
 	return err
 }
 
+// GetAll lists the members with one of the statuses and one of the types given;
+// an empty list means any. Deleted and purged members are only listed when
+// their status is asked for explicitly. A purged member has no personal data
+// left: all their fields are empty.
 func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []string) ([]Member, error) {
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since, created_at FROM %s",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since, created_at, deleted_at FROM %s",
 		MEMBERSTABLE)}
 	filters := []string{}
 	statusFilters := []string{}
@@ -229,8 +248,13 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		filters = append(filters, fmt.Sprintf("( %s )", strings.Join(typeFilters, " OR ")))
 	}
 
-	filters = append(filters, "status NOT IN (?, ?)")
-	queryValues = append(queryValues, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED)
+	// Former members are left out, unless their status was asked for
+	for _, status := range []string{MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED} {
+		if !common.StringInSlice(status, memberStatusList) {
+			filters = append(filters, "status != ?")
+			queryValues = append(queryValues, status)
+		}
+	}
 
 	filter := strings.Join(filters, " AND ")
 	queryString = compact(append(queryString, filter))
@@ -250,8 +274,19 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		var rolesAsString string
 		var shirtSize sql.NullInt64
 		var shirtSince sql.NullString
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince, &m.CreatedAt); err != nil {
+		var deletedAt sql.NullInt64
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince, &m.CreatedAt, &deletedAt); err != nil {
 			return nil, err
+		}
+		if m.Status == MEMBERSSTATUSPURGED {
+			// Nothing is left of a purged member. Their row may also have been
+			// scrubbed outside of the application: do not try to decrypt it.
+			members = append(members, Member{UUID: m.UUID, Type: m.Type, Status: m.Status, Language: m.Language, Roles: []string{}, CreatedAt: m.CreatedAt, DeletedAt: deletedAt.Int64})
+			continue
+		}
+		if m.Status == MEMBERSSTATUSDELETED && deletedAt.Int64 > 0 {
+			m.DeletedAt = deletedAt.Int64
+			m.PurgeAt = deletedAt.Int64 + PurgeDelay()
 		}
 		m.ShirtSize = int(shirtSize.Int64)
 		m.ShirtSince = nullToEmptyString(shirtSince)
@@ -272,10 +307,13 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	return members, nil
 }
 
+// DeleteMember is a soft delete: the member disappears from the application,
+// but their data is kept until the purge (see PurgeDelay), so that an admin
+// can restore them.
 func (m *Member) DeleteMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status=? WHERE uuid=?",
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status=?, deleted_at=? WHERE uuid=?",
 		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
@@ -283,8 +321,146 @@ func (m *Member) DeleteMember(ctx context.Context) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, MEMBERSSTATUSDELETED, m.UUID)
+	_, err = stmt.ExecContext(ctx, MEMBERSSTATUSDELETED, time.Now().Unix(), m.UUID)
 	return err
+}
+
+// GetDeleted loads a deleted member who is not purged yet. Member.Get does not
+// see them. It returns sql.ErrNoRows for anybody else.
+func (m *Member) GetDeleted(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.GetDeleted")
+	defer span.End()
+	members, err := m.GetAll(ctx, []string{MEMBERSSTATUSDELETED}, []string{})
+	if err != nil {
+		return err
+	}
+	for _, member := range members {
+		if member.UUID == m.UUID {
+			*m = member
+			return nil
+		}
+	}
+	return sql.ErrNoRows
+}
+
+// RestoreMember brings back a deleted member, as long as they are not purged.
+// A member who had chosen a password, a guest or a canalla comes back active;
+// a member who never chose a password comes back as created. It returns
+// ErrMemberNotDeleted when there is nobody to restore.
+func (m *Member) RestoreMember(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.RestoreMember")
+	defer span.End()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var memberType string
+	var credentials int
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(
+		"SELECT type, (SELECT COUNT(*) FROM %s c WHERE c.uuid = m.uuid) FROM %s m WHERE m.uuid = ? AND m.status = ?",
+		MEMBERSCREDENTIALSTABLE, MEMBERSTABLE), m.UUID, MEMBERSSTATUSDELETED).Scan(&memberType, &credentials)
+	if err == sql.ErrNoRows {
+		return ErrMemberNotDeleted
+	}
+	if err != nil {
+		return err
+	}
+	status := MEMBERSSTATUSCREATED
+	if credentials > 0 || memberType == MEMBERSTYPEGUEST || memberType == MEMBERSTYPECANALLA {
+		status = MEMBERSSTATUSACTIVATED
+	}
+	// last_activity_date: the inactivity scan must not pause them right away
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET status = ?, deleted_at = NULL, last_activity_date = ? WHERE uuid = ? AND status = ?",
+		MEMBERSTABLE), status, time.Now().Unix(), m.UUID, MEMBERSSTATUSDELETED); err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	m.Status = status
+	return nil
+}
+
+// GetMembersToPurge returns the UUID of the members deleted at or before the
+// given time (Unix seconds) and not purged yet.
+func GetMembersToPurge(ctx context.Context, deletedBefore int64) ([]string, error) {
+	ctx, span := tracer.Start(ctx, "GetMembersToPurge")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
+		"SELECT uuid FROM %s WHERE status = ? AND deleted_at IS NOT NULL AND deleted_at <= ?",
+		MEMBERSTABLE), MEMBERSSTATUSDELETED, deletedBefore)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	uuids := []string{}
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return nil, err
+		}
+		uuids = append(uuids, uuid)
+	}
+	return uuids, rows.Err()
+}
+
+// PurgeMember erases the personal data of a deleted member, for good: name,
+// email, contact, height, weight, roles, notes, shirt, credentials, links with
+// dependents and the notes written about their dues. The row stays, with its
+// UUID and its type, so that the past events, castells, dues and badges still
+// count somebody: an anonymous former member. It returns false when the
+// member is not deleted (nothing is erased then).
+func (m *Member) PurgeMember(ctx context.Context) (bool, error) {
+	ctx, span := tracer.Start(ctx, "Member.PurgeMember")
+	defer span.End()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET firstName=?, lastName=?, height=?, weight=?, roles=?, extra=?, email=?, contact=?, subscribed=0, musician=0, shirt_size=NULL, shirt_since=NULL, status=? WHERE uuid=? AND status=?",
+		MEMBERSTABLE),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		common.Encrypt(""),
+		MEMBERSSTATUSPURGED,
+		m.UUID,
+		MEMBERSSTATUSDELETED)
+	if err != nil {
+		return false, err
+	}
+	purged, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	if purged == 0 {
+		return false, nil
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE uuid = ?", MEMBERSCREDENTIALSTABLE), m.UUID); err != nil {
+		return false, err
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(
+		"DELETE FROM %s WHERE responsible_uuid = ? OR dependent_uuid = ?", MEMBERSDEPENDANTSTABLE), m.UUID, m.UUID); err != nil {
+		return false, err
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf("UPDATE %s SET note = NULL WHERE member_uuid = ?", DUES_LOG_TABLE), m.UUID); err != nil {
+		return false, err
+	}
+	if err = tx.Commit(); err != nil {
+		return false, err
+	}
+	m.Status = MEMBERSSTATUSPURGED
+	return true, nil
 }
 
 func (m *Member) sanitizeEmptyRoles() {
@@ -453,6 +629,10 @@ func (m *Member) GetDependents(ctx context.Context) ([]Member, error) {
 		common.Debug("Found dependent with UUID %s for responsible with UUID %s", dependent_uuid, m.UUID)
 		dependent = Member{UUID: dependent_uuid}
 		if err = dependent.Get(ctx); err != nil {
+			if err == sql.ErrNoRows {
+				// A deleted dependent: the link is kept in case they are restored
+				continue
+			}
 			return nil, err
 		}
 		dependents = append(dependents, dependent)

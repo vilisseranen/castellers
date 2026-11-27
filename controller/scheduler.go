@@ -34,6 +34,9 @@ func (s *Scheduler) Start() {
 	// Change status of member who have not participated in some time
 	s.cron.AddFunc("@every 10m", pauseAbsentMembers)
 
+	// Erase the personal data of the members deleted long ago
+	s.cron.AddFunc("@every 1h", purgeDeletedMembers)
+
 	s.cron.Start()
 }
 
@@ -45,6 +48,11 @@ func RunNotificationDeliveryOnce() {
 // RunPauseAbsentMembersOnce runs the inactivity pause scan once (used by tests and cron).
 func RunPauseAbsentMembersOnce() {
 	pauseAbsentMembers()
+}
+
+// RunPurgeDeletedMembersOnce runs the purge of the deleted members once (used by tests and cron).
+func RunPurgeDeletedMembersOnce() {
+	purgeDeletedMembers()
 }
 
 func checkAndSendNotification() {
@@ -495,6 +503,35 @@ func pauseAbsentMembers() {
 			common.Debug("Setting member %v as %s", member, model.MEMBERSSTATUSPAUSED)
 			member.SetStatus(ctx, model.MEMBERSSTATUSPAUSED)
 		}
+	}
+}
+
+// purgeDeletedMembers erases the personal data of the members who were deleted
+// more than purge_delay_days ago. Until then, an admin can restore them.
+func purgeDeletedMembers() {
+	ctx, span := tracer.Start(context.Background(), "purgeDeletedMembers")
+	defer span.End()
+
+	uuids, err := model.GetMembersToPurge(ctx, time.Now().Unix()-model.PurgeDelay())
+	if err != nil {
+		common.Error("Cannot list the members to purge: %v", err)
+		return
+	}
+	for _, uuid := range uuids {
+		member := model.Member{UUID: uuid}
+		purged, err := member.PurgeMember(ctx)
+		if err != nil {
+			common.Error("Cannot purge member %s: %v", uuid, err)
+			continue
+		}
+		if !purged {
+			continue
+		}
+		// Their sessions ended when they were deleted. Once more, to be sure.
+		if err := revokeMemberSessions(ctx, uuid, ""); err != nil {
+			common.Error("Cannot revoke the sessions of member %s: %s", uuid, err.Error())
+		}
+		common.Info("Member %s was purged", uuid)
 	}
 }
 
