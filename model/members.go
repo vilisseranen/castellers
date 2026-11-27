@@ -64,6 +64,11 @@ type Member struct {
 	// deleted, and they are only filled in the list of members.
 	DeletedAt int64 `json:"deletedAt"`
 	PurgeAt   int64 `json:"purgeAt"`
+	// DeletionAt is when the member will be deleted automatically, because
+	// they have not come for a long time or never activated their account
+	// (Unix seconds). It is 0 when no deletion is planned, and it is only
+	// filled in the list of members.
+	DeletionAt int64 `json:"deletionAt"`
 }
 
 // ErrMemberNotDeleted is returned when restoring a member who is not deleted,
@@ -74,6 +79,12 @@ var ErrMemberNotDeleted = errors.New("member is not deleted")
 // is erased, in seconds. An admin can restore the member during that time.
 func PurgeDelay() int64 {
 	return int64(common.GetConfigInt("purge_delay_days")) * 24 * 3600
+}
+
+// DeletionNoticeDelay is the time between the notice sent to an inactive
+// member and their automatic deletion, in seconds.
+func DeletionNoticeDelay() int64 {
+	return int64(common.GetConfigInt("deletion_notice_days")) * 24 * 3600
 }
 
 // String keeps personal data out of logs and error messages: formatting a
@@ -219,7 +230,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 	ctx, span := tracer.Start(ctx, "Member.GetAll")
 	defer span.End()
 	queryString := []string{fmt.Sprintf(
-		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since, created_at, deleted_at FROM %s",
+		"SELECT uuid, firstName, lastName, height, weight, roles, extra, type, email, contact, status, subscribed, language, musician, shirt_size, shirt_since, created_at, deleted_at, deletion_notice_at FROM %s",
 		MEMBERSTABLE)}
 	filters := []string{}
 	statusFilters := []string{}
@@ -274,8 +285,8 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		var rolesAsString string
 		var shirtSize sql.NullInt64
 		var shirtSince sql.NullString
-		var deletedAt sql.NullInt64
-		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince, &m.CreatedAt, &deletedAt); err != nil {
+		var deletedAt, deletionNoticeAt sql.NullInt64
+		if err = rows.Scan(&m.UUID, &m.FirstName, &m.LastName, &m.Height, &m.Weight, &rolesAsString, &m.Extra, &m.Type, &m.Email, &m.Contact, &m.Status, &m.Subscribed, &m.Language, &m.Musician, &shirtSize, &shirtSince, &m.CreatedAt, &deletedAt, &deletionNoticeAt); err != nil {
 			return nil, err
 		}
 		if m.Status == MEMBERSSTATUSPURGED {
@@ -287,6 +298,9 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 		if m.Status == MEMBERSSTATUSDELETED && deletedAt.Int64 > 0 {
 			m.DeletedAt = deletedAt.Int64
 			m.PurgeAt = deletedAt.Int64 + PurgeDelay()
+		}
+		if m.Status != MEMBERSSTATUSDELETED && deletionNoticeAt.Int64 > 0 {
+			m.DeletionAt = deletionNoticeAt.Int64 + DeletionNoticeDelay()
 		}
 		m.ShirtSize = int(shirtSize.Int64)
 		m.ShirtSince = nullToEmptyString(shirtSince)
@@ -313,7 +327,7 @@ func (m *Member) GetAll(ctx context.Context, memberStatusList, memberTypeList []
 func (m *Member) DeleteMember(ctx context.Context) error {
 	ctx, span := tracer.Start(ctx, "Member.DeleteMember")
 	defer span.End()
-	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status=?, deleted_at=? WHERE uuid=?",
+	stmt, err := db.PrepareContext(ctx, fmt.Sprintf("UPDATE %s SET status=?, deleted_at=?, deletion_notice_at=NULL, admin_notified_at=NULL WHERE uuid=?",
 		MEMBERSTABLE))
 	if err != nil {
 		common.Fatal(err.Error())
@@ -373,7 +387,7 @@ func (m *Member) RestoreMember(ctx context.Context) error {
 	}
 	// last_activity_date: the inactivity scan must not pause them right away
 	if _, err = tx.ExecContext(ctx, fmt.Sprintf(
-		"UPDATE %s SET status = ?, deleted_at = NULL, last_activity_date = ? WHERE uuid = ? AND status = ?",
+		"UPDATE %s SET status = ?, deleted_at = NULL, admin_notified_at = NULL, last_activity_date = ? WHERE uuid = ? AND status = ?",
 		MEMBERSTABLE), status, time.Now().Unix(), m.UUID, MEMBERSSTATUSDELETED); err != nil {
 		return err
 	}
@@ -461,6 +475,191 @@ func (m *Member) PurgeMember(ctx context.Context) (bool, error) {
 	}
 	m.Status = MEMBERSSTATUSPURGED
 	return true, nil
+}
+
+// MemberActivity is what the inactivity scan needs to know about a member.
+type MemberActivity struct {
+	UUID   string
+	Type   string
+	Status string
+	// Unix seconds, 0 when not known or never
+	CreatedAt         int64
+	LastActivityDate  int64
+	LastParticipation int64 // start of the last event they answered or came to
+	DeletionNoticeAt  int64 // when they were told of their deletion, 0 if not
+}
+
+// GetMembersActivity returns the activity of all the members who are not
+// deleted. An answer to an event, whatever it is, shows that somebody is still
+// around; so does being marked present.
+func GetMembersActivity(ctx context.Context) ([]MemberActivity, error) {
+	ctx, span := tracer.Start(ctx, "GetMembersActivity")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
+		"SELECT m.uuid, m.type, m.status, m.created_at, m.last_activity_date, m.deletion_notice_at, "+
+			"(SELECT MAX(e.startDate) FROM %s e JOIN %s p ON e.uuid = p.event_uuid "+
+			"WHERE p.member_uuid = m.uuid AND (COALESCE(p.answer, '') != '' OR p.presence = ?) AND e.deleted = 0 AND e.cancelled = 0) "+
+			"FROM %s m WHERE m.status NOT IN (?, ?)",
+		EVENTS_TABLE, PARTICIPATION_TABLE, MEMBERSTABLE),
+		common.AnswerYes, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	activities := []MemberActivity{}
+	for rows.Next() {
+		var a MemberActivity
+		var noticeAt, lastParticipation sql.NullInt64
+		if err := rows.Scan(&a.UUID, &a.Type, &a.Status, &a.CreatedAt, &a.LastActivityDate, &noticeAt, &lastParticipation); err != nil {
+			return nil, err
+		}
+		a.DeletionNoticeAt = noticeAt.Int64
+		a.LastParticipation = lastParticipation.Int64
+		activities = append(activities, a)
+	}
+	return activities, rows.Err()
+}
+
+// SetDeletionNotice notes when a member was told of their automatic deletion.
+// The admins are not told yet.
+func (m *Member) SetDeletionNotice(ctx context.Context, at int64) error {
+	ctx, span := tracer.Start(ctx, "Member.SetDeletionNotice")
+	defer span.End()
+	_, err := db.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET deletion_notice_at = ?, admin_notified_at = NULL WHERE uuid = ?", MEMBERSTABLE), at, m.UUID)
+	return err
+}
+
+// ClearDeletionNotice cancels the automatic deletion of a member.
+func (m *Member) ClearDeletionNotice(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.ClearDeletionNotice")
+	defer span.End()
+	_, err := db.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET deletion_notice_at = NULL, admin_notified_at = NULL WHERE uuid = ?", MEMBERSTABLE), m.UUID)
+	return err
+}
+
+// KeepMember restarts the inactivity delay of a member and cancels their
+// automatic deletion, if one was planned. Their status does not change.
+func (m *Member) KeepMember(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.KeepMember")
+	defer span.End()
+	_, err := db.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET last_activity_date = ?, deletion_notice_at = NULL, admin_notified_at = NULL WHERE uuid = ? AND status NOT IN (?, ?)",
+		MEMBERSTABLE), time.Now().Unix(), m.UUID, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED)
+	return err
+}
+
+// KeepMemberIfNoticed is KeepMember for a member who was told of their
+// automatic deletion, and does nothing for the others: a member who logs in
+// after the notice wants to stay.
+func (m *Member) KeepMemberIfNoticed(ctx context.Context) error {
+	ctx, span := tracer.Start(ctx, "Member.KeepMemberIfNoticed")
+	defer span.End()
+	_, err := db.ExecContext(ctx, fmt.Sprintf(
+		"UPDATE %s SET last_activity_date = ?, deletion_notice_at = NULL, admin_notified_at = NULL WHERE uuid = ? AND deletion_notice_at IS NOT NULL AND status NOT IN (?, ?)",
+		MEMBERSTABLE), time.Now().Unix(), m.UUID, MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED)
+	return err
+}
+
+// GetResponsibles returns the members who answer for this one (the parents of
+// a canalla, usually), without those who are deleted.
+func (m *Member) GetResponsibles(ctx context.Context) ([]Member, error) {
+	ctx, span := tracer.Start(ctx, "Member.GetResponsibles")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
+		"SELECT responsible_uuid FROM %s WHERE dependent_uuid = ?", MEMBERSDEPENDANTSTABLE), m.UUID)
+	if err != nil {
+		return nil, err
+	}
+	uuids := []string{}
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		uuids = append(uuids, uuid)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	responsibles := []Member{}
+	for _, uuid := range uuids {
+		responsible := Member{UUID: uuid}
+		if err := responsible.Get(ctx); err != nil {
+			if err == sql.ErrNoRows {
+				continue
+			}
+			return nil, err
+		}
+		responsibles = append(responsibles, responsible)
+	}
+	return responsibles, nil
+}
+
+// AdminNotice is a member the admins must be told about: somebody who will be
+// deleted automatically, or a deleted member whose data will be erased soon.
+type AdminNotice struct {
+	UUID string
+	Name string
+	Type string
+	Date int64 // day of the deletion, or of the purge (Unix seconds)
+}
+
+// GetAdminNotices lists what the admins were not told yet: the members with a
+// planned deletion, and the deleted members whose purge comes before the given
+// time.
+func GetAdminNotices(ctx context.Context, purgeBefore int64) (deletions []AdminNotice, purges []AdminNotice, err error) {
+	ctx, span := tracer.Start(ctx, "GetAdminNotices")
+	defer span.End()
+	rows, err := db.QueryContext(ctx, fmt.Sprintf(
+		"SELECT uuid, firstName, lastName, type, status, deletion_notice_at, deleted_at FROM %s "+
+			"WHERE admin_notified_at IS NULL AND ("+
+			"(status NOT IN (?, ?) AND deletion_notice_at IS NOT NULL) OR "+
+			"(status = ? AND deleted_at IS NOT NULL AND deleted_at + ? <= ?)) "+
+			"ORDER BY id",
+		MEMBERSTABLE),
+		MEMBERSSTATUSDELETED, MEMBERSSTATUSPURGED, MEMBERSSTATUSDELETED, PurgeDelay(), purgeBefore)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	deletions = []AdminNotice{}
+	purges = []AdminNotice{}
+	for rows.Next() {
+		var n AdminNotice
+		var firstName, lastName []byte
+		var status string
+		var noticeAt, deletedAt sql.NullInt64
+		if err := rows.Scan(&n.UUID, &firstName, &lastName, &n.Type, &status, &noticeAt, &deletedAt); err != nil {
+			return nil, nil, err
+		}
+		n.Name = strings.TrimSpace(decryptOrEmpty(firstName) + " " + decryptOrEmpty(lastName))
+		if status == MEMBERSSTATUSDELETED {
+			n.Date = deletedAt.Int64 + PurgeDelay()
+			purges = append(purges, n)
+		} else {
+			n.Date = noticeAt.Int64 + DeletionNoticeDelay()
+			deletions = append(deletions, n)
+		}
+	}
+	return deletions, purges, rows.Err()
+}
+
+// SetAdminNotified notes that the admins were told about these members.
+func SetAdminNotified(ctx context.Context, uuids []string) error {
+	ctx, span := tracer.Start(ctx, "SetAdminNotified")
+	defer span.End()
+	now := time.Now().Unix()
+	for _, uuid := range uuids {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(
+			"UPDATE %s SET admin_notified_at = ? WHERE uuid = ?", MEMBERSTABLE), now, uuid); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *Member) sanitizeEmptyRoles() {
