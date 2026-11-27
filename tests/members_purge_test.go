@@ -125,6 +125,13 @@ func TestRestoreMember(t *testing.T) {
 	h.addMember("abc123", "Joan", "Marti", "", "", "", "", "member", "joan@marti.ca", "")
 	h.addMember("123", "Pol", "Petit", "", "", "", "", "canalla", "", "")
 
+	// Only by an admin
+	if code, _ := h.post("/members/abc123/restore", memberToken, ""); code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 when a member restores somebody. Got %d", code)
+	}
+	if code, _ := h.post("/members/abc123/restore", "", ""); code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 when restoring without a token. Got %d", code)
+	}
 	// Only a deleted member can be restored
 	if code, _ := h.post("/members/abc123/restore", adminToken, ""); code != http.StatusNotFound {
 		t.Errorf("Expected 404 when restoring a member who is not deleted. Got %d", code)
@@ -134,14 +141,6 @@ func TestRestoreMember(t *testing.T) {
 		if code, _ := h.duesRequest("DELETE", "/members/"+uuid, adminToken, nil); code != http.StatusOK {
 			t.Fatalf("Expected to delete member %s. Got %d", uuid, code)
 		}
-	}
-
-	// Only by an admin. The session of the deleted member has ended anyway.
-	if code, _ := h.post("/members/abc123/restore", memberToken, ""); code != http.StatusUnauthorized {
-		t.Errorf("Expected 401 when a member restores somebody. Got %d", code)
-	}
-	if code, _ := h.post("/members/abc123/restore", "", ""); code != http.StatusUnauthorized {
-		t.Errorf("Expected 401 when restoring without a token. Got %d", code)
 	}
 
 	// With a password: active again. Never chose one: created. Canalla: active.
