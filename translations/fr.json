@@ -124,7 +124,6 @@
     "deletion_notice_intro": "Un mot à propos de ton compte chez les Castellers de Montréal.",
     "deletion_notice_title": "Ton compte sera supprimé le %s",
     "deletion_notice_text_inactive": "Nous n'avons pas eu de tes nouvelles depuis plus de %d mois. Pour ne pas garder tes renseignements personnels sans raison, nous supprimerons ton compte à cette date.",
-    "deletion_notice_text_pending": "Ton compte a été créé il y a plus de %d mois et n'a jamais été activé. Pour ne pas garder tes renseignements personnels sans raison, nous le supprimerons à cette date.",
     "deletion_notice_nothing": "Si tu ne fais rien, tes renseignements personnels seront effacés pour de bon %d jours plus tard.",
     "deletion_notice_action_title": "Tu veux rester ?",
     "deletion_notice_action_text": "Connecte-toi avant cette date et ton compte sera conservé. Si tu n'as pas de mot de passe ou si tu l'as oublié, utilise « Mot de passe oublié » sur la page de connexion.",

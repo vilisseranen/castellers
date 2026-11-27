@@ -16,7 +16,7 @@ func TestDeletionNoticeEmail(t *testing.T) {
 	member := model.Member{UUID: "m1", FirstName: "Ramon", Email: "ramon@example.com", Language: "fr"}
 	payload := EmailDeletionNoticePayload{Recipient: member, Member: member, DeletionAt: deletionTestDay(t)}
 
-	email := deletionNoticeEmail(payload, 24, 6, 90)
+	email := deletionNoticeEmail(payload, 24, 90)
 	if email.Header.Title != "Ton compte sera supprimé le 27-12-2026" {
 		t.Errorf("Unexpected subject: %q", email.Header.Title)
 	}
@@ -33,29 +33,19 @@ func TestDeletionNoticeEmail(t *testing.T) {
 		t.Errorf("Expected a button to log in. Got %v", email.Actions)
 	}
 
-	// An account that was never activated is told so
-	payload.NeverActivated = true
-	text = deletionNoticeEmail(payload, 24, 6, 90).MainSections[0].Text
-	if !strings.Contains(text, "il y a plus de 6 mois") || strings.Contains(text, "24 mois") {
-		t.Errorf("Expected the email to talk about an account never activated. Got %q", text)
-	}
-
 	// The same email is written in every language, and fits in the template
 	for _, language := range []string{"fr", "en", "cat"} {
 		payload.Recipient.Language = language
-		for _, neverActivated := range []bool{false, true} {
-			payload.NeverActivated = neverActivated
-			email := deletionNoticeEmail(payload, 24, 6, 90)
-			if strings.Contains(email.Header.Title+email.MainSections[0].Text, "%!") {
-				t.Errorf("Badly formatted text in %s: %q / %q", language, email.Header.Title, email.MainSections[0].Text)
-			}
-			if _, err := email.buildEmail(); err != nil {
-				t.Errorf("Cannot build the email in %s: %v", language, err)
-			}
+		email := deletionNoticeEmail(payload, 24, 90)
+		if strings.Contains(email.Header.Title+email.MainSections[0].Text, "%!") {
+			t.Errorf("Badly formatted text in %s: %q / %q", language, email.Header.Title, email.MainSections[0].Text)
+		}
+		if _, err := email.buildEmail(); err != nil {
+			t.Errorf("Cannot build the email in %s: %v", language, err)
 		}
 	}
 	payload.Recipient.Language = "en"
-	if title := deletionNoticeEmail(payload, 24, 6, 90).Header.Title; title != "Your account will be deleted on 27-12-2026" {
+	if title := deletionNoticeEmail(payload, 24, 90).Header.Title; title != "Your account will be deleted on 27-12-2026" {
 		t.Errorf("Unexpected subject in English: %q", title)
 	}
 }
@@ -66,7 +56,7 @@ func TestDeletionNoticeEmailForDependent(t *testing.T) {
 	child := model.Member{UUID: "m2", FirstName: "Pol <b>", LastName: "Petit"}
 	payload := EmailDeletionNoticePayload{Recipient: parent, Member: child, DeletionAt: deletionTestDay(t)}
 
-	email := deletionNoticeEmail(payload, 24, 6, 90)
+	email := deletionNoticeEmail(payload, 24, 90)
 	if email.Top.To != "ramon@example.com" {
 		t.Errorf("Expected the email to go to the parent. Got %q", email.Top.To)
 	}
@@ -82,7 +72,7 @@ func TestDeletionNoticeEmailForDependent(t *testing.T) {
 	}
 	for _, language := range []string{"fr", "en", "cat"} {
 		payload.Recipient.Language = language
-		email := deletionNoticeEmail(payload, 24, 6, 90)
+		email := deletionNoticeEmail(payload, 24, 90)
 		if strings.Contains(email.Header.Title+email.MainSections[0].Text, "%!") {
 			t.Errorf("Badly formatted text in %s: %q / %q", language, email.Header.Title, email.MainSections[0].Text)
 		}

@@ -124,7 +124,6 @@
     "deletion_notice_intro": "A word about your account with the Castellers de Montréal.",
     "deletion_notice_title": "Your account will be deleted on %s",
     "deletion_notice_text_inactive": "We have not heard from you for more than %d months. So that we do not keep your personal information for no reason, we will delete your account on that day.",
-    "deletion_notice_text_pending": "Your account was created more than %d months ago and was never activated. So that we do not keep your personal information for no reason, we will delete it on that day.",
     "deletion_notice_nothing": "If you do nothing, your personal information will be erased for good %d days later.",
     "deletion_notice_action_title": "Want to stay?",
     "deletion_notice_action_text": "Log in before that day and your account will be kept. If you have no password or forgot it, use \"Forgot password\" on the login page.",

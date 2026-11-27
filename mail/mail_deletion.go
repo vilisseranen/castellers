@@ -14,10 +14,9 @@ import (
 // EmailDeletionNoticePayload announces the automatic deletion of Member to
 // Recipient: the member themselves, or somebody responsible for them.
 type EmailDeletionNoticePayload struct {
-	Recipient      model.Member
-	Member         model.Member
-	DeletionAt     int64 // Unix seconds
-	NeverActivated bool  // the account was created and never used
+	Recipient  model.Member
+	Member     model.Member
+	DeletionAt int64 // Unix seconds
 }
 
 // EmailDeletionDigestPayload tells an admin about the planned deletions and
@@ -50,7 +49,6 @@ func SendDeletionNoticeEmail(ctx context.Context, payload EmailDeletionNoticePay
 
 	email := deletionNoticeEmail(payload,
 		months(common.GetConfigInt("inactive_delete_delay_days")),
-		months(common.GetConfigInt("pending_delete_delay_days")),
 		common.GetConfigInt("purge_delay_days"))
 	if err := sendMail(ctx, email); err != nil {
 		common.Error("Error sending Email: " + err.Error())
@@ -59,10 +57,10 @@ func SendDeletionNoticeEmail(ctx context.Context, payload EmailDeletionNoticePay
 	return nil
 }
 
-// deletionNoticeEmail writes the notice. inactiveMonths and pendingMonths are
-// the delays after which a member in pause and an account never activated are
-// deleted; purgeDays is the time before the data of a deleted member is erased.
-func deletionNoticeEmail(payload EmailDeletionNoticePayload, inactiveMonths, pendingMonths, purgeDays int) emailInfo {
+// deletionNoticeEmail writes the notice. inactiveMonths is the delay after
+// which a member in pause is deleted; purgeDays is the time before the data of
+// a deleted member is erased.
+func deletionNoticeEmail(payload EmailDeletionNoticePayload, inactiveMonths, purgeDays int) emailInfo {
 	lang := payload.Recipient.Language
 	date := deletionDay(payload.DeletionAt)
 	forSelf := payload.Recipient.UUID == payload.Member.UUID
@@ -75,9 +73,6 @@ func deletionNoticeEmail(payload EmailDeletionNoticePayload, inactiveMonths, pen
 	}
 	if forSelf {
 		reason := fmt.Sprintf(common.Translate("deletion_notice_text_inactive", lang), inactiveMonths)
-		if payload.NeverActivated {
-			reason = fmt.Sprintf(common.Translate("deletion_notice_text_pending", lang), pendingMonths)
-		}
 		title := fmt.Sprintf(common.Translate("deletion_notice_title", lang), date)
 		email.Header = emailHeader{Title: title}
 		email.MainSections = []emailMain{{

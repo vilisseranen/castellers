@@ -78,7 +78,6 @@
     "deletion_notice_intro": "Unes paraules sobre el teu compte als Castellers de Montréal.",
     "deletion_notice_title": "El teu compte se suprimirà el %s",
     "deletion_notice_text_inactive": "Fa més de %d mesos que no en sabem res de tu. Per no conservar les teves dades personals sense motiu, suprimirem el teu compte en aquesta data.",
-    "deletion_notice_text_pending": "El teu compte es va crear fa més de %d mesos i no s'ha activat mai. Per no conservar les teves dades personals sense motiu, el suprimirem en aquesta data.",
     "deletion_notice_nothing": "Si no fas res, les teves dades personals s'esborraran definitivament %d dies després.",
     "deletion_notice_action_title": "Vols quedar-te?",
     "deletion_notice_action_text": "Inicia la sessió abans d'aquesta data i el teu compte es conservarà. Si no tens contrasenya o l'has oblidada, fes servir «Contrasenya oblidada» a la pàgina d'inici de sessió.",

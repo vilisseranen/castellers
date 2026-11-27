@@ -73,6 +73,22 @@ func TestDeletionDue(t *testing.T) {
 	}
 }
 
+// Only somebody who activated their account one day is told of its deletion.
+func TestToldOfDeletion(t *testing.T) {
+	cases := map[string]bool{
+		model.MEMBERSSTATUSPAUSED:  true,
+		model.MEMBERSSTATUSCREATED: false,
+	}
+	for status, told := range cases {
+		for _, lastParticipation := range []int64{0, time.Now().Unix() - 800*testDay} {
+			activity := model.MemberActivity{Type: model.MEMBERSTYPEREGULAR, Status: status, LastParticipation: lastParticipation}
+			if got := controller.ToldOfDeletion(activity); got != told {
+				t.Errorf("Status %s, last participation %d: expected told = %v. Got %v", status, lastParticipation, told, got)
+			}
+		}
+	}
+}
+
 // An inactive member is told first, and deleted 30 days later.
 func TestInactiveMemberIsToldThenDeleted(t *testing.T) {
 	h.clearTables()

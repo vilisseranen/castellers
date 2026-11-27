@@ -56,6 +56,14 @@ func DeletionDue(a model.MemberActivity, now int64) bool {
 	return now-lastSeen >= delay
 }
 
+// ToldOfDeletion tells if a member gets the notice of their deletion. Somebody
+// who never activated their account never signed up for anything: an email
+// about closing an account they do not know would only puzzle them. Their
+// deletion is only announced to the admins.
+func ToldOfDeletion(a model.MemberActivity) bool {
+	return a.Status != model.MEMBERSSTATUSCREATED
+}
+
 // deleteInactiveMembers looks for the members who have been inactive for too
 // long. They are first told that their account will be deleted, then deleted
 // deletion_notice_days later if nothing happened in between. A deleted member
@@ -108,9 +116,10 @@ func deleteInactiveMembers() {
 
 // sendDeletionNotice tells a member that their account will be deleted. A
 // member without an email (canalla) is announced to the members responsible
-// for them. Nobody can be told for a guest: the admins will be.
+// for them. Nobody is told for a guest, nor for an account that was never
+// activated (see ToldOfDeletion): the admins will be.
 func sendDeletionNotice(ctx context.Context, activity model.MemberActivity, deletionAt int64) {
-	if !common.GetConfigBool("smtp.enabled") {
+	if !common.GetConfigBool("smtp.enabled") || !ToldOfDeletion(activity) {
 		return
 	}
 	member := model.Member{UUID: activity.UUID}
@@ -132,10 +141,9 @@ func sendDeletionNotice(ctx context.Context, activity model.MemberActivity, dele
 			continue
 		}
 		payload := mail.EmailDeletionNoticePayload{
-			Recipient:      recipient,
-			Member:         member,
-			DeletionAt:     deletionAt,
-			NeverActivated: neverActivated(activity),
+			Recipient:  recipient,
+			Member:     member,
+			DeletionAt: deletionAt,
 		}
 		if err := mail.SendDeletionNoticeEmail(ctx, payload); err != nil {
 			common.Error("Cannot tell member %s of the deletion of member %s: %v", recipient.UUID, member.UUID, err)

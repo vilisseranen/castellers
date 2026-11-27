@@ -17,8 +17,8 @@ Members who have been inactive for too long are deleted automatically, after a n
   - a member in pause, or with an account that was not activated but who came anyway, 730 days after their last sign of life (`inactive_delete_delay_days`): the last event they answered or came to, a reactivation or a "keep" by an admin, or their creation.
 
   Active members and admins are never deleted automatically.
-- The member is first told by email, with the day of the deletion, 30 days later (`deletion_notice_days`). A member without an email (canalla) is announced to the members responsible for them. Nobody can be told for a guest. The email is sent whether or not the member is subscribed to the emails.
-- 30 days after the notice, the member is deleted, as by an admin: they can be restored for 90 days, then they are purged.
+- The deletion is first planned, for 30 days later (`deletion_notice_days`). A member in pause is told by email, with the day of the deletion and how to stay; a member without an email (canalla) is announced to the members responsible for them. The email is sent whether or not the member is subscribed to the emails. Nobody is told for a guest, nor for an account that was never activated: somebody who never signed up gets no email about closing an account. The admins are told in every case.
+- 30 days after the deletion was planned, the member is deleted, as by an admin: they can be restored for 90 days, then they are purged.
 - The deletion is cancelled when the member logs in, answers to an event or comes to one, chooses a password, or when an admin reactivates or keeps them.
 - `POST /members/{uuid}/keep` (admins) keeps a member: their inactivity delay starts again and their planned deletion is cancelled. Their status does not change.
 - Members have `deletionAt` (Unix seconds, 0 when no deletion is planned), filled in the list of members.
@@ -27,7 +27,7 @@ Members who have been inactive for too long are deleted automatically, after a n
 
 ### Changed
 
-- The first scan after this version is installed plans the deletion of all the members already due, and tells them all at once.
+- The first scan after this version is installed plans the deletion of all the members already due, and tells at once those who are told.
 
 ## [0.36.0] - 2026-11-27
 
