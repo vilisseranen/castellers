@@ -28,6 +28,7 @@ const (
 	ERRORMEMBERTYPE             = "error with the type provided"
 	ERRORUPDATEMEMBER           = "error updating member"
 	ERRORDELETEMEMBER           = "error deleting member"
+	ERRORRESTOREMEMBER          = "error restoring member"
 	ERRORREGISTRATIONEMAIL      = "error sending the registration email"
 	ERRORRESETCREDENTIALS       = "error resetting credentials"
 	ERROREMAILUNAVAILABLE       = "this email is already used by another member."
@@ -111,6 +112,11 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 		sanitized := make([]model.Member, len(members))
 		for i, member := range members {
 			sanitized[i] = model.Member{UUID: member.UUID, FirstName: member.FirstName, LastName: member.LastName, Roles: []string{}}
+			// The status of a former member is told, so that the past castells
+			// can show them as such. The other statuses stay private.
+			if member.Status == model.MEMBERSSTATUSDELETED || member.Status == model.MEMBERSSTATUSPURGED {
+				sanitized[i].Status = member.Status
+			}
 		}
 		members = sanitized
 	}
@@ -430,6 +436,53 @@ func DeleteMember(w http.ResponseWriter, r *http.Request) {
 		common.Error("Cannot revoke the sessions of member %s: %s", UUID, err.Error())
 	}
 	RespondWithJSON(w, http.StatusOK, nil)
+}
+
+// RestoreMember lets an admin bring back a deleted member, as long as their
+// personal data is not erased (see model.PurgeDelay).
+func RestoreMember(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "RestoreMember")
+	defer span.End()
+
+	vars := mux.Vars(r)
+	UUID := vars["member_uuid"]
+	m := model.Member{UUID: UUID}
+	if err := m.GetDeleted(ctx); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			common.Debug("No deleted member %s to restore", UUID)
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
+		default:
+			common.Warn("Error getting deleted member: %s", err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORRESTOREMEMBER)
+		}
+		return
+	}
+	// Their email may have been given to another member in the meantime
+	if m.Email != "" {
+		other := model.Member{Email: m.Email}
+		if err := other.GetByEmail(ctx); err == nil {
+			common.Info("Cannot restore member %s: their email is used by member %s", UUID, other.UUID)
+			RespondWithError(w, http.StatusConflict, ERROREMAILUNAVAILABLE)
+			return
+		} else if err.Error() != model.MEMBERSEMAILNOTFOUNDMESSAGE {
+			common.Warn("Error looking for the email of member %s: %s", UUID, err.Error())
+			RespondWithError(w, http.StatusInternalServerError, ERRORRESTOREMEMBER)
+			return
+		}
+	}
+	if err := m.RestoreMember(ctx); err != nil {
+		if err == model.ErrMemberNotDeleted {
+			RespondWithError(w, http.StatusNotFound, ERRORMEMBERNOTFOUND)
+			return
+		}
+		common.Warn("Error restoring member: %s", err.Error())
+		RespondWithError(w, http.StatusInternalServerError, ERRORRESTOREMEMBER)
+		return
+	}
+	m.DeletedAt = 0
+	m.PurgeAt = 0
+	RespondWithJSON(w, http.StatusOK, m)
 }
 
 func GetRoles(w http.ResponseWriter, r *http.Request) {

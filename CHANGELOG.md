@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.36.0] - 2026-11-27
+
+The personal data of a deleted member is erased after 90 days. Until then, an admin can restore them. Used by UI 1.20.0.
+
+### Added
+
+- A deleted member is purged 90 days after their deletion (`purge_delay_days`, or `APP_PURGE_DELAY_DAYS`): their status becomes `purged` and their name, email, contact, height, weight, roles, notes, shirt, musician flag, credentials, links with dependents and the notes written about their dues are erased for good. The row stays, with its UUID and its type: the past events, castells, dues and badges still count an anonymous former member. A task checks every hour.
+- `POST /members/{uuid}/restore` (admins) brings back a deleted member who is not purged yet. A member who had chosen a password, a guest or a canalla comes back `active`; a member who never chose a password comes back `created`. The API answers 404 when there is nobody to restore and 409 when their email was given to another member in the meantime.
+- Members have `deletedAt` and `purgeAt` (Unix seconds, 0 when the member is not deleted), filled in the list of members.
+
+### Changed
+
+- `GET /members?status=deleted` and `status=purged` now list the former members; they were always left out before. Without these statuses, nothing changes: former members are not listed. A purged member comes with empty fields. A member who is not an admin sees only the name of a former member and their status (`deleted` or `purged`); the status of the other members is still not told to them.
+- The members who were already deleted will be purged 90 days after this version is installed: we do not know when they were deleted.
+- A deleted dependent no longer breaks the list of dependents of the member responsible for them: they are skipped. The link is removed when they are purged.
+- `GET /members/{uuid}` answers 404 for a purged member, as for a deleted one.
+
 ## [0.35.0] - 2026-11-26
 
 The admins can note which members have a shirt of the colla.
