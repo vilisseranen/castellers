@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The API version is defined in [`VERSION`](VERSION) and exposed at `GET /api/v1/version`.
 
+## [0.37.0] - 2026-11-27
+
+Members who have been inactive for too long are deleted automatically, after a notice. Used by UI 1.21.0.
+
+### Added
+
+- Every hour, a task looks for the members who are due for deletion:
+  - an account that was never activated (status `created`, no answer nor presence to any event), 180 days after its creation (`pending_delete_delay_days`);
+  - a member in pause, or with an account that was not activated but who came anyway, 730 days after their last sign of life (`inactive_delete_delay_days`): the last event they answered or came to, a reactivation or a "keep" by an admin, or their creation.
+
+  Active members and admins are never deleted automatically.
+- The deletion is first planned, for 30 days later (`deletion_notice_days`). A member in pause is told by email, with the day of the deletion and how to stay; a member without an email (canalla) is announced to the members responsible for them. The email is sent whether or not the member is subscribed to the emails. Nobody is told for a guest, nor for an account that was never activated: somebody who never signed up gets no email about closing an account. The admins are told in every case.
+- 30 days after the deletion was planned, the member is deleted, as by an admin: they can be restored for 90 days, then they are purged.
+- The deletion is cancelled when the member logs in, answers to an event or comes to one, chooses a password, or when an admin reactivates or keeps them.
+- `POST /members/{uuid}/keep` (admins) keeps a member: their inactivity delay starts again and their planned deletion is cancelled. Their status does not change.
+- Members have `deletionAt` (Unix seconds, 0 when no deletion is planned), filled in the list of members.
+- Every Monday at 9:00 (Montréal), the admins subscribed to the emails receive one email with the deletions planned since the last one and the deleted members who will be purged within 30 days. Each member is announced once for each. Nothing is sent when there is nothing new.
+- `auto_delete_enabled` (`APP_AUTO_DELETE_ENABLED`), true by default: set it to false to stop the automatic deletions. The purge of the deleted members is not concerned.
+
+### Changed
+
+- The first scan after this version is installed plans the deletion of all the members already due, and tells at once those who are told.
+
 ## [0.36.0] - 2026-11-27
 
 The personal data of a deleted member is erased after 90 days. Until then, an admin can restore them. Used by UI 1.20.0.

@@ -49,7 +49,11 @@ func ReadConfig() {
 	viper.SetDefault("jwt.participation_ttl_minutes", 2880)
 	viper.SetDefault("jwt.registration_ttl_minutes", 10080)
 	viper.SetDefault("inactive_delay_days", 21)
-	viper.SetDefault("purge_delay_days", 90) // Time before the data of a deleted member is erased
+	viper.SetDefault("purge_delay_days", 90)            // Time before the data of a deleted member is erased
+	viper.SetDefault("auto_delete_enabled", true)       // Delete the members who are inactive for too long
+	viper.SetDefault("pending_delete_delay_days", 180)  // Account never activated: time before its deletion is planned
+	viper.SetDefault("inactive_delete_delay_days", 730) // Member in pause: time before their deletion is planned
+	viper.SetDefault("deletion_notice_days", 30)        // Time between the notice and the deletion
 	viper.SetDefault("otel_enable", false)
 
 	// read config file
@@ -88,6 +92,10 @@ func ReadConfig() {
 	viper.BindEnv("otel_enable", "APP_OTEL_ENABLE")
 	viper.BindEnv("inactive_delay_days", "APP_INACTIVE_DELAY_DAYS")
 	viper.BindEnv("purge_delay_days", "APP_PURGE_DELAY_DAYS")
+	viper.BindEnv("auto_delete_enabled", "APP_AUTO_DELETE_ENABLED")
+	viper.BindEnv("pending_delete_delay_days", "APP_PENDING_DELETE_DELAY_DAYS")
+	viper.BindEnv("inactive_delete_delay_days", "APP_INACTIVE_DELETE_DELAY_DAYS")
+	viper.BindEnv("deletion_notice_days", "APP_DELETION_NOTICE_DAYS")
 
 	var c config
 	err = viper.Unmarshal(&c)

@@ -195,6 +195,35 @@ orthogonal to `Type`.
   the list of statuses asked for; all the personal fields are then empty.
 - The backups keep the data of a purged member until they expire.
 
+### Automatic deletion of inactive members
+
+The scheduler task `deleteInactiveMembers`
+([`controller/inactivity.go`](../controller/inactivity.go)) runs every hour,
+unless `auto_delete_enabled` is false.
+
+- **Who is due** (`controller.DeletionDue`): a `created` account that never
+  answered nor came to an event, `pending_delete_delay_days` (180) after its
+  creation; a `paused` member, or a `created` one who came anyway,
+  `inactive_delete_delay_days` (730) after their last sign of life, the most
+  recent of: the last event they answered or came to, `last_activity_date`
+  and `created_at`. Never an `active` member, never an admin.
+- **Notice**: `deletion_notice_at` is stamped and the member is told by email
+  (`mail.SendDeletionNoticeEmail`); for a member without an email, the members
+  responsible for them are told. A `created` account gets no email
+  (`controller.ToldOfDeletion`): its owner never signed up. `deletionAt` in
+  the list of members is the day of the deletion.
+- **Deletion**: `deletion_notice_days` (30) after the notice, if the member is
+  still due, `Member.DeleteMember`. From there, see `deleted` and `purged`.
+- **Cancelled** when the member is not due anymore: they answered or came to
+  an event, logged in (`Member.KeepMemberIfNoticed`), chose a password, or an
+  admin reactivated them or kept them (`POST /members/{uuid}/keep`,
+  `Member.KeepMember`, which stamps `last_activity_date`).
+- **Admins**: `sendDeletionDigest`, every Monday at 9:00 in Montréal, sends
+  one email to the subscribed admins with the members whose deletion was
+  planned and the deleted members purged within `deletion_notice_days`.
+  `admin_notified_at` remembers who was announced, so each one is announced
+  once.
+
 ---
 
 ## Lifecycle diagram

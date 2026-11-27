@@ -20,7 +20,12 @@ type Scheduler struct {
 }
 
 func (s *Scheduler) Start() {
-	s.cron = cron.New()
+	// The tasks at a given time of the day follow the time of the colla
+	if location, err := time.LoadLocation("America/Montreal"); err == nil {
+		s.cron = cron.NewWithLocation(location)
+	} else {
+		s.cron = cron.New()
+	}
 
 	// Send notifications when they are ready
 	s.cron.AddFunc("@every 10s", checkAndSendNotification)
@@ -36,6 +41,12 @@ func (s *Scheduler) Start() {
 
 	// Erase the personal data of the members deleted long ago
 	s.cron.AddFunc("@every 1h", purgeDeletedMembers)
+
+	// Plan the deletion of the members inactive for too long, then delete them
+	s.cron.AddFunc("@every 1h", deleteInactiveMembers)
+
+	// Tell the admins about the planned deletions and purges: Monday, 9:00
+	s.cron.AddFunc("0 0 9 * * MON", sendDeletionDigest)
 
 	s.cron.Start()
 }

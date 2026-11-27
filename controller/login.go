@@ -82,6 +82,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RespondWithError(w, http.StatusInternalServerError, ERRORCREATETOKEN)
 		return
 	}
+	// A member who was told that their account would be deleted and logs in
+	// wants to stay.
+	member := model.Member{UUID: credentialsInDB.UUID}
+	if err := member.KeepMemberIfNoticed(ctx); err != nil {
+		common.Warn("Cannot cancel the deletion of member %s: %s", credentialsInDB.UUID, err.Error())
+	}
 	RespondWithJSON(w, http.StatusOK, tokens)
 }
 
